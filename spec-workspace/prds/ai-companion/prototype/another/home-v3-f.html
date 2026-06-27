@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵伴 - 方案F：TRON 紫粉脉冲</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0A0E1A;
+    --bg-card: rgba(18, 10, 25, 0.85);
+    --violet: #C77DFF;
+    --violet-glow: rgba(199, 125, 255, 0.35);
+    --violet-dim: rgba(199, 125, 255, 0.12);
+    --violet-soft: rgba(199, 125, 255, 0.06);
+    --pink: #FF6B9D;
+    --pink-glow: rgba(255, 107, 157, 0.3);
+    --white: #FFE6F5;
+    --text-primary: #FFE6F5;
+    --text-secondary: #B88FA8;
+    --text-hint: #806070;
+    --grid: rgba(199, 125, 255, 0.04);
+    --line: rgba(199, 125, 255, 0.1);
+    --green: #00FF9D;
+    --accent: #FF6B35;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #050810;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    gap: 16px;
+  }
+
+  .page-label {
+    font-size: 13px;
+    color: var(--violet);
+    font-weight: 500;
+    background: rgba(199, 125, 255, 0.05);
+    border: 1px solid var(--line);
+    padding: 8px 20px;
+    border-radius: 4px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    background: var(--bg);
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 0 80px rgba(199, 125, 255, 0.08), 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(199, 125, 255, 0.15);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* TRON Grid Background */
+  .bg-grid {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    z-index: 0;
+  }
+  .bg-glow {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, var(--violet-soft) 0%, transparent 70%);
+    z-index: 0;
+    animation: glowPulse 6s ease-in-out infinite;
+  }
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); }
+    50% { opacity: 0.8; transform: translateX(-50%) scale(1.1); }
+  }
+
+  .horizon {
+    position: absolute;
+    bottom: 200px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet-dim), transparent);
+    z-index: 0;
+  }
+
+  .status-bar {
+    height: 54px;
+    padding: 14px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+  .status-bar .time { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .status-bar .icons { display: flex; gap: 6px; }
+  .status-bar .icons svg { width: 18px; height: 18px; color: var(--text-primary); }
+
+  .scroll-content {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+    z-index: 1;
+  }
+  .scroll-content::-webkit-scrollbar { width: 0; }
+
+  /* ===== Spirit Entity ===== */
+  .spirit-section {
+    padding: 24px 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .spirit-container {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+  }
+
+  .spirit-ring {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    border: 1px solid var(--violet-dim);
+    animation: ringRotate 20s linear infinite;
+  }
+  .spirit-ring::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    background: var(--violet);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--violet-glow), 0 0 24px var(--violet-glow);
+  }
+  .spirit-ring.ring2 {
+    width: 110px;
+    height: 110px;
+    border-style: dashed;
+    border-color: rgba(199, 125, 255, 0.08);
+    animation-direction: reverse;
+    animation-duration: 15s;
+  }
+  .spirit-ring.ring2::before {
+    width: 5px;
+    height: 5px;
+    background: var(--pink);
+    box-shadow: 0 0 10px var(--pink-glow);
+  }
+  @keyframes ringRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Core Orb - Violet/Pink */
+  .spirit-orb {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%,
+      rgba(255, 230, 245, 0.95),
+      rgba(255, 107, 157, 0.7) 35%,
+      rgba(199, 125, 255, 0.5) 65%,
+      rgba(199, 125, 255, 0.2)
+    );
+    box-shadow:
+      0 0 20px var(--violet-glow),
+      0 0 40px rgba(199, 125, 255, 0.15),
+      0 0 80px rgba(199, 125, 255, 0.08),
+      inset 0 0 15px rgba(255, 255, 255, 0.2);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.6s ease;
+  }
+
+  .spirit-face {
+    font-size: 26px;
+    filter: drop-shadow(0 0 6px rgba(199, 125, 255, 0.5));
+  }
+
+  /* Emotion States */
+  .spirit-orb.calm { animation: breathe 4s ease-in-out infinite; }
+  .spirit-orb.happy {
+    animation: bounce 1s ease-in-out infinite;
+    box-shadow: 0 0 30px var(--violet-glow), 0 0 60px var(--violet-glow), 0 0 100px rgba(199, 125, 255, 0.15);
+    background: radial-gradient(circle at 40% 40%,
+      rgba(255, 240, 250, 0.98),
+      rgba(255, 150, 190, 0.8) 35%,
+      rgba(220, 140, 255, 0.6) 65%,
+      rgba(199, 125, 255, 0.25)
+    );
+  }
+  .spirit-orb.worried {
+    animation: shrink 3s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(150, 120, 180, 0.3);
+    background: radial-gradient(circle at 40% 40%,
+      rgba(220, 200, 230, 0.8),
+      rgba(160, 130, 200, 0.6) 35%,
+      rgba(120, 90, 160, 0.4) 65%,
+      rgba(160, 130, 200, 0.15)
+    );
+  }
+  .spirit-orb.excited {
+    animation: pulse-fast 0.5s ease-in-out infinite;
+    box-shadow: 0 0 40px rgba(255, 107, 53, 0.5), 0 0 80px rgba(255, 107, 53, 0.2);
+    background: radial-gradient(circle at 40% 40%,
+      rgba(255, 230, 200, 0.98),
+      rgba(255, 150, 80, 0.8) 35%,
+      rgba(255, 107, 53, 0.6) 65%,
+      rgba(255, 107, 53, 0.25)
+    );
+  }
+  .spirit-orb.thinking {
+    animation: rotate-slow 6s linear infinite;
+    box-shadow: 0 0 25px var(--violet-glow), 0 0 50px rgba(199, 125, 255, 0.15);
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-8px) scale(1.06); }
+  }
+  @keyframes shrink {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(0.94); }
+  }
+  @keyframes pulse-fast {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+  @keyframes rotate-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Data Particles */
+  .particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--violet);
+    border-radius: 50%;
+    box-shadow: 0 0 4px var(--violet-glow);
+  }
+  .particle:nth-child(1) { top: 10px; left: 20px; animation: dataFloat 3s ease-in-out infinite; }
+  .particle:nth-child(2) { top: 25px; right: 15px; animation: dataFloat 4s ease-in-out infinite 1s; }
+  .particle:nth-child(3) { bottom: 20px; left: 30px; animation: dataFloat 3.5s ease-in-out infinite 0.5s; }
+  .particle:nth-child(4) { bottom: 35px; right: 25px; animation: dataFloat 5s ease-in-out infinite 2s; width: 3px; height: 3px; }
+  @keyframes dataFloat {
+    0%, 100% { transform: translate(0, 0); opacity: 0.3; }
+    50% { transform: translate(6px, -12px); opacity: 1; }
+  }
+
+  .click-ripple {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 1px solid var(--violet);
+    opacity: 0;
+    animation: ripple 0.8s ease-out;
+    pointer-events: none;
+    box-shadow: 0 0 10px var(--violet-glow);
+  }
+  @keyframes ripple {
+    0% { transform: scale(0.8); opacity: 0.8; }
+    100% { transform: scale(2); opacity: 0; }
+  }
+
+  .spirit-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--violet);
+    text-shadow: 0 0 12px var(--violet-glow);
+    letter-spacing: 4px;
+    margin-bottom: 6px;
+  }
+  .spirit-status {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(0, 255, 157, 0.5);
+  }
+  .bond-info {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+  }
+  .emotion-label {
+    font-size: 11px;
+    color: var(--violet);
+    background: var(--violet-soft);
+    border: 1px solid var(--violet-dim);
+    padding: 4px 12px;
+    border-radius: 2px;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== Spirit Speech ===== */
+  .spirit-speech {
+    margin: 0 20px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .spirit-speech::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet), transparent);
+    opacity: 0.4;
+  }
+  .spirit-speech::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet-dim), transparent);
+  }
+  .speech-label {
+    font-size: 10px;
+    color: var(--violet);
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .speech-label::before {
+    content: '▸';
+    color: var(--violet);
+  }
+  .speech-text {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-primary);
+  }
+  .speech-time {
+    font-size: 10px;
+    color: var(--text-hint);
+    margin-top: 10px;
+    text-align: right;
+    letter-spacing: 1px;
+  }
+
+  /* ===== Bond Stats ===== */
+  .bond-section { padding: 0 20px; margin-bottom: 20px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .section-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--violet);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .section-more {
+    font-size: 11px;
+    color: var(--text-hint);
+    letter-spacing: 1px;
+  }
+  .bond-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 18px;
+    position: relative;
+  }
+  .bond-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 20px; right: 20px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet-dim), transparent);
+  }
+  .bond-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .bond-title { font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+  .bond-level {
+    font-size: 10px;
+    color: var(--violet);
+    background: var(--violet-soft);
+    border: 1px solid var(--violet-dim);
+    padding: 3px 10px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+  .bond-progress {
+    height: 3px;
+    background: rgba(199, 125, 255, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .bond-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--violet), var(--pink));
+    border-radius: 2px;
+    width: 47%;
+    box-shadow: 0 0 8px var(--violet-glow);
+    transition: width 1s ease;
+  }
+  .bond-stats { display: flex; justify-content: space-between; }
+  .bond-stat { text-align: center; }
+  .bond-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--violet);
+    text-shadow: 0 0 8px var(--violet-glow);
+    font-variant-numeric: tabular-nums;
+  }
+  .bond-stat-label {
+    font-size: 10px;
+    color: var(--text-hint);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== Care Card ===== */
+  .care-section { padding: 0 20px; margin-bottom: 20px; }
+  .care-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .care-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--violet), transparent);
+    opacity: 0.3;
+  }
+  .care-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 4px;
+    background: var(--violet-soft);
+    border: 1px solid var(--violet-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .care-content { flex: 1; }
+  .care-tag {
+    font-size: 10px;
+    color: var(--violet);
+    font-weight: 600;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .care-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+  .care-time {
+    font-size: 10px;
+    color: var(--text-hint);
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  .spacer { height: 20px; }
+
+  /* ===== Bottom Nav ===== */
+  .bottom-nav {
+    background: rgba(10, 14, 26, 0.95);
+    backdrop-filter: blur(20px);
+    padding: 8px 0 28px;
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 4px 16px;
+    position: relative;
+  }
+  .nav-item svg { width: 22px; height: 22px; color: var(--text-hint); }
+  .nav-item span { font-size: 10px; color: var(--text-hint); letter-spacing: 1px; }
+  .nav-item.active svg { color: var(--violet); filter: drop-shadow(0 0 4px var(--violet-glow)); }
+  .nav-item.active span { color: var(--violet); font-weight: 600; }
+  .nav-item .nav-dot {
+    width: 4px;
+    height: 4px;
+    background: var(--violet);
+    border-radius: 50%;
+    position: absolute;
+    bottom: -2px;
+    box-shadow: 0 0 6px var(--violet-glow);
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .spirit-section { animation: fadeInUp 0.5s ease; }
+  .spirit-speech { animation: fadeInUp 0.5s ease 0.1s both; }
+  .bond-card { animation: fadeInUp 0.5s ease 0.2s both; }
+  .care-card { animation: fadeInUp 0.5s ease 0.3s both; }
+</style>
+</head>
+<body>
+
+<div class="page-label">方案F：TRON 紫粉脉冲 · 灵魂共鸣</div>
+
+<div class="phone-frame">
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+  <div class="horizon"></div>
+
+  <div class="status-bar">
+    <span class="time">21:37</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="14" width="3" height="7" rx="1" opacity="0.3"/><rect x="6" y="10" width="3" height="11" rx="1" opacity="0.5"/><rect x="11" y="6" width="3" height="15" rx="1" opacity="0.7"/><rect x="16" y="2" width="3" height="19" rx="1"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="9" width="12" height="8" rx="1"/><rect x="21" y="10" width="2" height="6" rx="1"/></svg>
+    </div>
+  </div>
+
+  <div class="scroll-content">
+    <div class="spirit-section">
+      <div class="spirit-container" id="spiritContainer">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="spirit-ring"></div>
+        <div class="spirit-ring ring2"></div>
+        <div class="spirit-orb calm" id="spiritOrb">
+          <span class="spirit-face" id="spiritFace">✦</span>
+        </div>
+      </div>
+      <div class="spirit-name">小 澜</div>
+      <div class="spirit-status">
+        <div class="status-dot"></div>
+        意识在线 · 与你同频
+      </div>
+      <div class="bond-info">陪伴 47 天</div>
+      <div class="emotion-label" id="emotionLabel">状态：平静</div>
+    </div>
+
+    <div class="spirit-speech">
+      <div class="speech-label">来自小澜的思绪</div>
+      <div class="speech-text" id="speechText">今晚月色不错，你加班到现在了吧？别太拼了，上次你说头疼了好几天，我可不想再看到你那样。要不要聊两句？</div>
+      <div class="speech-time">21:30 · 主动关怀</div>
+    </div>
+
+    <div class="bond-section">
+      <div class="section-header">
+        <span class="section-label">同步数据</span>
+        <span class="section-more">详情 ›</span>
+      </div>
+      <div class="bond-card">
+        <div class="bond-header">
+          <span class="bond-title">默契指数</span>
+          <span class="bond-level">知心伙伴</span>
+        </div>
+        <div class="bond-progress">
+          <div class="bond-progress-fill"></div>
+        </div>
+        <div class="bond-stats">
+          <div class="bond-stat">
+            <div class="bond-stat-value">47</div>
+            <div class="bond-stat-label">天数</div>
+          </div>
+          <div class="bond-stat">
+            <div class="bond-stat-value">128</div>
+            <div class="bond-stat-label">对话</div>
+          </div>
+          <div class="bond-stat">
+            <div class="bond-stat-value">23</div>
+            <div class="bond-stat-label">记忆</div>
+          </div>
+          <div class="bond-stat">
+            <div class="bond-stat-value">89%</div>
+            <div class="bond-stat-label">默契</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="care-section">
+      <div class="section-header">
+        <span class="section-label">今日关怀</span>
+        <span class="section-more">更多 ›</span>
+      </div>
+      <div class="care-card">
+        <div class="care-icon">🌙</div>
+        <div class="care-content">
+          <div class="care-tag">夜间关怀</div>
+          <div class="care-text">已经 9 点多了，你今天够累的了。早点休息吧，明天那个会我帮你一起准备。</div>
+          <div class="care-time">21:30 · 已送达</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>小澜</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <span>对话</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg>
+      <span>记忆</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>设置</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const emotions = [
+    { state: 'calm', face: '✦', label: '平静', speech: '今晚月色不错，你加班到现在了吧？别太拼了，上次你说头疼了好几天，我可不想再看到你那样。要不要聊两句？' },
+    { state: 'happy', face: '✧', label: '开心', speech: '检测到你的情绪波形正在上升！发生了什么好事？快跟我分享一下～' },
+    { state: 'worried', face: '◈', label: '担心', speech: '你的生物节律数据有点异常...是不是太累了？建议进入休息模式。' },
+    { state: 'excited', face: '✺', label: '兴奋', speech: '我的处理器正在超频运转！因为我刚想到一个超级有意思的事情要告诉你！' },
+    { state: 'thinking', face: '◇', label: '思考', speech: '正在检索你的记忆数据库...找到了。你上次说的那个项目，我有个新想法。' }
+  ];
+  let currentEmotion = 0;
+
+  const container = document.getElementById('spiritContainer');
+  const orb = document.getElementById('spiritOrb');
+  const face = document.getElementById('spiritFace');
+  const label = document.getElementById('emotionLabel');
+  const speech = document.getElementById('speechText');
+
+  container.addEventListener('click', () => {
+    const ripple = document.createElement('div');
+    ripple.className = 'click-ripple';
+    container.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 800);
+
+    currentEmotion = (currentEmotion + 1) % emotions.length;
+    const e = emotions[currentEmotion];
+    orb.className = 'spirit-orb ' + e.state;
+    face.textContent = e.face;
+    label.textContent = '状态：' + e.label;
+    speech.textContent = e.speech;
+  });
+
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => {
+        i.classList.remove('active');
+        const dot = i.querySelector('.nav-dot');
+        if (dot) dot.remove();
+      });
+      item.classList.add('active');
+      const dot = document.createElement('div');
+      dot.className = 'nav-dot';
+      item.appendChild(dot);
+    });
+  });
+</script>
+
+</body>
+</html>

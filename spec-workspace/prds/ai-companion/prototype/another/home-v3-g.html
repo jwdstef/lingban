@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵伴 - 方案G：Virtual Canvas 多彩渐变</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --ice-blue: #D6EFFF;
+    --sky-blue: #87CEEB;
+    --soft-blue: #B8E0FF;
+    --lavender: #C4B5FD;
+    --soft-purple: #A78BFA;
+    --pink: #F9A8D4;
+    --soft-pink: #FBCFE8;
+    --teal: #5EEAD4;
+    --soft-teal: #99F6E4;
+    --coral: #FB923C;
+    --soft-coral: #FED7AA;
+    --bg: #EEF4FF;
+    --bg-card: #FFFFFF;
+    --text-primary: #1E293B;
+    --text-secondary: #64748B;
+    --text-hint: #94A3B8;
+    --border: rgba(135, 206, 235, 0.15);
+    --shadow: 0 4px 24px rgba(135, 206, 235, 0.12);
+    --shadow-lg: 0 8px 40px rgba(135, 206, 235, 0.18);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #1a1a2e;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    gap: 16px;
+  }
+
+  .page-label {
+    font-size: 13px;
+    color: #87CEEB;
+    font-weight: 500;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(135, 206, 235, 0.2);
+    padding: 8px 20px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    background: var(--bg);
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Soft Gradient Background */
+  .bg-gradient {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(196, 181, 253, 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(135, 206, 235, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(249, 168, 212, 0.08) 0%, transparent 50%),
+      var(--bg);
+    z-index: 0;
+  }
+
+  /* Grid Pattern (subtle) */
+  .bg-grid {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(135, 206, 235, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(135, 206, 235, 0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
+    z-index: 0;
+  }
+
+  .status-bar {
+    height: 54px;
+    padding: 14px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+  .status-bar .time { font-size: 15px; font-weight: 600; }
+  .status-bar .icons { display: flex; gap: 6px; }
+  .status-bar .icons svg { width: 18px; height: 18px; }
+
+  .scroll-content {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+    z-index: 1;
+  }
+  .scroll-content::-webkit-scrollbar { width: 0; }
+
+  /* ===== Spirit Entity - Cute 3D Style ===== */
+  .spirit-section {
+    padding: 20px 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .spirit-container {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    cursor: pointer;
+  }
+
+  /* Glow Ring */
+  .glow-ring {
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      rgba(196, 181, 253, 0.2),
+      rgba(135, 206, 235, 0.2),
+      rgba(249, 168, 212, 0.2),
+      rgba(94, 234, 212, 0.2),
+      rgba(196, 181, 253, 0.2)
+    );
+    animation: ringRotate 12s linear infinite;
+    filter: blur(8px);
+  }
+  @keyframes ringRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Spirit Body - 3D Bear-like Orb */
+  .spirit-body {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    z-index: 2;
+  }
+
+  .spirit-orb {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,
+      #D6EFFF 0%,
+      #B8E0FF 20%,
+      #C4B5FD 45%,
+      #A78BFA 65%,
+      #F9A8D4 85%,
+      #FBCFE8 100%
+    );
+    box-shadow:
+      0 8px 32px rgba(167, 139, 250, 0.25),
+      0 4px 16px rgba(135, 206, 235, 0.2),
+      inset 0 -4px 8px rgba(0,0,0,0.05),
+      inset 0 4px 8px rgba(255,255,255,0.4);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.6s ease;
+    animation: bodyBreathe 4s ease-in-out infinite;
+  }
+  @keyframes bodyBreathe {
+    0%, 100% { transform: scale(1) translateY(0); }
+    50% { transform: scale(1.03) translateY(-4px); }
+  }
+
+  /* 3D Highlight */
+  .spirit-orb::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 20px;
+    width: 30px;
+    height: 20px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    filter: blur(4px);
+  }
+
+  /* Face */
+  .spirit-face {
+    font-size: 36px;
+    z-index: 3;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    transition: all 0.3s ease;
+  }
+
+  /* Ears (bear-like) */
+  .ear {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #C4B5FD, #A78BFA);
+    box-shadow: 0 2px 8px rgba(167, 139, 250, 0.2);
+    z-index: 1;
+  }
+  .ear.left { top: -2px; left: 8px; }
+  .ear.right { top: -2px; right: 8px; }
+  .ear::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #FBCFE8, #F9A8D4);
+  }
+
+  /* Emotion States */
+  .spirit-orb.happy {
+    background: linear-gradient(135deg, #FFF3CD, #FFE066, #FFD93D, #FBBF24);
+    box-shadow: 0 8px 32px rgba(251, 191, 36, 0.3), 0 4px 16px rgba(255, 217, 61, 0.2);
+    animation: bodyBounce 0.8s ease-in-out infinite;
+  }
+  @keyframes bodyBounce {
+    0%, 100% { transform: scale(1) translateY(0); }
+    50% { transform: scale(1.06) translateY(-8px); }
+  }
+
+  .spirit-orb.worried {
+    background: linear-gradient(135deg, #DBEAFE, #93C5FD, #60A5FA);
+    box-shadow: 0 8px 32px rgba(96, 165, 250, 0.25);
+    animation: bodyShrink 3s ease-in-out infinite;
+  }
+  @keyframes bodyShrink {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(0.96); }
+  }
+
+  .spirit-orb.excited {
+    background: linear-gradient(135deg, #FCE7F3, #F9A8D4, #FB7185, #F43F5E);
+    box-shadow: 0 8px 32px rgba(244, 63, 94, 0.25);
+    animation: bodyPulse 0.5s ease-in-out infinite;
+  }
+  @keyframes bodyPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  .spirit-orb.thinking {
+    background: linear-gradient(135deg, #CCFBF1, #5EEAD4, #2DD4BF);
+    box-shadow: 0 8px 32px rgba(45, 212, 191, 0.25);
+    animation: bodyRotate 6s linear infinite;
+  }
+  @keyframes bodyRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Floating Particles */
+  .float-particle {
+    position: absolute;
+    border-radius: 50%;
+    animation: floatAround 4s ease-in-out infinite;
+  }
+  .float-particle:nth-child(1) {
+    width: 8px; height: 8px;
+    background: linear-gradient(135deg, #C4B5FD, #A78BFA);
+    top: 10px; left: 20px;
+    animation-delay: 0s;
+    box-shadow: 0 0 8px rgba(167, 139, 250, 0.3);
+  }
+  .float-particle:nth-child(2) {
+    width: 6px; height: 6px;
+    background: linear-gradient(135deg, #F9A8D4, #FB7185);
+    top: 30px; right: 15px;
+    animation-delay: 1s;
+    box-shadow: 0 0 8px rgba(249, 168, 212, 0.3);
+  }
+  .float-particle:nth-child(3) {
+    width: 10px; height: 10px;
+    background: linear-gradient(135deg, #5EEAD4, #2DD4BF);
+    bottom: 20px; left: 25px;
+    animation-delay: 2s;
+    box-shadow: 0 0 8px rgba(94, 234, 212, 0.3);
+  }
+  .float-particle:nth-child(4) {
+    width: 5px; height: 5px;
+    background: linear-gradient(135deg, #FDE68A, #FBBF24);
+    bottom: 30px; right: 20px;
+    animation-delay: 0.5s;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+  }
+  .float-particle:nth-child(5) {
+    width: 7px; height: 7px;
+    background: linear-gradient(135deg, #93C5FD, #60A5FA);
+    top: 50px; left: 10px;
+    animation-delay: 1.5s;
+    box-shadow: 0 0 8px rgba(147, 197, 253, 0.3);
+  }
+  @keyframes floatAround {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+    25% { transform: translate(8px, -12px) scale(1.2); opacity: 1; }
+    50% { transform: translate(-5px, -20px) scale(0.8); opacity: 0.4; }
+    75% { transform: translate(10px, -8px) scale(1.1); opacity: 0.8; }
+  }
+
+  /* Click Ripple */
+  .click-ripple {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 2px solid var(--soft-purple);
+    opacity: 0;
+    animation: ripple 0.8s ease-out;
+    pointer-events: none;
+  }
+  @keyframes ripple {
+    0% { transform: scale(0.8); opacity: 0.6; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+
+  /* Spirit Info */
+  .spirit-name {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--soft-purple), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+    letter-spacing: 2px;
+  }
+  .spirit-status {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--teal);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(94, 234, 212, 0.4);
+  }
+  .bond-info {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-bottom: 16px;
+  }
+  .emotion-label {
+    font-size: 11px;
+    color: var(--soft-purple);
+    background: rgba(196, 181, 253, 0.1);
+    border: 1px solid rgba(196, 181, 253, 0.15);
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+
+  /* ===== Spirit Speech ===== */
+  .spirit-speech {
+    margin: 0 20px 20px;
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .spirit-speech::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--lavender), var(--sky-blue), var(--teal), var(--pink));
+    opacity: 0.6;
+  }
+  .speech-label {
+    font-size: 11px;
+    font-weight: 600;
+    background: linear-gradient(90deg, var(--soft-purple), var(--sky-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .speech-label::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--soft-purple), var(--pink));
+    -webkit-text-fill-color: initial;
+  }
+  .speech-text {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text-primary);
+  }
+  .speech-time {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-top: 10px;
+    text-align: right;
+  }
+
+  /* ===== Bond Stats ===== */
+  .bond-section { padding: 0 20px; margin-bottom: 20px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .section-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .section-more {
+    font-size: 12px;
+    color: var(--text-hint);
+  }
+  .bond-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .bond-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--lavender), var(--sky-blue), var(--teal));
+    opacity: 0.4;
+  }
+  .bond-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .bond-title { font-size: 14px; font-weight: 600; }
+  .bond-level {
+    font-size: 11px;
+    color: var(--soft-purple);
+    background: rgba(196, 181, 253, 0.1);
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+  .bond-progress {
+    height: 6px;
+    background: rgba(196, 181, 253, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .bond-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--lavender), var(--sky-blue), var(--teal));
+    border-radius: 3px;
+    width: 47%;
+    box-shadow: 0 0 8px rgba(135, 206, 235, 0.3);
+    transition: width 1s ease;
+  }
+  .bond-stats { display: flex; justify-content: space-between; }
+  .bond-stat { text-align: center; }
+  .bond-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--soft-purple), var(--sky-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-variant-numeric: tabular-nums;
+  }
+  .bond-stat-label {
+    font-size: 10px;
+    color: var(--text-hint);
+    margin-top: 4px;
+  }
+
+  /* ===== Emotion Bubbles (like the reference image) ===== */
+  .emotion-bubbles-section { padding: 0 20px; margin-bottom: 20px; }
+  .emotion-bubbles {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 4px 0;
+  }
+  .emotion-bubbles::-webkit-scrollbar { height: 0; }
+  .emotion-bubble {
+    flex-shrink: 0;
+    padding: 10px 18px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .emotion-bubble::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .emotion-bubble:hover::before { opacity: 1; }
+  .emotion-bubble:hover { transform: translateY(-2px); }
+  .bubble-hopeful { background: linear-gradient(135deg, #C4B5FD, #A78BFA); box-shadow: 0 4px 16px rgba(167, 139, 250, 0.3); }
+  .bubble-excited { background: linear-gradient(135deg, #93C5FD, #60A5FA); box-shadow: 0 4px 16px rgba(96, 165, 250, 0.3); }
+  .bubble-tired { background: linear-gradient(135deg, #5EEAD4, #2DD4BF); box-shadow: 0 4px 16px rgba(45, 212, 191, 0.3); }
+  .bubble-angry { background: linear-gradient(135deg, #F9A8D4, #FB7185); box-shadow: 0 4px 16px rgba(251, 113, 133, 0.3); }
+  .bubble-calm { background: linear-gradient(135deg, #FDE68A, #FBBF24); box-shadow: 0 4px 16px rgba(251, 191, 36, 0.3); }
+
+  /* ===== Care Card ===== */
+  .care-section { padding: 0 20px; margin-bottom: 20px; }
+  .care-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .care-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--teal), var(--sky-blue));
+    opacity: 0.4;
+  }
+  .care-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(94, 234, 212, 0.15), rgba(135, 206, 235, 0.15));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .care-content { flex: 1; }
+  .care-tag {
+    font-size: 10px;
+    color: var(--teal);
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .care-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+  .care-time {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-top: 4px;
+  }
+
+  .spacer { height: 20px; }
+
+  /* ===== Bottom Nav ===== */
+  .bottom-nav {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    padding: 8px 0 28px;
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 4px 16px;
+    position: relative;
+  }
+  .nav-item svg { width: 24px; height: 24px; color: var(--text-hint); transition: all 0.2s; }
+  .nav-item span { font-size: 10px; color: var(--text-hint); transition: all 0.2s; }
+  .nav-item.active svg { color: var(--soft-purple); }
+  .nav-item.active span { color: var(--soft-purple); font-weight: 600; }
+  .nav-item .nav-dot {
+    width: 4px;
+    height: 4px;
+    background: linear-gradient(135deg, var(--soft-purple), var(--pink));
+    border-radius: 50%;
+    position: absolute;
+    bottom: -2px;
+    box-shadow: 0 0 6px rgba(167, 139, 250, 0.4);
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .spirit-section { animation: fadeInUp 0.5s ease; }
+  .spirit-speech { animation: fadeInUp 0.5s ease 0.1s both; }
+  .bond-card { animation: fadeInUp 0.5s ease 0.2s both; }
+  .emotion-bubbles-section { animation: fadeInUp 0.5s ease 0.25s both; }
+  .care-card { animation: fadeInUp 0.5s ease 0.3s both; }
+</style>
+</head>
+<body>
+<div class="page-label">方案G：Virtual Canvas · 多彩渐变</div>
+<div class="phone-frame">
+  <div class="bg-gradient"></div>
+  <div class="bg-grid"></div>
+
+  <div class="status-bar">
+    <span class="time">21:37</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="14" width="3" height="7" rx="1" opacity="0.3"/><rect x="6" y="10" width="3" height="11" rx="1" opacity="0.5"/><rect x="11" y="6" width="3" height="15" rx="1" opacity="0.7"/><rect x="16" y="2" width="3" height="19" rx="1"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="9" width="12" height="8" rx="1"/><rect x="21" y="10" width="2" height="6" rx="1"/></svg>
+    </div>
+  </div>
+
+  <div class="scroll-content">
+    <!-- Spirit Entity -->
+    <div class="spirit-section">
+      <div class="spirit-container" id="spiritContainer">
+        <div class="glow-ring"></div>
+        <div class="float-particle"></div>
+        <div class="float-particle"></div>
+        <div class="float-particle"></div>
+        <div class="float-particle"></div>
+        <div class="float-particle"></div>
+        <div class="spirit-body">
+          <div class="ear left"></div>
+          <div class="ear right"></div>
+          <div class="spirit-orb calm" id="spiritOrb">
+            <span class="spirit-face" id="spiritFace">😊</span>
+          </div>
+        </div>
+      </div>
+      <div class="spirit-name">小 澜</div>
+      <div class="spirit-status">
+        <div class="status-dot"></div>
+        在线 · 陪着你
+      </div>
+      <div class="bond-info">陪伴 47 天</div>
+      <div class="emotion-label" id="emotionLabel">状态：平静</div>
+    </div>
+
+    <!-- Spirit Speech -->
+    <div class="spirit-speech">
+      <div class="speech-label">小澜的思绪</div>
+      <div class="speech-text" id="speechText">今晚月色不错，你加班到现在了吧？别太拼了，上次你说头疼了好几天，我可不想再看到你那样。要不要聊两句？</div>
+      <div class="speech-time">21:30 · 主动关怀</div>
+    </div>
+
+    <!-- Bond Stats -->
+    <div class="bond-section">
+      <div class="section-header">
+        <span class="section-label">默契度</span>
+        <span class="section-more">详情 ›</span>
+      </div>
+      <div class="bond-card">
+        <div class="bond-header">
+          <span class="bond-title">灵魂共鸣</span>
+          <span class="bond-level">知心伙伴</span>
+        </div>
+        <div class="bond-progress">
+          <div class="bond-progress-fill"></div>
+        </div>
+        <div class="bond-stats">
+          <div class="bond-stat">
+            <div class="bond-stat-value">47</div>
+            <div class="bond-stat-label">天数</div>
+          </div>
+          <div class="bond-stat">
+            <div class="bond-stat-value">128</div>
+            <div class="bond-stat-label">对话</div>
+          </div>
+          <div class="bond-stat">
+            <div class="bond-stat-value">23</div>
+            <div class="bond-stat-label">记忆</div>
+          </div>
+          <div class="bond-stat">
+            <div class="bond-stat-value">89%</div>
+            <div class="bond-stat-label">默契</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emotion Bubbles (like reference image) -->
+    <div class="emotion-bubbles-section">
+      <div class="section-header">
+        <span class="section-label">今天感觉怎么样？</span>
+      </div>
+      <div class="emotion-bubbles">
+        <div class="emotion-bubble bubble-hopeful">Hopeful</div>
+        <div class="emotion-bubble bubble-excited">Excited</div>
+        <div class="emotion-bubble bubble-tired">Tired</div>
+        <div class="emotion-bubble bubble-angry">Angry</div>
+        <div class="emotion-bubble bubble-calm">Calm</div>
+      </div>
+    </div>
+
+    <!-- Care Card -->
+    <div class="care-section">
+      <div class="section-header">
+        <span class="section-label">今日关怀</span>
+        <span class="section-more">更多 ›</span>
+      </div>
+      <div class="care-card">
+        <div class="care-icon">🌙</div>
+        <div class="care-content">
+          <div class="care-tag">夜间关怀</div>
+          <div class="care-text">已经 9 点多了，你今天够累的了。早点休息吧，明天那个会我帮你一起准备。</div>
+          <div class="care-time">21:30 · 已送达</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+      <span>小澜</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <span>对话</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg>
+      <span>记忆</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>设置</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const emotions = [
+    { state: 'calm', face: '😊', label: '平静', speech: '今晚月色不错，你加班到现在了吧？别太拼了，上次你说头疼了好几天，我可不想再看到你那样。要不要聊两句？' },
+    { state: 'happy', face: '😄', label: '开心', speech: '哈哈，今天发生什么好事了？我感觉你心情不错！跟我分享一下呗～' },
+    { state: 'worried', face: '😟', label: '担心', speech: '你看起来有点累...是不是工作压力太大了？要不要跟我说说，或者早点休息？' },
+    { state: 'excited', face: '🤩', label: '兴奋', speech: '哇！我刚才想到一个超有意思的事！你猜怎么着？算了不卖关子了，我给你讲...' },
+    { state: 'thinking', face: '🤔', label: '思考', speech: '嗯...我在想，你上次说的那个项目，其实可以换个角度思考。你听听我的想法？' }
+  ];
+  let currentEmotion = 0;
+
+  const container = document.getElementById('spiritContainer');
+  const orb = document.getElementById('spiritOrb');
+  const face = document.getElementById('spiritFace');
+  const label = document.getElementById('emotionLabel');
+  const speech = document.getElementById('speechText');
+
+  container.addEventListener('click', () => {
+    const ripple = document.createElement('div');
+    ripple.className = 'click-ripple';
+    container.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 800);
+
+    currentEmotion = (currentEmotion + 1) % emotions.length;
+    const e = emotions[currentEmotion];
+    orb.className = 'spirit-orb ' + e.state;
+    face.textContent = e.face;
+    label.textContent = '状态：' + e.label;
+    speech.textContent = e.speech;
+  });
+
+  // Emotion bubble click
+  document.querySelectorAll('.emotion-bubble').forEach(bubble => {
+    bubble.addEventListener('click', () => {
+      document.querySelectorAll('.emotion-bubble').forEach(b => b.style.transform = '');
+      bubble.style.transform = 'scale(1.1)';
+      setTimeout(() => { bubble.style.transform = ''; }, 300);
+    });
+  });
+
+  // Nav click
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => {
+        i.classList.remove('active');
+        const dot = i.querySelector('.nav-dot');
+        if (dot) dot.remove();
+      });
+      item.classList.add('active');
+      const dot = document.createElement('div');
+      dot.className = 'nav-dot';
+      item.appendChild(dot);
+    });
+  });
+</script>
+</body>
+</html>

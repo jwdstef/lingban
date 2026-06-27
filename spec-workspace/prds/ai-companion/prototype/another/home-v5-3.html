@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵伴 - 日落暖阳系</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --peach: #FFDAC1;
+    --coral: #FFB4A2;
+    --warm-orange: #FFBE72;
+    --soft-peach: #FFD6A5;
+    --pink: #FF73EC;
+    --cream: #FFF6EF;
+    --bg: #FFF6EF;
+    --card: #FFFFFF;
+    --text-primary: #3D2B1F;
+    --text-secondary: #8B6B50;
+    --text-hint: #B8956A;
+    --border: rgba(255, 180, 162, 0.15);
+    --shadow: 0 4px 24px rgba(255, 180, 162, 0.1);
+    --shadow-lg: 0 8px 40px rgba(255, 180, 162, 0.15);
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #2a2018; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 16px; }
+  .page-label { font-size: 13px; color: var(--coral); background: white; padding: 8px 20px; border-radius: 20px; box-shadow: var(--shadow); }
+  .phone-frame { width: 390px; height: 844px; background: var(--bg); border-radius: 44px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 2px #1a1a1a; position: relative; display: flex; flex-direction: column; }
+
+  /* Warm Sunset Background */
+  .bg-sunset { position: absolute; top: 0; left: 0; right: 0; height: 400px; background: linear-gradient(180deg, rgba(255, 218, 193, 0.4) 0%, rgba(255, 190, 114, 0.15) 40%, transparent 100%); z-index: 0; }
+  .bg-sunset-glow { position: absolute; top: 60px; right: 20px; width: 100px; height: 100px; background: radial-gradient(circle, rgba(255, 190, 114, 0.2) 0%, transparent 70%); border-radius: 50%; z-index: 0; }
+  .bg-mountain { position: absolute; bottom: 180px; left: 0; right: 0; height: 80px; z-index: 0; opacity: 0.08; }
+  .bg-mountain::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: linear-gradient(135deg, var(--coral) 0%, var(--warm-orange) 50%, var(--peach) 100%); clip-path: polygon(0% 100%, 0% 40%, 15% 20%, 30% 50%, 45% 10%, 60% 35%, 75% 15%, 90% 45%, 100% 25%, 100% 100%); }
+
+  .status-bar { height: 54px; padding: 14px 28px 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; position: relative; z-index: 10; }
+  .status-bar .time { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .status-bar .icons { display: flex; gap: 6px; }
+  .status-bar .icons svg { width: 18px; height: 18px; }
+  .scroll-content { flex: 1; overflow-y: auto; position: relative; z-index: 1; }
+  .scroll-content::-webkit-scrollbar { width: 0; }
+
+  /* Spirit - Cute Warm Bear */
+  .spirit-section { padding: 16px 20px 0; display: flex; flex-direction: column; align-items: center; }
+  .spirit-container { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; cursor: pointer; }
+  .spirit-glow { position: absolute; width: 100px; height: 100px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 190, 114, 0.25) 0%, transparent 70%); animation: warmGlow 4s ease-in-out infinite; }
+  @keyframes warmGlow { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.4); opacity: 1; } }
+
+  .bear-body-wrap { position: relative; width: 85px; height: 95px; animation: bearSway 3s ease-in-out infinite; z-index: 2; }
+  @keyframes bearSway { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(2deg); } 75% { transform: rotate(-2deg); } }
+  .bear-ears { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; }
+  .bear-ear { width: 22px; height: 22px; background: linear-gradient(180deg, var(--coral), #E8943A); border-radius: 50%; position: relative; }
+  .bear-ear::after { content: ''; position: absolute; top: 5px; left: 5px; width: 12px; height: 12px; background: rgba(255, 214, 165, 0.6); border-radius: 50%; }
+  .bear-head { width: 75px; height: 70px; background: linear-gradient(180deg, var(--peach), var(--soft-peach)); border-radius: 38px 38px 33px 33px; margin: 0 auto; position: relative; box-shadow: 0 6px 20px rgba(255, 180, 162, 0.25), inset 0 -3px 6px rgba(0,0,0,0.04); }
+  .bear-head::before { content: ''; position: absolute; top: 16px; left: 18px; width: 38px; height: 24px; background: rgba(255, 255, 255, 0.4); border-radius: 50%; }
+  .bear-face { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 24px; z-index: 3; }
+  .bear-blush { position: absolute; top: 34px; width: 12px; height: 7px; background: rgba(255, 180, 162, 0.4); border-radius: 50%; }
+  .bear-blush.left { left: 12px; }
+  .bear-blush.right { right: 12px; }
+  .bear-body { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 55px; height: 30px; background: linear-gradient(180deg, var(--peach), var(--soft-peach)); border-radius: 28px 28px 20px 20px; }
+  .bear-feet { position: absolute; bottom: -16px; display: flex; gap: 14px; left: 50%; transform: translateX(-50%); }
+  .bear-foot { width: 16px; height: 10px; background: var(--coral); border-radius: 8px; }
+
+  .spirit-name { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .spirit-name span { color: var(--coral); }
+  .spirit-greeting { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+  .spirit-sub { font-size: 11px; color: var(--text-hint); margin-bottom: 16px; }
+  .emotion-label { font-size: 11px; color: var(--warm-orange); background: rgba(255, 190, 114, 0.1); border: 1px solid rgba(255, 190, 114, 0.15); padding: 4px 14px; border-radius: 20px; margin-bottom: 20px; }
+
+  /* Cards */
+  .card { background: var(--card); border-radius: 20px; padding: 16px; margin: 0 20px 16px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+  .card-warm::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--coral), var(--warm-orange), var(--peach)); opacity: 0.5; }
+
+  /* Speech */
+  .speech-label { font-size: 11px; color: var(--coral); font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .speech-label::before { content: ''; width: 6px; height: 6px; background: var(--coral); border-radius: 50%; }
+  .speech-text { font-size: 15px; line-height: 1.7; color: var(--text-primary); }
+  .speech-time { font-size: 11px; color: var(--text-hint); margin-top: 8px; text-align: right; }
+
+  /* Mood */
+  .mood-section { padding: 0 20px; margin-bottom: 16px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-label { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .section-more { font-size: 12px; color: var(--text-hint); }
+  .mood-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .mood-title { font-size: 13px; color: var(--text-secondary); }
+  .mood-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .mood-emoji { font-size: 18px; margin-left: 6px; }
+  .mood-bar { height: 4px; background: rgba(255, 180, 162, 0.12); border-radius: 2px; overflow: hidden; margin-bottom: 12px; }
+  .mood-bar-fill { height: 100%; background: linear-gradient(90deg, var(--coral), var(--warm-orange)); border-radius: 2px; width: 65%; }
+
+  /* Memory */
+  .memory-card { }
+  .memory-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .memory-icon { font-size: 18px; }
+  .memory-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .memory-days { font-size: 28px; font-weight: 700; color: var(--coral); margin-bottom: 4px; }
+  .memory-sub { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+  .memory-photos { display: flex; gap: 8px; }
+  .memory-photo { width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, var(--peach), var(--coral)); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .memory-photo:nth-child(2) { background: linear-gradient(135deg, var(--warm-orange), var(--soft-peach)); }
+  .memory-photo:nth-child(3) { background: linear-gradient(135deg, var(--coral), var(--pink)); opacity: 0.7; }
+
+  /* Evening Companion */
+  .evening-card { display: flex; gap: 14px; align-items: flex-start; }
+  .evening-icon { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--coral), var(--warm-orange)); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .evening-content { flex: 1; }
+  .evening-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .evening-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .evening-tag { display: inline-block; margin-top: 6px; padding: 3px 10px; background: rgba(255, 180, 162, 0.1); color: var(--coral); font-size: 11px; border-radius: 10px; }
+
+  /* Music */
+  .music-card { display: flex; align-items: center; gap: 12px; }
+  .music-cover { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, var(--coral), var(--warm-orange)); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .music-info { flex: 1; }
+  .music-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+  .music-artist { font-size: 11px; color: var(--text-hint); }
+  .music-btn { padding: 6px 14px; background: linear-gradient(90deg, var(--coral), var(--warm-orange)); color: white; border: none; border-radius: 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
+
+  .spacer { height: 16px; }
+
+  /* Nav */
+  .bottom-nav { background: var(--card); padding: 8px 0 28px; display: flex; justify-content: space-around; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 16px; position: relative; }
+  .nav-item svg { width: 22px; height: 22px; color: var(--text-hint); }
+  .nav-item span { font-size: 10px; color: var(--text-hint); }
+  .nav-item.active svg { color: var(--coral); }
+  .nav-item.active span { color: var(--coral); font-weight: 600; }
+  .nav-item .nav-dot { width: 4px; height: 4px; background: var(--coral); border-radius: 50%; position: absolute; bottom: -2px; }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .spirit-section { animation: fadeInUp 0.5s ease; }
+  .card { animation: fadeInUp 0.5s ease 0.1s both; }
+  .mood-section .card:nth-child(2) { animation-delay: 0.15s; }
+  .mood-section .card:nth-child(3) { animation-delay: 0.2s; }
+</style>
+</head>
+<body>
+<div class="page-label">日落暖阳系 · 温暖放松</div>
+<div class="phone-frame">
+  <div class="bg-sunset"></div>
+  <div class="bg-sunset-glow"></div>
+  <div class="bg-mountain"></div>
+
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="14" width="3" height="7" rx="1" opacity="0.3"/><rect x="6" y="10" width="3" height="11" rx="1" opacity="0.5"/><rect x="11" y="6" width="3" height="15" rx="1" opacity="0.7"/><rect x="16" y="2" width="3" height="19" rx="1"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="9" width="12" height="8" rx="1"/><rect x="21" y="10" width="2" height="6" rx="1"/></svg>
+    </div>
+  </div>
+
+  <div class="scroll-content">
+    <div class="spirit-section">
+      <div class="spirit-container" id="spiritContainer">
+        <div class="spirit-glow"></div>
+        <div class="bear-body-wrap">
+          <div class="bear-ears"><div class="bear-ear"></div><div class="bear-ear"></div></div>
+          <div class="bear-head">
+            <div class="bear-blush left"></div>
+            <div class="bear-blush right"></div>
+            <div class="bear-face" id="bearFace">😊</div>
+          </div>
+          <div class="bear-body"></div>
+          <div class="bear-feet"><div class="bear-foot"></div><div class="bear-foot"></div></div>
+        </div>
+      </div>
+      <div class="spirit-name">嗨，<span>暖暖</span></div>
+      <div class="spirit-greeting">今天过得怎么样呀？</div>
+      <div class="spirit-sub">要不要听首歌放松一下？</div>
+      <div class="emotion-label" id="emotionLabel">今日心情：放松</div>
+    </div>
+
+    <div class="card card-warm">
+      <div class="speech-label">暖暖说</div>
+      <div class="speech-text" id="speechText">呼噜噜～辛苦啦～要不要听首歌放松一下？《慢慢喜欢你》🎵</div>
+      <div class="speech-time">21:30 · 晚间陪伴</div>
+    </div>
+
+    <div class="mood-section">
+      <div class="section-header"><span class="section-label">今日心情</span><span class="section-more">情绪报告 ›</span></div>
+      <div class="card card-warm">
+        <div class="mood-header">
+          <span class="mood-title">心情指数</span>
+          <span><span class="mood-value">放松</span><span class="mood-emoji">😌</span></span>
+        </div>
+        <div class="mood-bar"><div class="mood-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="mood-section">
+      <div class="section-header"><span class="section-label">今日推荐</span></div>
+      <div class="card card-warm">
+        <div class="music-card">
+          <div class="music-cover"></div>
+          <div class="music-info">
+            <div class="music-title">慢慢喜欢你</div>
+            <div class="music-artist">莫文蔚</div>
+          </div>
+          <button class="music-btn">去播放</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mood-section">
+      <div class="section-header"><span class="section-label">我们的回忆</span><span class="section-more">全部 ›</span></div>
+      <div class="card card-warm">
+        <div class="memory-card">
+          <div class="memory-header">
+            <div class="memory-icon"></div>
+            <div class="memory-title">一起走过了</div>
+          </div>
+          <div class="memory-days">98 天</div>
+          <div class="memory-sub">一起听过 56 首歌 · 聊过 328 次天</div>
+          <div class="memory-photos">
+            <div class="memory-photo"></div>
+            <div class="memory-photo"></div>
+            <div class="memory-photo"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mood-section">
+      <div class="section-header"><span class="section-label">晚安陪伴</span></div>
+      <div class="card card-warm">
+        <div class="evening-card">
+          <div class="evening-icon"></div>
+          <div class="evening-content">
+            <div class="evening-title">现在有点晚了呢</div>
+            <div class="evening-text">记得早点休息哦，晚安～好梦</div>
+            <div class="evening-tag">晚安好梦</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg><span>首页</span><div class="nav-dot"></div></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>回忆</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><span>陪伴</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg><span>我的</span></div>
+  </div>
+</div>
+<script>
+  const emotions = [
+    { face: '😊', label: '放松', speech: '呼噜噜～辛苦啦～要不要听首歌放松一下？《慢慢喜欢你》' },
+    { face: '😄', label: '开心', speech: '今天过得不错嘛！有什么开心的事跟我分享一下呗～' },
+    { face: '', label: '想你', speech: '主人...你今天好像不太开心...怎么了？跟我说说吧...' },
+    { face: '', label: '被爱', speech: '好呀，这首歌很适合今晚呢～我们一起听吧...' },
+    { face: '😴', label: '困了', speech: '嗯...我也困了...你早点睡吧，我陪着你...晚安...好梦...' }
+  ];
+  let currentEmotion = 0;
+  const container = document.getElementById('spiritContainer');
+  const face = document.getElementById('bearFace');
+  const label = document.getElementById('emotionLabel');
+  const speech = document.getElementById('speechText');
+  container.addEventListener('click', () => {
+    currentEmotion = (currentEmotion + 1) % emotions.length;
+    const e = emotions[currentEmotion];
+    face.textContent = e.face;
+    label.textContent = '今日心情：' + e.label;
+    speech.textContent = e.speech;
+  });
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => { i.classList.remove('active'); const d = i.querySelector('.nav-dot'); if (d) d.remove(); });
+      item.classList.add('active');
+      const dot = document.createElement('div'); dot.className = 'nav-dot'; item.appendChild(dot);
+    });
+  });
+</script>
+</body>
+</html>

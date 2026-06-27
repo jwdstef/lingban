@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵伴 - 方案五：银发关怀系</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --china-red: #D84C4C;
+    --warm-gold: #E7B96A;
+    --off-white: #FAF4EA;
+    --soft-red: #F5D0D0;
+    --soft-gold: #FFF3D6;
+    --bg: #FAF4EA;
+    --card: #FFFFFF;
+    --text-primary: #3D2B1F;
+    --text-secondary: #6B5040;
+    --text-hint: #9B8070;
+    --border: rgba(216, 76, 76, 0.1);
+    --shadow: 0 4px 24px rgba(61, 43, 31, 0.06);
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #2a2018; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 16px; }
+  .page-label { font-size: 13px; color: var(--china-red); background: white; padding: 8px 20px; border-radius: 20px; box-shadow: var(--shadow); }
+  .phone-frame { width: 390px; height: 844px; background: var(--bg); border-radius: 44px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 2px #1a1a1a; position: relative; display: flex; flex-direction: column; }
+  .bg-warm { position: absolute; top: 0; left: 0; right: 0; height: 200px; background: linear-gradient(180deg, rgba(231, 185, 106, 0.08) 0%, transparent 100%); z-index: 0; }
+  .status-bar { height: 54px; padding: 14px 28px 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; position: relative; z-index: 10; }
+  .status-bar .time { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .status-bar .icons { display: flex; gap: 6px; }
+  .status-bar .icons svg { width: 18px; height: 18px; }
+  .scroll-content { flex: 1; overflow-y: auto; position: relative; z-index: 1; }
+  .scroll-content::-webkit-scrollbar { width: 0; }
+
+  /* Greeting - Large Font */
+  .greeting-section { padding: 20px 24px 0; }
+  .greeting-text { font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .greeting-name { font-size: 28px; font-weight: 700; color: var(--china-red); margin-bottom: 16px; }
+  .weather-card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+  .weather-icon { font-size: 48px; }
+  .weather-info { flex: 1; }
+  .weather-temp { font-size: 36px; font-weight: 700; color: var(--text-primary); }
+  .weather-desc { font-size: 16px; color: var(--text-secondary); margin-top: 4px; }
+  .weather-date { font-size: 14px; color: var(--text-hint); margin-top: 4px; }
+
+  /* Big Buttons */
+  .action-section { padding: 0 24px; margin-bottom: 24px; }
+  .section-label { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; }
+  .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .action-btn { background: var(--card); border-radius: 20px; padding: 24px 16px; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+  .action-btn:active { transform: scale(0.96); border-color: var(--china-red); }
+  .action-btn-icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .action-btn-icon.chat { background: rgba(216, 76, 76, 0.1); }
+  .action-btn-icon.call { background: rgba(107, 191, 89, 0.1); }
+  .action-btn-icon.health { background: rgba(231, 185, 106, 0.15); }
+  .action-btn-icon.news { background: rgba(110, 197, 255, 0.1); }
+  .action-btn-text { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+
+  /* Companion */
+  .companion-section { padding: 0 24px; margin-bottom: 24px; }
+  .companion-card { background: var(--card); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); display: flex; gap: 16px; align-items: center; }
+  .companion-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--china-red), var(--warm-gold)); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; box-shadow: 0 4px 16px rgba(216, 76, 76, 0.2); }
+  .companion-content { flex: 1; }
+  .companion-name { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .companion-text { font-size: 16px; color: var(--text-secondary); line-height: 1.5; }
+  .companion-time { font-size: 13px; color: var(--text-hint); margin-top: 4px; }
+
+  /* Health Reminder */
+  .health-section { padding: 0 24px; margin-bottom: 24px; }
+  .health-card { background: linear-gradient(135deg, rgba(231, 185, 106, 0.1), rgba(216, 76, 76, 0.05)); border-radius: 20px; padding: 20px; border: 1px solid rgba(231, 185, 106, 0.15); }
+  .health-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .health-icon { font-size: 24px; }
+  .health-title { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+  .health-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+  .health-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .health-dot.red { background: var(--china-red); }
+  .health-dot.gold { background: var(--warm-gold); }
+  .health-dot.green { background: #6BBF59; }
+  .health-text { font-size: 16px; color: var(--text-secondary); }
+  .health-time { font-size: 14px; color: var(--text-hint); margin-left: auto; }
+
+  .spacer { height: 20px; }
+
+  /* Nav - Larger */
+  .bottom-nav { background: var(--card); padding: 10px 0 32px; display: flex; justify-content: space-around; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 6px 20px; position: relative; }
+  .nav-item svg { width: 28px; height: 28px; color: var(--text-hint); }
+  .nav-item span { font-size: 13px; color: var(--text-hint); }
+  .nav-item.active svg { color: var(--china-red); }
+  .nav-item.active span { color: var(--china-red); font-weight: 600; }
+  .nav-item .nav-dot { width: 5px; height: 5px; background: var(--china-red); border-radius: 50%; position: absolute; bottom: -2px; }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .greeting-section { animation: fadeInUp 0.5s ease; }
+  .weather-card { animation: fadeInUp 0.5s ease 0.1s both; }
+  .action-grid { animation: fadeInUp 0.5s ease 0.2s both; }
+  .companion-card { animation: fadeInUp 0.5s ease 0.3s both; }
+  .health-card { animation: fadeInUp 0.5s ease 0.4s both; }
+</style>
+</head>
+<body>
+<div class="page-label">方案五：银发关怀系 · 中国红</div>
+<div class="phone-frame">
+  <div class="bg-warm"></div>
+  <div class="status-bar">
+    <span class="time">09:30</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="14" width="3" height="7" rx="1" opacity="0.3"/><rect x="6" y="10" width="3" height="11" rx="1" opacity="0.5"/><rect x="11" y="6" width="3" height="15" rx="1" opacity="0.7"/><rect x="16" y="2" width="3" height="19" rx="1"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="9" width="12" height="8" rx="1"/><rect x="21" y="10" width="2" height="6" rx="1"/></svg>
+    </div>
+  </div>
+  <div class="scroll-content">
+    <!-- Large Greeting -->
+    <div class="greeting-section">
+      <div class="greeting-text">早上好</div>
+      <div class="greeting-name">王阿姨</div>
+    </div>
+
+    <!-- Weather -->
+    <div class="weather-card">
+      <div class="weather-icon"></div>
+      <div class="weather-info">
+        <div class="weather-temp">25℃</div>
+        <div class="weather-desc">晴转多云 · 适宜出行</div>
+        <div class="weather-date">今天星期二 · 6月22日</div>
+      </div>
+    </div>
+
+    <!-- Big Action Buttons -->
+    <div class="action-section">
+      <div class="section-label">常用功能</div>
+      <div class="action-grid">
+        <div class="action-btn">
+          <div class="action-btn-icon chat"></div>
+          <div class="action-btn-text">聊天</div>
+        </div>
+        <div class="action-btn">
+          <div class="action-btn-icon call"></div>
+          <div class="action-btn-text">给女儿打电话</div>
+        </div>
+        <div class="action-btn">
+          <div class="action-btn-icon health"></div>
+          <div class="action-btn-text">健康提醒</div>
+        </div>
+        <div class="action-btn">
+          <div class="action-btn-icon news"></div>
+          <div class="action-btn-text">今日新闻</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Companion Message -->
+    <div class="companion-section">
+      <div class="section-label">小澜说</div>
+      <div class="companion-card">
+        <div class="companion-avatar"></div>
+        <div class="companion-content">
+          <div class="companion-name">小澜</div>
+          <div class="companion-text">王阿姨早上好！今天天气不错，记得出去走走。您的降压药该吃了吗？</div>
+          <div class="companion-time">09:00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Health Reminders -->
+    <div class="health-section">
+      <div class="section-label">今日提醒</div>
+      <div class="health-card">
+        <div class="health-header">
+          <div class="health-icon"></div>
+          <div class="health-title">健康日程</div>
+        </div>
+        <div class="health-item">
+          <div class="health-dot red"></div>
+          <div class="health-text">吃降压药</div>
+          <div class="health-time">08:00</div>
+        </div>
+        <div class="health-item">
+          <div class="health-dot gold"></div>
+          <div class="health-text">散步 30 分钟</div>
+          <div class="health-time">10:00</div>
+        </div>
+        <div class="health-item">
+          <div class="health-dot green"></div>
+          <div class="health-text">午休</div>
+          <div class="health-time">13:00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg><span>小澜</span><div class="nav-dot"></div></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>对话</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg><span>记忆</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>设置</span></div>
+  </div>
+</div>
+<script>
+  document.querySelectorAll('.action-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.style.transform = 'scale(0.96)';
+      setTimeout(() => { btn.style.transform = ''; }, 200);
+    });
+  });
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => { i.classList.remove('active'); const d = i.querySelector('.nav-dot'); if (d) d.remove(); });
+      item.classList.add('active');
+      const dot = document.createElement('div'); dot.className = 'nav-dot'; item.appendChild(dot);
+    });
+  });
+</script>
+</body>
+</html>

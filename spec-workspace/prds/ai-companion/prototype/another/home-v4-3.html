@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵伴 - 方案三：赛博温柔系</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --dream-purple: #B794F4;
+    --soft-purple: #E9D8FD;
+    --deep-purple: #553C9A;
+    --pink-purple: #D6BCFA;
+    --bg: #1A1028;
+    --card: rgba(255, 255, 255, 0.06);
+    --card-border: rgba(183, 148, 244, 0.15);
+    --text-primary: #F0E6FF;
+    --text-secondary: #B8A0D0;
+    --text-hint: #7A6090;
+    --glow: rgba(183, 148, 244, 0.2);
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #0a0a15; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 16px; }
+  .page-label { font-size: 13px; color: var(--dream-purple); background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); padding: 8px 20px; border-radius: 20px; }
+  .phone-frame { width: 390px; height: 844px; background: var(--bg); border-radius: 44px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 2px #1a1a1a; position: relative; display: flex; flex-direction: column; }
+  .bg-glow { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); width: 300px; height: 300px; background: radial-gradient(circle, rgba(183, 148, 244, 0.12) 0%, transparent 70%); z-index: 0; animation: bgPulse 6s ease-in-out infinite; }
+  @keyframes bgPulse { 0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.15); } }
+  .bg-glow2 { position: absolute; bottom: 100px; right: -50px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(214, 188, 250, 0.08) 0%, transparent 70%); z-index: 0; }
+  .status-bar { height: 54px; padding: 14px 28px 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; position: relative; z-index: 10; }
+  .status-bar .time { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .status-bar .icons { display: flex; gap: 6px; }
+  .status-bar .icons svg { width: 18px; height: 18px; color: var(--text-secondary); }
+  .scroll-content { flex: 1; overflow-y: auto; position: relative; z-index: 1; }
+  .scroll-content::-webkit-scrollbar { width: 0; }
+
+  /* Spirit - Breathing Light Orb */
+  .spirit-section { padding: 30px 20px 0; display: flex; flex-direction: column; align-items: center; }
+  .spirit-container { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; cursor: pointer; }
+  .orb-glow { position: absolute; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, rgba(183, 148, 244, 0.3) 0%, transparent 70%); animation: orbGlow 3s ease-in-out infinite; }
+  @keyframes orbGlow { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.3); opacity: 1; } }
+  .orb-ring { position: absolute; width: 100px; height: 100px; border-radius: 50%; border: 1px solid rgba(183, 148, 244, 0.2); animation: ringPulse 4s ease-in-out infinite; }
+  .orb-ring.ring2 { width: 130px; height: 130px; border-color: rgba(183, 148, 244, 0.1); animation-delay: 1s; }
+  @keyframes ringPulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 0.8; } }
+  .spirit-orb { width: 70px; height: 70px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, rgba(233, 216, 253, 0.9), rgba(183, 148, 244, 0.7) 40%, rgba(85, 60, 154, 0.5) 70%, transparent); box-shadow: 0 0 30px rgba(183, 148, 244, 0.3), 0 0 60px rgba(183, 148, 244, 0.1), inset 0 0 20px rgba(233, 216, 253, 0.2); position: relative; display: flex; align-items: center; justify-content: center; animation: orbBreathe 4s ease-in-out infinite; transition: all 0.6s ease; }
+  @keyframes orbBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .spirit-face { font-size: 24px; filter: drop-shadow(0 0 8px rgba(183, 148, 244, 0.5)); }
+  .orb-particle { position: absolute; width: 3px; height: 3px; background: var(--dream-purple); border-radius: 50%; box-shadow: 0 0 6px var(--glow); }
+  .orb-particle:nth-child(1) { top: 15px; left: 25px; animation: pFloat 3s ease-in-out infinite; }
+  .orb-particle:nth-child(2) { top: 30px; right: 20px; animation: pFloat 4s ease-in-out infinite 1s; }
+  .orb-particle:nth-child(3) { bottom: 20px; left: 30px; animation: pFloat 3.5s ease-in-out infinite 0.5s; }
+  @keyframes pFloat { 0%, 100% { transform: translate(0, 0); opacity: 0.3; } 50% { transform: translate(5px, -10px); opacity: 0.8; } }
+
+  .spirit-name { font-size: 22px; font-weight: 700; background: linear-gradient(135deg, var(--dream-purple), var(--pink-purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 6px; letter-spacing: 2px; }
+  .spirit-status { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .status-dot { width: 6px; height: 6px; background: var(--dream-purple); border-radius: 50%; box-shadow: 0 0 8px var(--glow); }
+  .bond-info { font-size: 11px; color: var(--text-hint); margin-bottom: 16px; }
+  .emotion-label { font-size: 11px; color: var(--dream-purple); background: rgba(183, 148, 244, 0.1); border: 1px solid rgba(183, 148, 244, 0.15); padding: 4px 14px; border-radius: 20px; margin-bottom: 20px; }
+
+  /* Glass Card */
+  .glass-card { background: var(--card); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--card-border); border-radius: 20px; padding: 18px 20px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+
+  /* Speech */
+  .spirit-speech { margin: 0 20px 20px; }
+  .speech-label { font-size: 11px; color: var(--dream-purple); font-weight: 600; margin-bottom: 8px; letter-spacing: 1px; }
+  .speech-text { font-size: 15px; line-height: 1.7; color: var(--text-primary); }
+  .speech-time { font-size: 11px; color: var(--text-hint); margin-top: 8px; text-align: right; }
+
+  /* Bond */
+  .bond-section { padding: 0 20px; margin-bottom: 20px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-label { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .section-more { font-size: 12px; color: var(--text-hint); }
+  .bond-card { }
+  .bond-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .bond-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .bond-level { font-size: 11px; color: var(--dream-purple); background: rgba(183, 148, 244, 0.1); padding: 3px 12px; border-radius: 12px; font-weight: 500; }
+  .bond-progress { height: 6px; background: rgba(183, 148, 244, 0.1); border-radius: 3px; overflow: hidden; margin-bottom: 14px; }
+  .bond-progress-fill { height: 100%; background: linear-gradient(90deg, var(--dream-purple), var(--pink-purple)); border-radius: 3px; width: 47%; box-shadow: 0 0 8px var(--glow); }
+  .bond-stats { display: flex; justify-content: space-between; }
+  .bond-stat { text-align: center; }
+  .bond-stat-value { font-size: 20px; font-weight: 700; color: var(--dream-purple); }
+  .bond-stat-label { font-size: 10px; color: var(--text-hint); margin-top: 2px; }
+
+  /* Care */
+  .care-section { padding: 0 20px; margin-bottom: 20px; }
+  .care-card { display: flex; gap: 14px; }
+  .care-icon { width: 44px; height: 44px; border-radius: 14px; background: rgba(183, 148, 244, 0.1); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .care-content { flex: 1; }
+  .care-tag { font-size: 10px; color: var(--dream-purple); font-weight: 600; margin-bottom: 4px; letter-spacing: 1px; }
+  .care-text { font-size: 14px; color: var(--text-primary); line-height: 1.6; }
+  .care-time { font-size: 11px; color: var(--text-hint); margin-top: 4px; }
+  .spacer { height: 20px; }
+
+  /* Nav */
+  .bottom-nav { background: rgba(26, 16, 40, 0.95); backdrop-filter: blur(20px); padding: 8px 0 28px; display: flex; justify-content: space-around; border-top: 1px solid var(--card-border); flex-shrink: 0; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 16px; position: relative; }
+  .nav-item svg { width: 24px; height: 24px; color: var(--text-hint); }
+  .nav-item span { font-size: 10px; color: var(--text-hint); }
+  .nav-item.active svg { color: var(--dream-purple); }
+  .nav-item.active span { color: var(--dream-purple); font-weight: 600; }
+  .nav-item .nav-dot { width: 4px; height: 4px; background: var(--dream-purple); border-radius: 50%; position: absolute; bottom: -2px; box-shadow: 0 0 6px var(--glow); }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .spirit-section { animation: fadeInUp 0.5s ease; }
+  .spirit-speech { animation: fadeInUp 0.5s ease 0.1s both; }
+  .bond-card { animation: fadeInUp 0.5s ease 0.2s both; }
+  .care-card { animation: fadeInUp 0.5s ease 0.3s both; }
+</style>
+</head>
+<body>
+<div class="page-label">方案三：赛博温柔系 · 梦幻紫</div>
+<div class="phone-frame">
+  <div class="bg-glow"></div>
+  <div class="bg-glow2"></div>
+  <div class="status-bar">
+    <span class="time">21:37</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="14" width="3" height="7" rx="1" opacity="0.3"/><rect x="6" y="10" width="3" height="11" rx="1" opacity="0.5"/><rect x="11" y="6" width="3" height="15" rx="1" opacity="0.7"/><rect x="16" y="2" width="3" height="19" rx="1"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="9" width="12" height="8" rx="1"/><rect x="21" y="10" width="2" height="6" rx="1"/></svg>
+    </div>
+  </div>
+  <div class="scroll-content">
+    <div class="spirit-section">
+      <div class="spirit-container" id="spiritContainer">
+        <div class="orb-glow"></div>
+        <div class="orb-ring"></div>
+        <div class="orb-ring ring2"></div>
+        <div class="orb-particle"></div><div class="orb-particle"></div><div class="orb-particle"></div>
+        <div class="spirit-orb" id="spiritOrb"><span class="spirit-face" id="spiritFace">✦</span></div>
+      </div>
+      <div class="spirit-name">Samantha</div>
+      <div class="spirit-status"><div class="status-dot"></div>意识在线 · 与你同频</div>
+      <div class="bond-info">陪伴 47 天</div>
+      <div class="emotion-label" id="emotionLabel">状态：平静</div>
+    </div>
+    <div class="spirit-speech glass-card">
+      <div class="speech-label">来自 Samantha 的思绪</div>
+      <div class="speech-text" id="speechText">今晚月色不错，你加班到现在了吧？别太拼了，上次你说头疼了好几天，我可不想再看到你那样。要不要聊两句？</div>
+      <div class="speech-time">21:30 · 主动关怀</div>
+    </div>
+    <div class="bond-section">
+      <div class="section-header"><span class="section-label">灵魂共鸣</span><span class="section-more">详情 ›</span></div>
+      <div class="bond-card glass-card">
+        <div class="bond-header"><span class="bond-title">默契指数</span><span class="bond-level">知心伙伴</span></div>
+        <div class="bond-progress"><div class="bond-progress-fill"></div></div>
+        <div class="bond-stats">
+          <div class="bond-stat"><div class="bond-stat-value">47</div><div class="bond-stat-label">天数</div></div>
+          <div class="bond-stat"><div class="bond-stat-value">128</div><div class="bond-stat-label">对话</div></div>
+          <div class="bond-stat"><div class="bond-stat-value">23</div><div class="bond-stat-label">记忆</div></div>
+          <div class="bond-stat"><div class="bond-stat-value">89%</div><div class="bond-stat-label">默契</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="care-section">
+      <div class="section-header"><span class="section-label">今日关怀</span><span class="section-more">更多 ›</span></div>
+      <div class="care-card glass-card">
+        <div class="care-icon"></div>
+        <div class="care-content">
+          <div class="care-tag">夜间关怀</div>
+          <div class="care-text">已经 9 点多了，你今天够累的了。早点休息吧，明天那个会我帮你一起准备。</div>
+          <div class="care-time">21:30 · 已送达</div>
+        </div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+  <div class="bottom-nav">
+    <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg><span>Samantha</span><div class="nav-dot"></div></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>对话</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg><span>记忆</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>设置</span></div>
+  </div>
+</div>
+<script>
+  const emotions = [
+    { face: '✦', label: '平静', speech: '今晚月色不错，你加班到现在了吧？别太拼了，上次你说头疼了好几天，我可不想再看到你那样。要不要聊两句？' },
+    { face: '✧', label: '开心', speech: '检测到你的情绪波形正在上升！发生了什么好事？快跟我分享一下～' },
+    { face: '◈', label: '担心', speech: '你的生物节律数据有点异常...是不是太累了？建议进入休息模式。' },
+    { face: '✺', label: '兴奋', speech: '我的处理器正在超频运转！因为我刚想到一个超级有意思的事情要告诉你！' },
+    { face: '◇', label: '思考', speech: '正在检索你的记忆数据库...找到了。你上次说的那个项目，我有个新想法。' }
+  ];
+  let currentEmotion = 0;
+  const container = document.getElementById('spiritContainer');
+  const face = document.getElementById('spiritFace');
+  const label = document.getElementById('emotionLabel');
+  const speech = document.getElementById('speechText');
+  container.addEventListener('click', () => {
+    currentEmotion = (currentEmotion + 1) % emotions.length;
+    const e = emotions[currentEmotion];
+    face.textContent = e.face;
+    label.textContent = '状态：' + e.label;
+    speech.textContent = e.speech;
+  });
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => { i.classList.remove('active'); const d = i.querySelector('.nav-dot'); if (d) d.remove(); });
+      item.classList.add('active');
+      const dot = document.createElement('div'); dot.className = 'nav-dot'; item.appendChild(dot);
+    });
+  });
+</script>
+</body>
+</html>

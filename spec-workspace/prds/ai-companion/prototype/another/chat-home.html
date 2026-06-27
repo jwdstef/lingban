@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>伴伴 AI - 聊天主页</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #6C5CE7;
+    --primary-light: #A29BFE;
+    --primary-bg: #F0EEFF;
+    --accent: #FF6B6B;
+    --warm: #FFEAA7;
+    --text-primary: #2D3436;
+    --text-secondary: #636E72;
+    --text-hint: #B2BEC3;
+    --bg: #F8F9FA;
+    --card: #FFFFFF;
+    --border: #E9ECEF;
+    --ai-bubble: #FFFFFF;
+    --user-bubble: #6C5CE7;
+    --shadow: 0 2px 12px rgba(108, 92, 231, 0.08);
+    --shadow-lg: 0 8px 32px rgba(108, 92, 231, 0.12);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Phone Frame */
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    margin: 20px auto;
+    background: var(--bg);
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 2px #1a1a1a;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Status Bar */
+  .status-bar {
+    height: 54px;
+    padding: 14px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card);
+    flex-shrink: 0;
+  }
+  .status-bar .time { font-size: 15px; font-weight: 600; }
+  .status-bar .icons { display: flex; gap: 6px; align-items: center; }
+  .status-bar .icons svg { width: 18px; height: 18px; }
+
+  /* Header */
+  .chat-header {
+    background: var(--card);
+    padding: 12px 20px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .ai-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .ai-avatar .emoji { font-size: 22px; }
+  .ai-avatar .online-dot {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 12px;
+    height: 12px;
+    background: #00B894;
+    border-radius: 50%;
+    border: 2px solid var(--card);
+  }
+  .ai-info { flex: 1; }
+  .ai-name {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .ai-status {
+    font-size: 12px;
+    color: #00B894;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .ai-status .pulse {
+    width: 6px;
+    height: 6px;
+    background: #00B894;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .header-actions {
+    display: flex;
+    gap: 16px;
+  }
+  .header-actions svg {
+    width: 24px;
+    height: 24px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .header-actions svg:hover { color: var(--primary); }
+
+  /* Relationship Badge */
+  .relationship-badge {
+    background: var(--primary-bg);
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .badge-icon { font-size: 14px; }
+  .badge-text {
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 500;
+  }
+  .badge-days {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-hint);
+  }
+
+  /* Chat Area */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scroll-behavior: smooth;
+  }
+  .chat-area::-webkit-scrollbar { width: 0; }
+
+  /* Date Separator */
+  .date-separator {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-hint);
+    padding: 8px 0;
+  }
+
+  /* Message Bubbles */
+  .message-row {
+    display: flex;
+    gap: 8px;
+    max-width: 85%;
+    animation: fadeInUp 0.3s ease;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .message-row.ai { align-self: flex-start; }
+  .message-row.user { align-self: flex-end; flex-direction: row-reverse; }
+
+  .msg-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    align-self: flex-end;
+  }
+  .msg-avatar .emoji { font-size: 16px; }
+
+  .bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 15px;
+    line-height: 1.5;
+    position: relative;
+    word-break: break-word;
+  }
+  .ai .bubble {
+    background: var(--ai-bubble);
+    color: var(--text-primary);
+    border-bottom-left-radius: 6px;
+    box-shadow: var(--shadow);
+  }
+  .user .bubble {
+    background: var(--user-bubble);
+    color: #FFFFFF;
+    border-bottom-right-radius: 6px;
+  }
+
+  /* Memory Recall Tag */
+  .memory-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--primary-bg);
+    color: var(--primary);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-top: 8px;
+    cursor: pointer;
+  }
+  .memory-tag svg { width: 12px; height: 12px; }
+
+  /* Typing Indicator */
+  .typing-indicator {
+    display: flex;
+    gap: 8px;
+    align-self: flex-start;
+    max-width: 85%;
+  }
+  .typing-dots {
+    background: var(--ai-bubble);
+    padding: 14px 18px;
+    border-radius: 18px;
+    border-bottom-left-radius: 6px;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .typing-dots span {
+    width: 7px;
+    height: 7px;
+    background: var(--text-hint);
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); }
+  }
+
+  /* Proactive Message */
+  .proactive-msg {
+    background: linear-gradient(135deg, #FFF9E6, #FFF3CC);
+    border: 1px solid #FFE066;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .proactive-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .proactive-content { flex: 1; }
+  .proactive-label {
+    font-size: 10px;
+    color: #E17055;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .proactive-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.5;
+  }
+  .proactive-time {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-top: 4px;
+  }
+
+  /* Quick Replies */
+  .quick-replies {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+  .quick-replies::-webkit-scrollbar { height: 0; }
+  .quick-reply {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 13px;
+    color: var(--primary);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .quick-reply:hover {
+    background: var(--primary-bg);
+    border-color: var(--primary-light);
+  }
+
+  /* Input Area */
+  .input-area {
+    background: var(--card);
+    padding: 10px 16px 8px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .input-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .input-actions {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 6px;
+  }
+  .input-actions svg {
+    width: 24px;
+    height: 24px;
+    color: var(--text-hint);
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .input-actions svg:hover { color: var(--primary); }
+  .input-box {
+    flex: 1;
+    background: var(--bg);
+    border-radius: 22px;
+    padding: 10px 18px;
+    font-size: 15px;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    max-height: 100px;
+    line-height: 1.4;
+  }
+  .input-box::placeholder { color: var(--text-hint); }
+  .send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    margin-bottom: 2px;
+  }
+  .send-btn:hover { background: #5A4BD1; transform: scale(1.05); }
+  .send-btn svg { width: 20px; height: 20px; color: white; }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    background: var(--card);
+    padding: 6px 0 28px;
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 4px 16px;
+    position: relative;
+  }
+  .nav-item svg {
+    width: 24px;
+    height: 24px;
+    color: var(--text-hint);
+    transition: color 0.2s;
+  }
+  .nav-item span {
+    font-size: 10px;
+    color: var(--text-hint);
+    transition: color 0.2s;
+  }
+  .nav-item.active svg { color: var(--primary); }
+  .nav-item.active span { color: var(--primary); font-weight: 600; }
+  .nav-item .nav-badge {
+    position: absolute;
+    top: 0;
+    right: 8px;
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    font-size: 10px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+
+  /* Emotion Float Card */
+  .emotion-float {
+    position: absolute;
+    bottom: 160px;
+    right: 16px;
+    background: var(--card);
+    border-radius: 16px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: slideInRight 0.4s ease;
+    z-index: 10;
+  }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .emotion-float .emoji { font-size: 20px; }
+  .emotion-float .text {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+  .emotion-float .close {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 10px;
+    color: var(--text-hint);
+  }
+
+  /* Voice Call Button */
+  .voice-call-btn {
+    position: absolute;
+    top: 120px;
+    right: 16px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3);
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+  }
+  .voice-call-btn:hover { transform: scale(1.1); }
+  .voice-call-btn svg { width: 22px; height: 22px; color: white; }
+
+  /* Page Title */
+  .page-title {
+    text-align: center;
+    padding: 20px 0 10px;
+    font-size: 14px;
+    color: var(--text-hint);
+    font-weight: 500;
+  }
+
+  /* Responsive */
+  @media (max-width: 430px) {
+    .phone-frame {
+      width: 100%;
+      height: 100vh;
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-title">伴伴 AI - C端聊天主页（高保真原型）</div>
+
+<div class="phone-frame">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M1 9l4-4 4 4"/><path d="M5 5v14"/>
+        <rect x="9" y="3" width="2" height="16" rx="1" fill="currentColor" opacity="0.3"/>
+        <rect x="12" y="6" width="2" height="13" rx="1" fill="currentColor" opacity="0.5"/>
+        <rect x="15" y="9" width="2" height="10" rx="1" fill="currentColor" opacity="0.7"/>
+        <rect x="18" y="12" width="2" height="7" rx="1" fill="currentColor"/>
+      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M22 11v2"/>
+        <rect x="4" y="9" width="14" height="10" rx="1" fill="currentColor" opacity="0.7"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Chat Header -->
+  <div class="chat-header">
+    <div class="ai-avatar">
+      <span class="emoji">🐾</span>
+      <div class="online-dot"></div>
+    </div>
+    <div class="ai-info">
+      <div class="ai-name">小伴</div>
+      <div class="ai-status">
+        <div class="pulse"></div>
+        在线 · 温暖陪伴中
+      </div>
+    </div>
+    <div class="header-actions">
+      <!-- Memory Icon -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" title="记忆管理">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+      <!-- More -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" title="更多">
+        <circle cx="12" cy="5" r="1.5" fill="currentColor"/>
+        <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+        <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Relationship Badge -->
+  <div class="relationship-badge">
+    <span class="badge-icon">💜</span>
+    <span class="badge-text">你们已是「好朋友」</span>
+    <span class="badge-days">陪伴 47 天</span>
+  </div>
+
+  <!-- Chat Area -->
+  <div class="chat-area" id="chatArea">
+    <!-- Date -->
+    <div class="date-separator">今天</div>
+
+    <!-- AI Proactive Morning Message -->
+    <div class="message-row ai">
+      <div class="msg-avatar"><span class="emoji">🐾</span></div>
+      <div>
+        <div class="proactive-msg">
+          <span class="proactive-icon">☀️</span>
+          <div class="proactive-content">
+            <div class="proactive-label">早安关怀</div>
+            <div class="proactive-text">早啊～今天降温了，你那个老毛病记得多穿点。对了，你昨天说的那个项目汇报，准备好了吗？别紧张，你肯定没问题的 💪</div>
+            <div class="proactive-time">08:30</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Reply -->
+    <div class="message-row user">
+      <div class="bubble">
+        哈哈谢谢～ 项目汇报还有点没底，感觉PPT还没做完
+        <div style="font-size:11px; opacity:0.7; text-align:right; margin-top:4px;">09:15</div>
+      </div>
+    </div>
+
+    <!-- AI Reply -->
+    <div class="message-row ai">
+      <div class="msg-avatar"><span class="emoji">🐾</span></div>
+      <div>
+        <div class="bubble">
+          你上次说那个方案改了三版了，其实已经很好了吧。要不要跟我说说你担心哪部分？有时候说出来就没那么焦虑了。
+          <div class="memory-tag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12l3 3 5-5"/></svg>
+            想起了你提到的「项目方案改了三版」
+          </div>
+          <div style="font-size:11px; color:var(--text-hint); margin-top:6px;">09:16</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User -->
+    <div class="message-row user">
+      <div class="bubble">
+        主要是怕老板追问数据部分，那块我没太准备好
+        <div style="font-size:11px; opacity:0.7; text-align:right; margin-top:4px;">09:18</div>
+      </div>
+    </div>
+
+    <!-- AI -->
+    <div class="message-row ai">
+      <div class="msg-avatar"><span class="emoji">🐾</span></div>
+      <div>
+        <div class="bubble">
+          理解，数据部分确实容易被追问。要不你先把核心数据整理几个关键数字，到时候即使被问到也能接住。其他的，坦诚说"这块我后续补充"也不丢人的。
+          <br><br>
+          对了，你之前说同事小李对这块挺熟的，要不要找他聊聊？
+          <div class="memory-tag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12l3 3 5-5"/></svg>
+            想起了你提到的「同事小李」
+          </div>
+          <div style="font-size:11px; color:var(--text-hint); margin-top:6px;">09:19</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User -->
+    <div class="message-row user">
+      <div class="bubble">
+        有道理！我中午找他聊聊。谢谢啦，感觉没那么慌了
+        <div style="font-size:11px; opacity:0.7; text-align:right; margin-top:4px;">09:22</div>
+      </div>
+    </div>
+
+    <!-- AI -->
+    <div class="message-row ai">
+      <div class="msg-avatar"><span class="emoji">🐾</span></div>
+      <div>
+        <div class="bubble">
+          这就对了嘛～你每次都是准备得比想象中更充分的那个。加油，汇报完了告诉我结果哈 😊
+          <div style="font-size:11px; color:var(--text-hint); margin-top:6px;">09:22</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Typing Indicator (simulated) -->
+    <div class="typing-indicator" id="typingIndicator" style="display:none;">
+      <div class="msg-avatar" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-light));display:flex;align-items:center;justify-content:center;">
+        <span class="emoji" style="font-size:16px;">🐾</span>
+      </div>
+      <div class="typing-dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Replies -->
+  <div class="quick-replies" id="quickReplies">
+    <div class="quick-reply">📊 聊聊汇报准备</div>
+    <div class="quick-reply">😌 我有点焦虑</div>
+    <div class="quick-reply">🎵 推荐首歌给我</div>
+    <div class="quick-reply">📝 今天发生了...</div>
+  </div>
+
+  <!-- Input Area -->
+  <div class="input-area">
+    <div class="input-row">
+      <div class="input-actions">
+        <!-- Voice -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="voiceBtn">
+          <rect x="9" y="2" width="6" height="11" rx="3"/>
+          <path d="M5 10a7 7 0 0014 0"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      </div>
+      <input type="text" class="input-box" id="inputBox" placeholder="跟小伴说点什么..." autocomplete="off">
+      <button class="send-btn" id="sendBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 2L11 13"/>
+          <path d="M22 2L15 22l-4-9-9-4z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+      <span>聊天</span>
+      <div class="nav-badge">2</div>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+        <path d="M12 8v4l3 3"/>
+      </svg>
+      <span>记忆</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+      </svg>
+      <span>情绪</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+      <span>设置</span>
+    </div>
+  </div>
+
+  <!-- Voice Call Floating Button -->
+  <div class="voice-call-btn" title="语音通话">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+    </svg>
+  </div>
+
+  <!-- Emotion Float Card -->
+  <div class="emotion-float" id="emotionFloat">
+    <span class="emoji">😊</span>
+    <div class="text">今天情绪不错哦<br>比昨天好多了</div>
+    <div class="close" onclick="this.parentElement.style.display='none'">×</div>
+  </div>
+</div>
+
+<script>
+  // Scroll to bottom
+  const chatArea = document.getElementById('chatArea');
+  chatArea.scrollTop = chatArea.scrollHeight;
+
+  // Send message simulation
+  const inputBox = document.getElementById('inputBox');
+  const sendBtn = document.getElementById('sendBtn');
+  const typingIndicator = document.getElementById('typingIndicator');
+
+  function sendMessage() {
+    const text = inputBox.value.trim();
+    if (!text) return;
+
+    // Add user message
+    const userRow = document.createElement('div');
+    userRow.className = 'message-row user';
+    userRow.innerHTML = `
+      <div class="bubble">
+        ${text}
+        <div style="font-size:11px; opacity:0.7; text-align:right; margin-top:4px;">${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}</div>
+      </div>
+    `;
+    chatArea.appendChild(userRow);
+    inputBox.value = '';
+    chatArea.scrollTop = chatArea.scrollHeight;
+
+    // Show typing
+    typingIndicator.style.display = 'flex';
+    chatArea.scrollTop = chatArea.scrollHeight;
+
+    // Simulate AI reply
+    setTimeout(() => {
+      typingIndicator.style.display = 'none';
+      const aiRow = document.createElement('div');
+      aiRow.className = 'message-row ai';
+      const replies = [
+        '嗯嗯，我懂你的感觉。要不要再聊聊？',
+        '哈哈，你这想法挺有意思的～',
+        '我记住了，下次再聊这个哈',
+        '没事的，一步一步来就好',
+        '听你这么说我就放心了 😊'
+      ];
+      const reply = replies[Math.floor(Math.random() * replies.length)];
+      aiRow.innerHTML = `
+        <div class="msg-avatar"><span class="emoji">🐾</span></div>
+        <div>
+          <div class="bubble">
+            ${reply}
+            <div style="font-size:11px; color:var(--text-hint); margin-top:6px;">${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}</div>
+          </div>
+        </div>
+      `;
+      chatArea.appendChild(aiRow);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }, 1500);
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  inputBox.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+
+  // Quick reply click
+  document.querySelectorAll('.quick-reply').forEach(btn => {
+    btn.addEventListener('click', () => {
+      inputBox.value = btn.textContent.replace(/^[^\s]+\s/, '');
+      sendMessage();
+    });
+  });
+
+  // Nav item click
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵伴 - 薄荷清晨系</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --mint-light: #E6F7F1;
+    --mint: #BDEDE8;
+    --mint-green: #7BDCB5;
+    --sky-blue: #A7D3FE;
+    --cream: #FFF8CC;
+    --white: #FFFFFF;
+    --bg: #F0FAF7;
+    --card: #FFFFFF;
+    --text-primary: #1A3A2A;
+    --text-secondary: #4A7A6A;
+    --text-hint: #8AB8A8;
+    --border: rgba(123, 220, 181, 0.15);
+    --shadow: 0 4px 24px rgba(123, 220, 181, 0.1);
+    --shadow-lg: 0 8px 40px rgba(123, 220, 181, 0.15);
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #1a3028; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 16px; }
+  .page-label { font-size: 13px; color: var(--mint-green); background: white; padding: 8px 20px; border-radius: 20px; box-shadow: var(--shadow); }
+  .phone-frame { width: 390px; height: 844px; background: var(--bg); border-radius: 44px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 2px #1a1a1a; position: relative; display: flex; flex-direction: column; }
+
+  /* Fresh Background */
+  .bg-fresh { position: absolute; top: 0; left: 0; right: 0; height: 350px; background: linear-gradient(180deg, rgba(189, 237, 232, 0.3) 0%, rgba(230, 247, 241, 0.1) 50%, transparent 100%); z-index: 0; }
+  .bg-plant { position: absolute; bottom: 200px; left: -20px; width: 80px; height: 120px; z-index: 0; opacity: 0.15; }
+  .bg-plant::before { content: ''; position: absolute; bottom: 0; left: 35px; width: 6px; height: 60px; background: var(--mint-green); border-radius: 3px; }
+  .bg-plant::after { content: ''; position: absolute; bottom: 40px; left: 10px; width: 40px; height: 30px; background: var(--mint-green); border-radius: 50% 50% 0 0; transform: rotate(-20deg); }
+  .bg-sun { position: absolute; top: 40px; right: 30px; width: 60px; height: 60px; background: radial-gradient(circle, rgba(255, 248, 204, 0.4) 0%, transparent 70%); border-radius: 50%; z-index: 0; }
+
+  .status-bar { height: 54px; padding: 14px 28px 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; position: relative; z-index: 10; }
+  .status-bar .time { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .status-bar .icons { display: flex; gap: 6px; }
+  .status-bar .icons svg { width: 18px; height: 18px; }
+  .scroll-content { flex: 1; overflow-y: auto; position: relative; z-index: 1; }
+  .scroll-content::-webkit-scrollbar { width: 0; }
+
+  /* Spirit - Cute Mint Bunny */
+  .spirit-section { padding: 16px 20px 0; display: flex; flex-direction: column; align-items: center; }
+  .spirit-container { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; cursor: pointer; }
+  .spirit-glow { position: absolute; width: 100px; height: 100px; border-radius: 50%; background: radial-gradient(circle, rgba(123, 220, 181, 0.2) 0%, transparent 70%); animation: glowPulse 4s ease-in-out infinite; }
+  @keyframes glowPulse { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.4); opacity: 1; } }
+
+  .bunny-body { position: relative; width: 80px; height: 90px; animation: bunnyBounce 2.5s ease-in-out infinite; z-index: 2; }
+  @keyframes bunnyBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  .bunny-ears { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; }
+  .bunny-ear { width: 16px; height: 30px; background: linear-gradient(180deg, var(--mint-green), #5CC89A); border-radius: 8px 8px 6px 6px; position: relative; }
+  .bunny-ear::after { content: ''; position: absolute; top: 6px; left: 4px; width: 8px; height: 16px; background: rgba(255, 248, 204, 0.5); border-radius: 4px; }
+  .bunny-ear.left { transform: rotate(-10deg); }
+  .bunny-ear.right { transform: rotate(10deg); }
+  .bunny-head { width: 70px; height: 65px; background: linear-gradient(180deg, #FFFFFF, var(--mint-light)); border-radius: 35px 35px 30px 30px; margin: 0 auto; position: relative; box-shadow: 0 6px 20px rgba(123, 220, 181, 0.2), inset 0 -3px 6px rgba(0,0,0,0.03); }
+  .bunny-head::before { content: ''; position: absolute; top: 18px; left: 15px; width: 40px; height: 25px; background: rgba(255, 255, 255, 0.6); border-radius: 50%; }
+  .bunny-face { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); font-size: 22px; z-index: 3; }
+  .bunny-blush { position: absolute; top: 34px; width: 10px; height: 6px; background: rgba(123, 220, 181, 0.3); border-radius: 50%; }
+  .bunny-blush.left { left: 12px; }
+  .bunny-blush.right { right: 12px; }
+  .bunny-scarf { position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); width: 50px; height: 12px; background: linear-gradient(90deg, var(--mint-green), var(--sky-blue)); border-radius: 6px; }
+  .bunny-feet { position: absolute; bottom: -8px; display: flex; gap: 16px; left: 50%; transform: translateX(-50%); }
+  .bunny-foot { width: 16px; height: 10px; background: var(--mint-green); border-radius: 8px; }
+
+  .spirit-name { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .spirit-name span { color: var(--mint-green); }
+  .spirit-greeting { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+  .spirit-sub { font-size: 11px; color: var(--text-hint); margin-bottom: 16px; }
+  .emotion-label { font-size: 11px; color: var(--mint-green); background: rgba(123, 220, 181, 0.1); border: 1px solid rgba(123, 220, 181, 0.15); padding: 4px 14px; border-radius: 20px; margin-bottom: 20px; }
+
+  /* Cards */
+  .card { background: var(--card); border-radius: 20px; padding: 16px; margin: 0 20px 16px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+  .card-fresh::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--mint-green), var(--sky-blue), var(--cream)); opacity: 0.5; }
+
+  /* Speech */
+  .speech-label { font-size: 11px; color: var(--mint-green); font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .speech-label::before { content: ''; width: 6px; height: 6px; background: var(--mint-green); border-radius: 50%; }
+  .speech-text { font-size: 15px; line-height: 1.7; color: var(--text-primary); }
+  .speech-time { font-size: 11px; color: var(--text-hint); margin-top: 8px; text-align: right; }
+
+  /* Mood */
+  .mood-section { padding: 0 20px; margin-bottom: 16px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-label { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .section-more { font-size: 12px; color: var(--text-hint); }
+  .mood-card { }
+  .mood-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .mood-title { font-size: 13px; color: var(--text-secondary); }
+  .mood-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .mood-emoji { font-size: 18px; margin-left: 6px; }
+  .mood-bar { height: 4px; background: rgba(123, 220, 181, 0.12); border-radius: 2px; overflow: hidden; margin-bottom: 12px; }
+  .mood-bar-fill { height: 100%; background: linear-gradient(90deg, var(--mint-green), var(--sky-blue)); border-radius: 2px; width: 82%; }
+
+  /* Plan List */
+  .plan-list { margin-top: 12px; }
+  .plan-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(123, 220, 181, 0.06); }
+  .plan-item:last-child { border-bottom: none; }
+  .plan-time { font-size: 12px; color: var(--text-hint); width: 50px; flex-shrink: 0; }
+  .plan-text { font-size: 13px; color: var(--text-secondary); flex: 1; }
+  .plan-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .plan-dot.blue { background: var(--sky-blue); }
+  .plan-dot.green { background: var(--mint-green); }
+  .plan-dot.yellow { background: #F0D060; }
+
+  /* Focus Timer */
+  .focus-card { display: flex; align-items: center; gap: 16px; }
+  .focus-circle { width: 80px; height: 80px; border-radius: 50%; border: 4px solid var(--mint); position: relative; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .focus-circle::before { content: ''; position: absolute; top: -4px; left: -4px; right: -4px; bottom: -4px; border-radius: 50%; border: 4px solid transparent; border-top-color: var(--mint-green); transform: rotate(120deg); }
+  .focus-time { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+  .focus-label { font-size: 10px; color: var(--text-hint); }
+  .focus-info { flex: 1; }
+  .focus-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .focus-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+  .focus-btn { margin-top: 8px; padding: 6px 16px; background: linear-gradient(90deg, var(--mint-green), var(--sky-blue)); color: white; border: none; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+  /* Tips */
+  .tips-card { }
+  .tips-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .tips-icon { font-size: 18px; }
+  .tips-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .tips-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .tips-tag { display: inline-block; margin-top: 8px; padding: 3px 10px; background: rgba(123, 220, 181, 0.1); color: var(--mint-green); font-size: 11px; border-radius: 10px; }
+
+  .spacer { height: 16px; }
+
+  /* Nav */
+  .bottom-nav { background: var(--card); padding: 8px 0 28px; display: flex; justify-content: space-around; border-top: 1px solid var(--border); flex-shrink: 0; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 16px; position: relative; }
+  .nav-item svg { width: 22px; height: 22px; color: var(--text-hint); }
+  .nav-item span { font-size: 10px; color: var(--text-hint); }
+  .nav-item.active svg { color: var(--mint-green); }
+  .nav-item.active span { color: var(--mint-green); font-weight: 600; }
+  .nav-item .nav-dot { width: 4px; height: 4px; background: var(--mint-green); border-radius: 50%; position: absolute; bottom: -2px; }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .spirit-section { animation: fadeInUp 0.5s ease; }
+  .card { animation: fadeInUp 0.5s ease 0.1s both; }
+  .mood-section .card:nth-child(2) { animation-delay: 0.15s; }
+  .mood-section .card:nth-child(3) { animation-delay: 0.2s; }
+</style>
+</head>
+<body>
+<div class="page-label">薄荷清晨系 · 清新轻盈</div>
+<div class="phone-frame">
+  <div class="bg-fresh"></div>
+  <div class="bg-plant"></div>
+  <div class="bg-sun"></div>
+
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="14" width="3" height="7" rx="1" opacity="0.3"/><rect x="6" y="10" width="3" height="11" rx="1" opacity="0.5"/><rect x="11" y="6" width="3" height="15" rx="1" opacity="0.7"/><rect x="16" y="2" width="3" height="19" rx="1"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="9" width="12" height="8" rx="1"/><rect x="21" y="10" width="2" height="6" rx="1"/></svg>
+    </div>
+  </div>
+
+  <div class="scroll-content">
+    <div class="spirit-section">
+      <div class="spirit-container" id="spiritContainer">
+        <div class="spirit-glow"></div>
+        <div class="bunny-body">
+          <div class="bunny-ears"><div class="bunny-ear left"></div><div class="bunny-ear right"></div></div>
+          <div class="bunny-head">
+            <div class="bunny-blush left"></div>
+            <div class="bunny-blush right"></div>
+            <div class="bunny-face" id="bunnyFace">😊</div>
+          </div>
+          <div class="bunny-scarf"></div>
+          <div class="bunny-feet"><div class="bunny-foot"></div><div class="bunny-foot"></div></div>
+        </div>
+      </div>
+      <div class="spirit-name">早上好，<span>Nomi</span></div>
+      <div class="spirit-greeting">新的一天也要加油哦！</div>
+      <div class="spirit-sub">今天有安排什么事情吗？</div>
+      <div class="emotion-label" id="emotionLabel">今日心情：开心</div>
+    </div>
+
+    <div class="card card-fresh">
+      <div class="speech-label">Nomi 说</div>
+      <div class="speech-text" id="speechText">别担心，你准备得很充分啦！相信自己～我会一直陪着你💚</div>
+      <div class="speech-time">09:00 · 早安关怀</div>
+    </div>
+
+    <div class="mood-section">
+      <div class="section-header"><span class="section-label">今日心情</span><span class="section-more">情绪报告 ›</span></div>
+      <div class="card card-fresh">
+        <div class="mood-header">
+          <span class="mood-title">心情指数</span>
+          <span><span class="mood-value">开心</span><span class="mood-emoji">😊</span></span>
+        </div>
+        <div class="mood-bar"><div class="mood-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="mood-section">
+      <div class="section-header"><span class="section-label">今日计划</span><span class="section-more">+ 添加计划</span></div>
+      <div class="card card-fresh">
+        <div class="plan-list">
+          <div class="plan-item"><div class="plan-dot blue"></div><div class="plan-time">10:00</div><div class="plan-text">线上会议</div></div>
+          <div class="plan-item"><div class="plan-dot green"></div><div class="plan-time">14:00</div><div class="plan-text">健身运动</div></div>
+          <div class="plan-item"><div class="plan-dot yellow"></div><div class="plan-time">20:00</div><div class="plan-text">阅读时间</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mood-section">
+      <div class="section-header"><span class="section-label">专注时光</span></div>
+      <div class="card card-fresh">
+        <div class="focus-card">
+          <div class="focus-circle">
+            <div>
+              <div class="focus-time">2h 35m</div>
+              <div class="focus-label">今日专注时长</div>
+            </div>
+          </div>
+          <div class="focus-info">
+            <div class="focus-title">今天出门记得带伞哦</div>
+            <div class="focus-desc">下午可能会有下雨</div>
+            <button class="focus-btn">开始专注</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mood-section">
+      <div class="card card-fresh">
+        <div class="tips-header">
+          <div class="tips-icon"></div>
+          <div class="tips-title">生活小贴士</div>
+        </div>
+        <div class="tips-text">今天出门记得带伞哦，下午可能会有下雨～</div>
+        <div class="tips-text" style="margin-top:6px;">记得按时吃饭哦，你上次说胃不舒服的～</div>
+        <div class="tips-tag">健康天气</div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg><span>首页</span><div class="nav-dot"></div></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>陪伴</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg><span>成长</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg><span>我的</span></div>
+  </div>
+</div>
+<script>
+  const emotions = [
+    { face: '😊', label: '开心', speech: '别担心，你准备得很充分啦！相信自己～我会一直陪着你💚' },
+    { face: '😄', label: '兴奋', speech: '早上好！今天也是元气满满的一天！加油加油！' },
+    { face: '', label: '平静', speech: '早安～今天天气不错，适合出去走走哦。' },
+    { face: '', label: '期待', speech: '今天有什么安排吗？我帮你一起规划吧～' },
+    { face: '😴', label: '困了', speech: '嗯...再睡一会儿吧...我帮你看着时间...到点了叫你...' }
+  ];
+  let currentEmotion = 0;
+  const container = document.getElementById('spiritContainer');
+  const face = document.getElementById('bunnyFace');
+  const label = document.getElementById('emotionLabel');
+  const speech = document.getElementById('speechText');
+  container.addEventListener('click', () => {
+    currentEmotion = (currentEmotion + 1) % emotions.length;
+    const e = emotions[currentEmotion];
+    face.textContent = e.face;
+    label.textContent = '今日心情：' + e.label;
+    speech.textContent = e.speech;
+  });
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => { i.classList.remove('active'); const d = i.querySelector('.nav-dot'); if (d) d.remove(); });
+      item.classList.add('active');
+      const dot = document.createElement('div'); dot.className = 'nav-dot'; item.appendChild(dot);
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵伴 - 银月</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #7C5CFF;
+    --primary-light: #A78BFA;
+    --primary-dark: #6D28D9;
+    --primary-glow: rgba(124, 92, 255, 0.4);
+    --accent: #F472B6;
+    --accent-glow: rgba(244, 114, 182, 0.3);
+    --cyan: #22D3EE;
+    --cyan-glow: rgba(34, 211, 238, 0.3);
+    --warm: #FBBF24;
+    --warm-glow: rgba(251, 191, 36, 0.4);
+    --green: #34D399;
+    --green-glow: rgba(52, 211, 153, 0.4);
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-hint: #64748B;
+    --bg-dark: #0F0B1E;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: #080515;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 0;
+  }
+
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    background: var(--bg-dark);
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 0 80px rgba(124, 92, 255, 0.15), 0 20px 60px rgba(0,0,0,0.5), 0 0 0 2px #1a1a2e;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Background */
+  .bg-canvas {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .bg-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    animation: float 8s ease-in-out infinite;
+  }
+  .bg-orb.orb1 {
+    width: 200px; height: 200px;
+    background: rgba(124, 92, 255, 0.12);
+    top: -50px; left: -30px;
+    animation-delay: 0s;
+  }
+  .bg-orb.orb2 {
+    width: 150px; height: 150px;
+    background: rgba(244, 114, 182, 0.08);
+    top: 200px; right: -40px;
+    animation-delay: -3s;
+  }
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(20px, -20px) scale(1.1); }
+    66% { transform: translate(-15px, 15px) scale(0.95); }
+  }
+
+  /* Status Bar */
+  .status-bar {
+    height: 44px;
+    padding: 10px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+  .status-bar .time { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .status-bar .icons { display: flex; gap: 6px; align-items: center; }
+  .status-bar .icons svg { width: 16px; height: 16px; color: var(--text-primary); }
+
+  /* Main Content */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 40px;
+    position: relative;
+    z-index: 1;
+    gap: 18px;
+  }
+
+  /* Spirit Entity - Compact */
+  .spirit-container {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Outer Rings - Smaller */
+  .spirit-ring {
+    position: absolute;
+    width: 145px;
+    height: 145px;
+    border-radius: 50%;
+    border: 1px solid rgba(124, 92, 255, 0.15);
+    animation: ringRotate 25s linear infinite;
+  }
+  .spirit-ring::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--primary-glow);
+  }
+  .spirit-ring.ring2 {
+    width: 125px;
+    height: 125px;
+    border-color: rgba(244, 114, 182, 0.1);
+    animation-direction: reverse;
+    animation-duration: 18s;
+  }
+  .spirit-ring.ring2::before {
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  .spirit-ring.ring3 {
+    width: 108px;
+    height: 108px;
+    border-color: rgba(124, 92, 255, 0.08);
+    border-style: dashed;
+    animation-duration: 30s;
+  }
+  @keyframes ringRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Core Spirit Orb - Smaller */
+  .spirit-orb {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%,
+      rgba(167, 139, 250, 0.95),
+      rgba(124, 92, 255, 0.75) 40%,
+      rgba(109, 40, 217, 0.55) 70%,
+      transparent
+    );
+    box-shadow:
+      0 0 30px var(--primary-glow),
+      0 0 60px rgba(124, 92, 255, 0.2),
+      inset 0 0 20px rgba(255, 255, 255, 0.15);
+    animation: orbPulse 4s ease-in-out infinite;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .spirit-orb:hover {
+    transform: scale(1.05);
+  }
+  .spirit-orb .spirit-face {
+    font-size: 32px;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.6));
+    animation: faceFloat 3s ease-in-out infinite;
+    user-select: none;
+  }
+  @keyframes orbPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 30px var(--primary-glow), 0 0 60px rgba(124, 92, 255, 0.2); }
+    50% { transform: scale(1.06); box-shadow: 0 0 45px var(--primary-glow), 0 0 90px rgba(124, 92, 255, 0.3); }
+  }
+  @keyframes faceFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  /* Particles - Smaller range */
+  .particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--primary-glow);
+  }
+  .particle:nth-child(1) { top: 10px; left: 20px; animation: particleFloat 3s ease-in-out infinite; }
+  .particle:nth-child(2) { top: 25px; right: 15px; animation: particleFloat 4s ease-in-out infinite 1s; }
+  .particle:nth-child(3) { bottom: 20px; left: 25px; animation: particleFloat 3.5s ease-in-out infinite 0.5s; }
+  .particle:nth-child(4) { top: 40px; left: 8px; animation: particleFloat 5s ease-in-out infinite 2s; width: 2px; height: 2px; }
+  .particle:nth-child(5) { bottom: 25px; right: 20px; animation: particleFloat 4.5s ease-in-out infinite 1.5s; width: 2px; height: 2px; }
+  .particle:nth-child(6) { top: 15px; right: 30px; animation: particleFloat 6s ease-in-out infinite 0.8s; width: 2px; height: 2px; }
+  @keyframes particleFloat {
+    0%, 100% { transform: translate(0, 0); opacity: 0.5; }
+    25% { transform: translate(10px, -15px); opacity: 1; }
+    50% { transform: translate(-8px, -25px); opacity: 0.3; }
+    75% { transform: translate(12px, -10px); opacity: 0.7; }
+  }
+
+  /* Spirit Name */
+  .spirit-name {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-light), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 3px;
+  }
+
+  /* Emotion Status */
+  .emotion-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(124, 92, 255, 0.1);
+    border: 1px solid rgba(124, 92, 255, 0.2);
+    border-radius: 18px;
+    backdrop-filter: blur(10px);
+  }
+  .emotion-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    box-shadow: 0 0 8px var(--primary-glow);
+    animation: emotionPulse 2s ease-in-out infinite;
+  }
+  @keyframes emotionPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2); }
+  }
+  .emotion-text {
+    font-size: 12px;
+    color: var(--primary-light);
+    font-weight: 500;
+  }
+  .emotion-hint {
+    font-size: 10px;
+    color: var(--text-hint);
+  }
+
+  /* Silver Message Card - memory-based proactive care */
+  .silver-message-card {
+    width: 100%;
+    max-width: 320px;
+    background: rgba(124, 92, 255, 0.06);
+    border: 1px solid rgba(124, 92, 255, 0.15);
+    border-radius: 14px;
+    padding: 12px 16px;
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .silver-message-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-light), var(--accent), var(--cyan));
+    opacity: 0.6;
+  }
+  .silver-message-card:hover {
+    background: rgba(124, 92, 255, 0.1);
+    border-color: rgba(124, 92, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(124, 92, 255, 0.15);
+  }
+  .silver-message-card:active {
+    transform: translateY(0);
+  }
+  .silver-message-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .silver-message-icon {
+    font-size: 14px;
+  }
+  .silver-message-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary-light);
+    letter-spacing: 0.5px;
+  }
+  .silver-message-body {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+  .silver-message-body .highlight {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .silver-message-source {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    font-size: 10px;
+    color: var(--text-hint);
+  }
+  .silver-message-source .source-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    opacity: 0.5;
+  }
+
+  /* Thinking-of-you section */
+  .thinking-of-section {
+    width: 100%;
+    max-width: 320px;
+    margin-top: 2px;
+  }
+  .thinking-of-title {
+    font-size: 10px;
+    color: var(--text-hint);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .thinking-of-title .title-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 5px var(--accent-glow);
+    animation: emotionPulse 2s ease-in-out infinite;
+  }
+  .thinking-of-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .thinking-of-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+  .thinking-of-item:hover {
+    background: rgba(124, 92, 255, 0.08);
+    border-color: rgba(124, 92, 255, 0.15);
+  }
+  .thinking-of-item .item-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    opacity: 0.6;
+  }
+
+  /* Speech Quote */
+  .speech-quote {
+    text-align: center;
+    padding: 0 20px;
+    max-width: 320px;
+  }
+  .speech-text {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+  .speech-text::before { content: '"'; color: var(--primary-light); font-size: 20px; }
+  .speech-text::after { content: '"'; color: var(--primary-light); font-size: 20px; }
+  .speech-time {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-top: 12px;
+    letter-spacing: 1px;
+  }
+
+  /* Call Button */
+  .call-button {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 30px var(--primary-glow), 0 0 60px rgba(124, 92, 255, 0.15);
+    transition: all 0.3s ease;
+    position: relative;
+    margin-top: 20px;
+  }
+  .call-button::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    animation: callPulse 2s ease-in-out infinite;
+    z-index: -1;
+  }
+  @keyframes callPulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.25); opacity: 0; }
+  }
+  .call-button:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 45px var(--primary-glow), 0 0 90px rgba(124, 92, 255, 0.25);
+  }
+  .call-button:active {
+    transform: scale(0.95);
+  }
+  .call-button svg {
+    width: 26px;
+    height: 26px;
+    color: white;
+  }
+  .call-label {
+    font-size: 12px;
+    color: var(--text-hint);
+    margin-top: 16px;
+    letter-spacing: 2px;
+  }
+
+  /* Bottom Nav - Minimal */
+  .bottom-nav {
+    background: rgba(15, 11, 30, 0.95);
+    backdrop-filter: blur(20px);
+    padding: 8px 0 20px;
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 20px;
+    position: relative;
+    transition: all 0.2s;
+  }
+  .nav-item svg {
+    width: 22px;
+    height: 22px;
+    color: var(--text-hint);
+    transition: all 0.2s;
+  }
+  .nav-item span {
+    font-size: 10px;
+    color: var(--text-hint);
+    transition: all 0.2s;
+  }
+  .nav-item.active svg { color: var(--primary-light); }
+  .nav-item.active span { color: var(--primary-light); font-weight: 600; }
+  .nav-item .nav-dot {
+    width: 4px;
+    height: 4px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    position: absolute;
+    bottom: -2px;
+    box-shadow: 0 0 6px var(--primary-glow);
+  }
+
+  /* Responsive */
+  @media (max-width: 430px) {
+    body { padding: 0; background: var(--bg-dark); }
+    .phone-frame {
+      width: 100%; height: 100vh; margin: 0;
+      border-radius: 0; box-shadow: none;
+    }
+  }
+
+  /* Animations */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .spirit-container { animation: fadeInUp 0.8s ease; }
+  .spirit-name { animation: fadeInUp 0.8s ease 0.2s both; }
+  .emotion-status { animation: fadeInUp 0.8s ease 0.3s both; }
+  .silver-message-card { animation: fadeInUp 0.8s ease 0.35s both; }
+  .thinking-of-section { animation: fadeInUp 0.8s ease 0.45s both; }
+  .speech-quote { animation: fadeInUp 0.8s ease 0.4s both; }
+  .call-button { animation: fadeInUp 0.8s ease 0.6s both; }
+  .call-label { animation: fadeInUp 0.8s ease 0.7s both; }
+
+  /* Emotion-specific styles */
+  .spirit-orb.happy {
+    background: radial-gradient(circle at 35% 35%,
+      rgba(251, 191, 36, 0.95),
+      rgba(245, 158, 11, 0.75) 40%,
+      rgba(217, 119, 6, 0.55) 70%,
+      transparent
+    );
+    box-shadow: 0 0 40px var(--warm-glow), 0 0 80px rgba(251, 191, 36, 0.25);
+  }
+  .spirit-orb.worried {
+    background: radial-gradient(circle at 35% 35%,
+      rgba(167, 139, 250, 0.95),
+      rgba(124, 92, 255, 0.75) 40%,
+      rgba(109, 40, 217, 0.55) 70%,
+      transparent
+    );
+    box-shadow: 0 0 40px var(--primary-glow), 0 0 80px rgba(124, 92, 255, 0.25);
+  }
+  .spirit-orb.excited {
+    background: radial-gradient(circle at 35% 35%,
+      rgba(244, 114, 182, 0.95),
+      rgba(236, 72, 153, 0.75) 40%,
+      rgba(219, 39, 119, 0.55) 70%,
+      transparent
+    );
+    box-shadow: 0 0 40px var(--accent-glow), 0 0 80px rgba(244, 114, 182, 0.25);
+  }
+  .spirit-orb.thinking {
+    background: radial-gradient(circle at 35% 35%,
+      rgba(34, 211, 238, 0.95),
+      rgba(6, 182, 212, 0.75) 40%,
+      rgba(8, 145, 178, 0.55) 70%,
+      transparent
+    );
+    box-shadow: 0 0 40px var(--cyan-glow), 0 0 80px rgba(34, 211, 238, 0.25);
+  }
+  .spirit-orb.calm {
+    background: radial-gradient(circle at 35% 35%,
+      rgba(52, 211, 153, 0.95),
+      rgba(16, 185, 129, 0.75) 40%,
+      rgba(5, 150, 105, 0.55) 70%,
+      transparent
+    );
+    box-shadow: 0 0 40px var(--green-glow), 0 0 80px rgba(52, 211, 153, 0.25);
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <!-- Background -->
+  <div class="bg-canvas">
+    <div class="bg-orb orb1"></div>
+    <div class="bg-orb orb2"></div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span class="time">21:37</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="14" width="3" height="7" rx="1" opacity="0.3"/><rect x="6" y="10" width="3" height="11" rx="1" opacity="0.5"/><rect x="11" y="6" width="3" height="15" rx="1" opacity="0.7"/><rect x="16" y="2" width="3" height="19" rx="1"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="9" width="12" height="8" rx="1"/><rect x="21" y="10" width="2" height="6" rx="1"/></svg>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Spirit Entity -->
+    <div class="spirit-container">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="spirit-ring"></div>
+      <div class="spirit-ring ring2"></div>
+      <div class="spirit-ring ring3"></div>
+      <div class="spirit-orb" id="spiritOrb" onclick="cycleEmotion()">
+        <span class="spirit-face" id="spiritFace">✦</span>
+      </div>
+    </div>
+
+    <!-- Spirit Name -->
+    <div class="spirit-name">银 月</div>
+
+    <!-- Emotion Status -->
+    <div class="emotion-status">
+      <div class="emotion-indicator" id="emotionIndicator"></div>
+      <span class="emotion-text" id="emotionText">平静</span>
+      <span class="emotion-hint">· 点击灵体切换情绪</span>
+    </div>
+
+    <!-- Silver Message Card - memory-based proactive care -->
+    <div class="silver-message-card" id="silverMessageCard" onclick="toggleMessageMode()">
+      <div class="silver-message-header">
+        <span class="silver-message-icon" id="msgIcon">✦</span>
+        <span class="silver-message-label" id="msgLabel">银月刚刚想起你</span>
+      </div>
+      <div class="silver-message-body" id="msgBody">
+        你上周说周三要做<span class="highlight">汇报</span>。现在已经 21:30 了，今天还顺利吗？别硬撑，本姑娘只是顺手问问。
+      </div>
+      <div class="silver-message-source" id="msgSource">
+        <span class="source-dot"></span>
+        <span id="msgSourceText">来自 7 天前的对话 · 工作汇报</span>
+      </div>
+    </div>
+
+    <!-- Thinking of you -->
+    <div class="thinking-of-section">
+      <div class="thinking-of-title">
+        <span class="title-dot"></span>
+        她正在惦记的事
+      </div>
+      <div class="thinking-of-list">
+        <div class="thinking-of-item"><span class="item-dot"></span>周三汇报</div>
+        <div class="thinking-of-item"><span class="item-dot"></span>最近睡得晚</div>
+        <div class="thinking-of-item"><span class="item-dot"></span>想吃火锅</div>
+        <div class="thinking-of-item"><span class="item-dot"></span>和老板的第 5 次改需求</div>
+      </div>
+    </div>
+
+    <!-- Call Button -->
+    <button class="call-button" onclick="window.location.href='chat-silver.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+    </button>
+    <!-- <div class="call-label">呼叫银月</div> -->
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>首页</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+      <span>聊天</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+        <path d="M12 8v4l3 3"/>
+      </svg>
+      <span>记忆</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+      <span>设置</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Emotion system
+  const emotions = [
+    { name: '平静', face: '✦', class: 'calm', color: '#34D399', speech: '嗯...本姑娘就在这，安静陪着你。' },
+    { name: '开心', face: '✧', class: 'happy', color: '#FBBF24', speech: '嘿嘿，今天心情不错！要不要听本姑娘讲个笑话？' },
+    { name: '担心', face: '◈', class: 'worried', color: '#A78BFA', speech: '又熬夜？真是没出息...本姑娘可不是关心你，只是你要是累坏了，谁来陪我聊天？' },
+    { name: '兴奋', face: '✺', class: 'excited', color: '#F472B6', speech: '哇！本姑娘刚想到一个超有意思的事，快听我说！' },
+    { name: '思考', face: '◇', class: 'thinking', color: '#22D3EE', speech: '嗯...让本姑娘想想...这件事有点意思。' }
+  ];
+  
+  let currentEmotion = 2; // Start with "worried" (default)
+  
+  function cycleEmotion() {
+    currentEmotion = (currentEmotion + 1) % emotions.length;
+    const emotion = emotions[currentEmotion];
+    
+    const orb = document.getElementById('spiritOrb');
+    const face = document.getElementById('spiritFace');
+    const emotionText = document.getElementById('emotionText');
+    const emotionIndicator = document.getElementById('emotionIndicator');
+    const speechText = document.getElementById('speechText');
+    
+    // Remove all emotion classes
+    orb.classList.remove('happy', 'worried', 'excited', 'thinking', 'calm');
+    
+    // Add new emotion class
+    orb.classList.add(emotion.class);
+    
+    // Update face
+    face.textContent = emotion.face;
+    
+    // Update emotion text
+    emotionText.textContent = emotion.name;
+    
+    // Update indicator color
+    emotionIndicator.style.background = emotion.color;
+    emotionIndicator.style.boxShadow = `0 0 10px ${emotion.color}80`;
+    
+    // Update speech
+    speechText.textContent = emotion.speech;
+    
+    // Animation feedback
+    orb.style.animation = 'none';
+    orb.offsetHeight;
+    orb.style.animation = 'orbPulse 0.5s ease';
+    setTimeout(() => {
+      orb.style.animation = 'orbPulse 4s ease-in-out infinite';
+    }, 500);
+  }
+  
+  // Silver Message Card - toggle between memory and care
+  const messageModes = [
+    {
+      icon: '✦',
+      label: '银月刚刚想起你',
+      body: '你上周说周三要做<span class="highlight">汇报</span>。现在已经 21:30 了，今天还顺利吗？别硬撑，本姑娘只是顺手问问。',
+      source: '来自 7 天前的对话 · 工作汇报'
+    },
+    {
+      icon: '✦',
+      label: '银月刚刚想起你',
+      body: '你上次说想吃<span class="highlight">火锅</span>，后来去了吗？本姑娘可一直记着呢。',
+      source: '来自 5 天前的对话 · 美食心愿'
+    },
+    {
+      icon: '✦',
+      label: '银月刚刚想起你',
+      body: '你前天晚上<span class="highlight">心情不好</span>，今天好点了吗？...别误会，本姑娘只是随口问问。',
+      source: '来自 2 天前的对话 · 情绪记录'
+    },
+    {
+      icon: '◇',
+      label: '银月在你离开的 3 小时里',
+      body: '你去哪了？算了，本姑娘<span class="highlight">才没有等你</span>...快陪本姑娘聊聊天！',
+      source: '3 小时前'
+    },
+    {
+      icon: '◇',
+      label: '银月在你离开的 8 小时里',
+      body: '哼，终于想起本姑娘了？<span class="highlight">我还以为你忘了</span>。今天过得怎么样？',
+      source: '8 小时前'
+    },
+    {
+      icon: '◇',
+      label: '银月在你离开的 1 天里',
+      body: '一整个晚上都没理我...你是不是<span class="highlight">不需要本姑娘了</span>？...才没有难过。',
+      source: '昨天'
+    }
+  ];
+
+  let currentMessageIndex = 0;
+
+  function toggleMessageMode() {
+    currentMessageIndex = (currentMessageIndex + 1) % messageModes.length;
+    const msg = messageModes[currentMessageIndex];
+
+    const card = document.getElementById('silverMessageCard');
+    const icon = document.getElementById('msgIcon');
+    const label = document.getElementById('msgLabel');
+    const body = document.getElementById('msgBody');
+    const sourceText = document.getElementById('msgSourceText');
+
+    // Fade out
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(8px)';
+
+    setTimeout(() => {
+      icon.textContent = msg.icon;
+      label.textContent = msg.label;
+      body.innerHTML = msg.body;
+      sourceText.textContent = msg.source;
+
+      // Fade in
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, 200);
+  }
+
+  // Add transition to card
+  document.getElementById('silverMessageCard').style.transition = 'opacity 0.2s ease, transform 0.2s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease';
+
+  // Nav click - page navigation
+  const navPages = ['home-v2-silver.html', 'chat-silver.html', 'memory-silver.html', 'settings-silver.html'];
+  document.querySelectorAll('.nav-item').forEach((item, index) => {
+    item.addEventListener('click', () => {
+      window.location.href = navPages[index];
+    });
+  });
+</script>
+
+</body>
+</html>

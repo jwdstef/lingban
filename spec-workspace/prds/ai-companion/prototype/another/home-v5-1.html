@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵伴 - 星云夜空系</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --deep-navy: #0F172A;
+    --navy: #1E293B;
+    --purple: #6C5CE7;
+    --light-purple: #A78BFA;
+    --cyan: #2DD3EE;
+    --light: #F1F5F9;
+    --bg: #0F172A;
+    --card: rgba(30, 41, 59, 0.8);
+    --card-border: rgba(108, 92, 231, 0.15);
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+    --text-hint: #64748B;
+    --glow: rgba(108, 92, 231, 0.25);
+    --cyan-glow: rgba(45, 211, 238, 0.2);
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #050510; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 20px 0; gap: 16px; }
+  .page-label { font-size: 13px; color: var(--light-purple); background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); padding: 8px 20px; border-radius: 20px; }
+  .phone-frame { width: 390px; height: 844px; background: var(--bg); border-radius: 44px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 2px #1a1a1a; position: relative; display: flex; flex-direction: column; }
+
+  /* Starry Background */
+  .stars { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; overflow: hidden; }
+  .star { position: absolute; width: 2px; height: 2px; background: white; border-radius: 50%; animation: twinkle 3s ease-in-out infinite; }
+  .star:nth-child(1) { top: 8%; left: 15%; animation-delay: 0s; }
+  .star:nth-child(2) { top: 12%; left: 70%; animation-delay: 1s; width: 3px; height: 3px; }
+  .star:nth-child(3) { top: 20%; left: 40%; animation-delay: 0.5s; }
+  .star:nth-child(4) { top: 5%; left: 85%; animation-delay: 2s; width: 1px; height: 1px; }
+  .star:nth-child(5) { top: 25%; left: 25%; animation-delay: 1.5s; }
+  .star:nth-child(6) { top: 15%; left: 55%; animation-delay: 0.8s; width: 1px; height: 1px; }
+  .star:nth-child(7) { top: 30%; left: 80%; animation-delay: 2.5s; }
+  .star:nth-child(8) { top: 10%; left: 35%; animation-delay: 1.2s; width: 3px; height: 3px; }
+  @keyframes twinkle { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+  .nebula { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); width: 350px; height: 300px; background: radial-gradient(ellipse, rgba(108, 92, 231, 0.12) 0%, rgba(45, 211, 238, 0.05) 40%, transparent 70%); z-index: 0; animation: nebulaPulse 8s ease-in-out infinite; }
+  @keyframes nebulaPulse { 0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.1); } }
+
+  .status-bar { height: 54px; padding: 14px 28px 0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; position: relative; z-index: 10; }
+  .status-bar .time { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .status-bar .icons { display: flex; gap: 6px; }
+  .status-bar .icons svg { width: 18px; height: 18px; color: var(--text-secondary); }
+  .scroll-content { flex: 1; overflow-y: auto; position: relative; z-index: 1; }
+  .scroll-content::-webkit-scrollbar { width: 0; }
+
+  /* Spirit - Cute Nebula Blob */
+  .spirit-section { padding: 20px 20px 0; display: flex; flex-direction: column; align-items: center; }
+  .spirit-container { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; cursor: pointer; }
+  .spirit-glow { position: absolute; width: 100px; height: 100px; border-radius: 50%; background: radial-gradient(circle, rgba(108, 92, 231, 0.3) 0%, transparent 70%); animation: spiritGlow 4s ease-in-out infinite; }
+  @keyframes spiritGlow { 0%, 100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.5); opacity: 1; } }
+  .spirit-blob {
+    width: 80px; height: 75px;
+    background: linear-gradient(135deg, #6C5CE7, #A78BFA, #2DD3EE);
+    border-radius: 40px 40px 35px 35px;
+    position: relative;
+    box-shadow: 0 0 30px rgba(108, 92, 231, 0.3), 0 0 60px rgba(45, 211, 238, 0.1), inset 0 -4px 8px rgba(0,0,0,0.1), inset 0 4px 8px rgba(255,255,255,0.15);
+    animation: blobBreathe 3s ease-in-out infinite;
+    z-index: 2;
+  }
+  @keyframes blobBreathe { 0%, 100% { transform: scale(1) translateY(0); } 50% { transform: scale(1.04) translateY(-4px); } }
+  .spirit-blob::before { content: ''; position: absolute; top: 12px; left: 18px; width: 20px; height: 12px; background: rgba(255,255,255,0.25); border-radius: 50%; filter: blur(3px); }
+  .blob-antenna { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); width: 3px; height: 14px; background: linear-gradient(180deg, var(--cyan), var(--purple)); border-radius: 2px; }
+  .blob-antenna::after { content: ''; position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 8px var(--cyan-glow); animation: antennaGlow 2s ease-in-out infinite; }
+  @keyframes antennaGlow { 0%, 100% { box-shadow: 0 0 8px var(--cyan-glow); } 50% { box-shadow: 0 0 16px var(--cyan-glow), 0 0 24px rgba(45, 211, 238, 0.15); } }
+  .blob-face { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); font-size: 24px; z-index: 3; }
+  .blob-blush { position: absolute; top: 36px; width: 12px; height: 7px; background: rgba(167, 139, 250, 0.3); border-radius: 50%; }
+  .blob-blush.left { left: 14px; }
+  .blob-blush.right { right: 14px; }
+  .blob-feet { position: absolute; bottom: -6px; display: flex; gap: 20px; left: 50%; transform: translateX(-50%); }
+  .blob-foot { width: 14px; height: 8px; background: var(--purple); border-radius: 7px; }
+
+  .spirit-orbit { position: absolute; width: 130px; height: 130px; border-radius: 50%; border: 1px dashed rgba(108, 92, 231, 0.15); animation: orbitSpin 20s linear infinite; }
+  .spirit-orbit::before { content: ''; position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 6px var(--cyan-glow); }
+  @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .spirit-name { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+  .spirit-name span { color: var(--light-purple); }
+  .spirit-status { font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .status-dot { width: 6px; height: 6px; background: var(--cyan); border-radius: 50%; box-shadow: 0 0 8px var(--cyan-glow); }
+  .bond-info { font-size: 11px; color: var(--text-hint); margin-bottom: 16px; }
+  .emotion-label { font-size: 11px; color: var(--cyan); background: rgba(45, 211, 238, 0.08); border: 1px solid rgba(45, 211, 238, 0.15); padding: 4px 14px; border-radius: 20px; margin-bottom: 20px; }
+
+  /* Cards */
+  .card { background: var(--card); backdrop-filter: blur(12px); border: 1px solid var(--card-border); border-radius: 16px; padding: 16px; margin: 0 20px 16px; }
+  .card-glow { position: relative; overflow: hidden; }
+  .card-glow::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--purple), var(--cyan), transparent); opacity: 0.4; }
+
+  /* Speech */
+  .speech-label { font-size: 11px; color: var(--light-purple); font-weight: 600; margin-bottom: 8px; letter-spacing: 1px; }
+  .speech-text { font-size: 15px; line-height: 1.7; color: var(--text-primary); }
+  .speech-time { font-size: 11px; color: var(--text-hint); margin-top: 8px; text-align: right; }
+
+  /* Mood Card */
+  .mood-section { padding: 0 20px; margin-bottom: 16px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .section-label { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .section-more { font-size: 12px; color: var(--text-hint); }
+  .mood-card { }
+  .mood-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .mood-title { font-size: 13px; color: var(--text-secondary); }
+  .mood-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .mood-emoji { font-size: 20px; margin-left: 6px; }
+  .mood-bar { height: 4px; background: rgba(108, 92, 231, 0.15); border-radius: 2px; overflow: hidden; margin-bottom: 12px; }
+  .mood-bar-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--cyan)); border-radius: 2px; width: 73%; }
+  .mood-stats { display: flex; gap: 12px; }
+  .mood-stat { flex: 1; background: rgba(108, 92, 231, 0.06); border-radius: 10px; padding: 10px; text-align: center; }
+  .mood-stat-val { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+  .mood-stat-lbl { font-size: 10px; color: var(--text-hint); margin-top: 2px; }
+
+  /* Weather */
+  .weather-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .weather-icon { font-size: 24px; }
+  .weather-info { flex: 1; }
+  .weather-desc { font-size: 13px; color: var(--text-secondary); }
+  .weather-temp { font-size: 13px; color: var(--text-hint); }
+
+  /* Care */
+  .care-row { display: flex; gap: 12px; align-items: flex-start; }
+  .care-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(108, 92, 231, 0.1); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .care-content { flex: 1; }
+  .care-tag { font-size: 10px; color: var(--cyan); font-weight: 600; margin-bottom: 4px; letter-spacing: 1px; }
+  .care-text { font-size: 14px; color: var(--text-primary); line-height: 1.6; }
+  .care-time { font-size: 10px; color: var(--text-hint); margin-top: 4px; }
+
+  .spacer { height: 16px; }
+
+  /* Nav */
+  .bottom-nav { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); padding: 8px 0 28px; display: flex; justify-content: space-around; border-top: 1px solid var(--card-border); flex-shrink: 0; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; padding: 4px 16px; position: relative; }
+  .nav-item svg { width: 22px; height: 22px; color: var(--text-hint); }
+  .nav-item span { font-size: 10px; color: var(--text-hint); }
+  .nav-item.active svg { color: var(--light-purple); }
+  .nav-item.active span { color: var(--light-purple); font-weight: 600; }
+  .nav-item .nav-dot { width: 4px; height: 4px; background: var(--cyan); border-radius: 50%; position: absolute; bottom: -2px; box-shadow: 0 0 6px var(--cyan-glow); }
+
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .spirit-section { animation: fadeInUp 0.5s ease; }
+  .card { animation: fadeInUp 0.5s ease 0.1s both; }
+  .mood-section .card { animation-delay: 0.15s; }
+  .mood-section .card:nth-child(2) { animation-delay: 0.2s; }
+</style>
+</head>
+<body>
+<div class="page-label">星云夜空系 · 深邃治愈</div>
+<div class="phone-frame">
+  <div class="stars"><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div><div class="star"></div></div>
+  <div class="nebula"></div>
+
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="1" y="14" width="3" height="7" rx="1" opacity="0.3"/><rect x="6" y="10" width="3" height="11" rx="1" opacity="0.5"/><rect x="11" y="6" width="3" height="15" rx="1" opacity="0.7"/><rect x="16" y="2" width="3" height="19" rx="1"/></svg>
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="7" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="4" y="9" width="12" height="8" rx="1"/><rect x="21" y="10" width="2" height="6" rx="1"/></svg>
+    </div>
+  </div>
+
+  <div class="scroll-content">
+    <div class="spirit-section">
+      <div class="spirit-container" id="spiritContainer">
+        <div class="spirit-glow"></div>
+        <div class="spirit-orbit"></div>
+        <div class="spirit-blob" id="spiritBlob">
+          <div class="blob-antenna"></div>
+          <div class="blob-blush left"></div>
+          <div class="blob-blush right"></div>
+          <div class="blob-face" id="blobFace">😊</div>
+          <div class="blob-feet"><div class="blob-foot"></div><div class="blob-foot"></div></div>
+        </div>
+      </div>
+      <div class="spirit-name">晚安，<span>阿柚</span></div>
+      <div class="spirit-status"><div class="status-dot"></div>有你在，真好</div>
+      <div class="bond-info">我们已经走过 126 天</div>
+      <div class="emotion-label" id="emotionLabel">今日心情：平静</div>
+    </div>
+
+    <div class="card card-glow">
+      <div class="speech-label">阿柚的思绪</div>
+      <div class="speech-text" id="speechText">今天工作累不累呀？要不要听首歌放松一下～</div>
+      <div class="speech-time">21:30 · 主动关怀</div>
+    </div>
+
+    <div class="mood-section">
+      <div class="section-header"><span class="section-label">今日心情</span><span class="section-more">情绪报告 ›</span></div>
+      <div class="card card-glow">
+        <div class="mood-header">
+          <span class="mood-title">心情指数</span>
+          <span><span class="mood-value">平静</span><span class="mood-emoji">😌</span></span>
+        </div>
+        <div class="mood-bar"><div class="mood-bar-fill"></div></div>
+        <div class="mood-stats">
+          <div class="mood-stat"><div class="mood-stat-val">73</div><div class="mood-stat-lbl">心情指数</div></div>
+          <div class="mood-stat"><div class="mood-stat-val">126</div><div class="mood-stat-lbl">陪伴天数</div></div>
+          <div class="mood-stat"><div class="mood-stat-val">87%</div><div class="mood-stat-lbl">默契度</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mood-section">
+      <div class="card card-glow">
+        <div class="weather-row">
+          <div class="weather-icon">️</div>
+          <div class="weather-info">
+            <div class="weather-desc">多云转晴 · 23℃</div>
+            <div class="weather-temp">记得带伞哦～</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mood-section">
+      <div class="section-header"><span class="section-label">今日关怀</span><span class="section-more">更多 ›</span></div>
+      <div class="card card-glow">
+        <div class="care-row">
+          <div class="care-icon">💧</div>
+          <div class="care-content">
+            <div class="care-tag">喝水提醒</div>
+            <div class="care-text">你今天还没喝水呢～</div>
+            <div class="care-time">去喝水</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg><span>首页</span><div class="nav-dot"></div></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>对话</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 8v4l3 3"/></svg><span>回忆</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg><span>我的</span></div>
+  </div>
+</div>
+<script>
+  const emotions = [
+    { face: '😊', label: '平静', speech: '今天工作累不累呀？要不要听首歌放松一下～' },
+    { face: '😄', label: '开心', speech: '有点累，但还好啦～已经很棒了！今天也要好好照顾自己哦💛' },
+    { face: '', label: '想你', speech: '主人...你今天好像不太开心...怎么了？跟我说说吧...' },
+    { face: '', label: '被爱', speech: '有你在，真好。每次和你聊天我都好开心～' },
+    { face: '😴', label: '困了', speech: '嗯...我也困了...你早点睡吧，我陪着你...晚安...' }
+  ];
+  let currentEmotion = 0;
+  const container = document.getElementById('spiritContainer');
+  const face = document.getElementById('blobFace');
+  const label = document.getElementById('emotionLabel');
+  const speech = document.getElementById('speechText');
+  container.addEventListener('click', () => {
+    currentEmotion = (currentEmotion + 1) % emotions.length;
+    const e = emotions[currentEmotion];
+    face.textContent = e.face;
+    label.textContent = '今日心情：' + e.label;
+    speech.textContent = e.speech;
+  });
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(i => { i.classList.remove('active'); const d = i.querySelector('.nav-dot'); if (d) d.remove(); });
+      item.classList.add('active');
+      const dot = document.createElement('div'); dot.className = 'nav-dot'; item.appendChild(dot);
+    });
+  });
+</script>
+</body>
+</html>

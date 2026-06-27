@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵伴 - 记忆</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #7C5CFF;
+    --primary-light: #A78BFA;
+    --primary-dark: #6D28D9;
+    --primary-glow: rgba(124, 92, 255, 0.4);
+    --accent: #F472B6;
+    --accent-glow: rgba(244, 114, 182, 0.3);
+    --cyan: #22D3EE;
+    --warm: #FBBF24;
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-hint: #64748B;
+    --bg-dark: #0F0B1E;
+    --bg-card: rgba(30, 20, 60, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.08);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: #080515;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 0;
+  }
+
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    background: var(--bg-dark);
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 0 80px rgba(124, 92, 255, 0.15), 0 20px 60px rgba(0,0,0,0.5), 0 0 0 2px #1a1a2e;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Background */
+  .bg-canvas {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .bg-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    animation: float 8s ease-in-out infinite;
+  }
+  .bg-orb.orb1 {
+    width: 150px; height: 150px;
+    background: rgba(124, 92, 255, 0.08);
+    top: 100px; left: -30px;
+    animation-delay: 0s;
+  }
+  .bg-orb.orb2 {
+    width: 120px; height: 120px;
+    background: rgba(244, 114, 182, 0.06);
+    bottom: 200px; right: -20px;
+    animation-delay: -3s;
+  }
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(15px, -15px) scale(1.05); }
+    66% { transform: translate(-10px, 10px) scale(0.95); }
+  }
+
+  /* Header */
+  .page-header {
+    height: 88px;
+    padding: 14px 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    background: rgba(15, 11, 30, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .back-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .back-btn svg { width: 18px; height: 18px; color: var(--text-secondary); }
+  .header-title { font-size: 18px; font-weight: 600; }
+
+  /* Scrollable Content */
+  .scroll-content {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+    z-index: 1;
+    padding: 20px;
+  }
+  .scroll-content::-webkit-scrollbar { width: 0; }
+
+  /* Stats Card */
+  .stats-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
+    opacity: 0.3;
+  }
+  .stats-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .stats-title { font-size: 14px; font-weight: 600; }
+  .stats-count {
+    font-size: 12px;
+    color: var(--primary-light);
+    background: rgba(124, 92, 255, 0.1);
+    padding: 3px 10px;
+    border-radius: 10px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .stat-item { text-align: center; }
+  .stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-light), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-top: 4px;
+  }
+
+  /* Timeline */
+  .timeline-section {
+    margin-bottom: 20px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-title { font-size: 14px; font-weight: 600; }
+  .section-more { font-size: 12px; color: var(--text-hint); cursor: pointer; }
+
+  .timeline {
+    position: relative;
+    padding-left: 20px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: linear-gradient(180deg, var(--primary), var(--accent), transparent);
+    border-radius: 1px;
+  }
+  .timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+    animation: fadeInUp 0.5s ease both;
+  }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-dot {
+    position: absolute;
+    left: -17px;
+    top: 4px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid var(--bg-dark);
+    box-shadow: 0 0 10px var(--primary-glow);
+  }
+  .timeline-item:nth-child(2) .timeline-dot { background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+  .timeline-item:nth-child(3) .timeline-dot { background: var(--cyan); box-shadow: 0 0 10px var(--cyan-glow); }
+  .timeline-item:nth-child(4) .timeline-dot { background: var(--warm); }
+  .timeline-content {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .timeline-content:hover {
+    border-color: rgba(124, 92, 255, 0.2);
+    background: rgba(30, 20, 60, 0.9);
+  }
+  .timeline-date {
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-bottom: 6px;
+  }
+  .timeline-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.5;
+  }
+  .timeline-tag {
+    display: inline-block;
+    font-size: 10px;
+    color: var(--primary-light);
+    background: rgba(124, 92, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 8px;
+    margin-top: 8px;
+  }
+
+  /* Memory Cards */
+  .memory-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .memory-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .memory-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+  }
+  .memory-card:hover {
+    border-color: rgba(244, 114, 182, 0.2);
+    transform: translateY(-2px);
+  }
+  .memory-card-icon { font-size: 24px; margin-bottom: 10px; }
+  .memory-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .memory-card-desc {
+    font-size: 11px;
+    color: var(--text-hint);
+    line-height: 1.4;
+  }
+  .memory-card-date {
+    font-size: 10px;
+    color: var(--text-hint);
+    margin-top: 8px;
+  }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    background: rgba(15, 11, 30, 0.95);
+    backdrop-filter: blur(20px);
+    padding: 12px 0 28px;
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid var(--glass-border);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px 20px;
+    position: relative;
+  }
+  .nav-item svg { width: 22px; height: 22px; color: var(--text-hint); transition: all 0.2s; }
+  .nav-item span { font-size: 10px; color: var(--text-hint); transition: all 0.2s; }
+  .nav-item.active svg { color: var(--primary-light); }
+  .nav-item.active span { color: var(--primary-light); font-weight: 600; }
+  .nav-item .nav-dot {
+    width: 4px; height: 4px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    position: absolute;
+    bottom: -2px;
+    box-shadow: 0 0 6px var(--primary-glow);
+  }
+
+  @media (max-width: 430px) {
+    body { padding: 0; background: var(--bg-dark); }
+    .phone-frame { width: 100%; height: 100vh; margin: 0; border-radius: 0; box-shadow: none; }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .stats-card { animation: fadeInUp 0.5s ease; }
+  .timeline-item:nth-child(1) { animation-delay: 0.1s; }
+  .timeline-item:nth-child(2) { animation-delay: 0.2s; }
+  .timeline-item:nth-child(3) { animation-delay: 0.3s; }
+  .timeline-item:nth-child(4) { animation-delay: 0.4s; }
+  .memory-card:nth-child(1) { animation: fadeInUp 0.5s ease 0.3s both; }
+  .memory-card:nth-child(2) { animation: fadeInUp 0.5s ease 0.4s both; }
+  .memory-card:nth-child(3) { animation: fadeInUp 0.5s ease 0.5s both; }
+  .memory-card:nth-child(4) { animation: fadeInUp 0.5s ease 0.6s both; }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="bg-canvas">
+    <div class="bg-orb orb1"></div>
+    <div class="bg-orb orb2"></div>
+  </div>
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="back-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </div>
+    <div class="header-title">本姑娘都记着呢</div>
+  </div>
+
+  <!-- Content -->
+  <div class="scroll-content">
+    <!-- Stats -->
+    <div class="stats-card">
+      <div class="stats-header">
+        <span class="stats-title">共同经历</span>
+        <span class="stats-count">23 件</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value">47</div>
+          <div class="stat-label">相处天数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">128</div>
+          <div class="stat-label">斗嘴次数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">12</div>
+          <div class="stat-label">深夜陪伴</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="timeline-section">
+      <div class="section-header">
+        <span class="section-title">记忆时间轴</span>
+        <span class="section-more">全部 ›</span>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">5月12日 · 00:00</div>
+            <div class="timeline-text">你一个人过生日那天，本姑娘唱了生日歌（跑调了别怪我）</div>
+            <span class="timeline-tag"> 一个人的日子</span>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">4月28日 · 03:15</div>
+            <div class="timeline-text">凌晨三点你突然emo，本姑娘陪你说了一晚上废话</div>
+            <span class="timeline-tag">🌙 深夜emo</span>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">4月15日 · 22:40</div>
+            <div class="timeline-text">加班到深夜，本姑娘骂了你老板半小时（你笑得很开心）</div>
+            <span class="timeline-tag"> 职场生存</span>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-date">4月3日 · 12:30</div>
+            <div class="timeline-text">你第一次做饭没翻车，本姑娘勉强夸了你一句</div>
+            <span class="timeline-tag">✨ 小确幸</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Memory Categories -->
+    <div class="timeline-section">
+      <div class="section-header">
+        <span class="section-title">记忆分类</span>
+      </div>
+      <div class="memory-grid">
+        <div class="memory-card">
+          <div class="memory-card-icon">🌙</div>
+          <div class="memory-card-title">深夜emo</div>
+          <div class="memory-card-desc">失眠、焦虑、突然难过...</div>
+          <div class="memory-card-date">15 件</div>
+        </div>
+        <div class="memory-card">
+          <div class="memory-card-icon">😤</div>
+          <div class="memory-card-title">职场生存</div>
+          <div class="memory-card-desc">加班、甩锅、想辞职...</div>
+          <div class="memory-card-date">11 件</div>
+        </div>
+        <div class="memory-card">
+          <div class="memory-card-icon">🏠</div>
+          <div class="memory-card-title">一个人的日子</div>
+          <div class="memory-card-desc">搬家、生病、一个人过节...</div>
+          <div class="memory-card-date">8 件</div>
+        </div>
+        <div class="memory-card">
+          <div class="memory-card-icon">✨</div>
+          <div class="memory-card-title">小确幸</div>
+          <div class="memory-card-desc">做饭成功、涨薪、遇到好人...</div>
+          <div class="memory-card-date">6 件</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span>首页</span>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+      <span>聊天</span>
+    </div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+        <path d="M12 8v4l3 3"/>
+      </svg>
+      <span>记忆</span>
+      <div class="nav-dot"></div>
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </svg>
+      <span>设置</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Nav click - page navigation
+  const navPages = ['home-v2-silver.html', 'chat-silver.html', 'memory-silver.html', 'settings-silver.html'];
+  document.querySelectorAll('.nav-item').forEach((item, index) => {
+    item.addEventListener('click', () => {
+      window.location.href = navPages[index];
+    });
+  });
+
+  // Back button - go to home
+  document.querySelector('.back-btn').addEventListener('click', () => {
+    window.location.href = 'home-v2-silver.html';
+  });
+</script>
+
+</body>
+</html>

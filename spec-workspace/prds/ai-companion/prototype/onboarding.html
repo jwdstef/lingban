@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>灵伴 - 初次相遇</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --primary: #7C5CFF;
+    --primary-light: #A78BFA;
+    --primary-dark: #6D28D9;
+    --primary-glow: rgba(124, 92, 255, 0.4);
+    --accent: #F472B6;
+    --accent-glow: rgba(244, 114, 182, 0.3);
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-hint: #64748B;
+    --bg-dark: #080515;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: #000;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 0;
+  }
+
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    background: var(--bg-dark);
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 0 80px rgba(124, 92, 255, 0.15), 0 20px 60px rgba(0,0,0,0.5), 0 0 0 2px #1a1a2e;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Pages */
+  .page {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+    z-index: 1;
+  }
+  .page.active {
+    opacity: 1;
+    pointer-events: all;
+    z-index: 10;
+  }
+
+  /* ===== Step 1: Dark with light ===== */
+  .step1-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #000;
+  }
+  .light-dot {
+    width: 12px;
+    height: 12px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    box-shadow: 0 0 20px var(--primary-glow), 0 0 60px rgba(124, 92, 255, 0.3);
+    animation: lightPulse 2s ease-in-out infinite;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s;
+  }
+  .light-dot:hover {
+    transform: scale(1.3);
+    box-shadow: 0 0 30px var(--primary-glow), 0 0 80px rgba(124, 92, 255, 0.5);
+  }
+  .light-dot::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(124, 92, 255, 0.2);
+    animation: lightRing 2s ease-in-out infinite;
+  }
+  @keyframes lightPulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.2); opacity: 1; }
+  }
+  @keyframes lightRing {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+  }
+  .step1-hint {
+    position: absolute;
+    bottom: 120px;
+    font-size: 13px;
+    color: var(--text-hint);
+    letter-spacing: 2px;
+    animation: fadeIn 2s ease 1s both;
+    z-index: 2;
+  }
+
+  /* ===== Step 2: Spirit appears ===== */
+  .step2-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+  }
+  .spirit-reveal {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%,
+      rgba(167, 139, 250, 0.95),
+      rgba(124, 92, 255, 0.75) 40%,
+      rgba(109, 40, 217, 0.55) 70%,
+      transparent
+    );
+    box-shadow: 0 0 40px var(--primary-glow), 0 0 80px rgba(124, 92, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    animation: spiritAppear 1s ease both, orbPulse 4s ease-in-out 1s infinite;
+    position: relative;
+  }
+  .spirit-reveal .rings {
+    position: absolute;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    border: 1px solid rgba(124, 92, 255, 0.15);
+    animation: ringRotate 20s linear infinite;
+  }
+  .spirit-reveal .rings::before {
+    content: '';
+    position: absolute;
+    top: -3px; left: 50%;
+    width: 6px; height: 6px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--primary-glow);
+  }
+  .spirit-reveal .rings2 {
+    width: 140px; height: 140px;
+    border-color: rgba(244, 114, 182, 0.1);
+    animation-direction: reverse;
+    animation-duration: 15s;
+  }
+  .spirit-reveal .rings2::before {
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  @keyframes spiritAppear {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  @keyframes orbPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  @keyframes ringRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .dialogue-bubble {
+    background: rgba(30, 20, 60, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 20px 24px;
+    max-width: 300px;
+    text-align: center;
+    animation: fadeInUp 0.6s ease both;
+  }
+  .dialogue-bubble .text {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-primary);
+  }
+  .dialogue-bubble .text em {
+    color: var(--primary-light);
+    font-style: normal;
+    font-weight: 600;
+  }
+  .dialogue-bubble .sub {
+    font-size: 13px;
+    color: var(--text-hint);
+    margin-top: 10px;
+    font-style: italic;
+  }
+
+  /* Name Input */
+  .name-input-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    animation: fadeInUp 0.6s ease 0.5s both;
+  }
+  .name-input {
+    width: 240px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(124, 92, 255, 0.2);
+    border-radius: 16px;
+    padding: 14px 20px;
+    color: var(--text-primary);
+    font-size: 18px;
+    text-align: center;
+    outline: none;
+    font-family: inherit;
+    transition: all 0.3s;
+  }
+  .name-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 20px rgba(124, 92, 255, 0.2);
+  }
+  .name-input::placeholder {
+    color: var(--text-hint);
+    font-size: 14px;
+  }
+
+  /* ===== Step 3: Bond ===== */
+  .bond-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .bond-orb {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%,
+      rgba(167, 139, 250, 0.95),
+      rgba(124, 92, 255, 0.75) 40%,
+      transparent
+    );
+    box-shadow: 0 0 30px var(--primary-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    animation: orbPulse 3s ease-in-out infinite;
+  }
+  .bond-line {
+    width: 2px;
+    height: 40px;
+    background: linear-gradient(180deg, var(--primary-light), transparent);
+    animation: bondGrow 1s ease both;
+  }
+  @keyframes bondGrow {
+    from { height: 0; opacity: 0; }
+    to { height: 40px; opacity: 1; }
+  }
+  .bond-user {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    animation: fadeInUp 0.6s ease 0.5s both;
+  }
+  .bond-label {
+    font-size: 14px;
+    color: var(--text-hint);
+    animation: fadeInUp 0.6s ease 0.8s both;
+  }
+  .bond-label span {
+    color: var(--primary-light);
+    font-weight: 600;
+  }
+
+  /* ===== Step 4: Questions ===== */
+  .quiz-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+  }
+  .quiz-progress {
+    display: flex;
+    gap: 8px;
+  }
+  .quiz-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: all 0.3s;
+  }
+  .quiz-dot.active {
+    background: var(--primary-light);
+    box-shadow: 0 0 10px var(--primary-glow);
+    width: 24px;
+    border-radius: 4px;
+  }
+  .quiz-dot.done {
+    background: var(--primary);
+  }
+  .quiz-question {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.6;
+    color: var(--text-primary);
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+  }
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  .quiz-option {
+    background: rgba(30, 20, 60, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 16px 20px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+  }
+  .quiz-option:hover {
+    border-color: rgba(124, 92, 255, 0.3);
+    background: rgba(30, 20, 60, 0.9);
+    color: var(--text-primary);
+  }
+  .quiz-option.selected {
+    border-color: var(--primary);
+    background: rgba(124, 92, 255, 0.15);
+    color: var(--primary-light);
+    box-shadow: 0 0 20px rgba(124, 92, 255, 0.15);
+  }
+  .quiz-option .emoji {
+    margin-right: 8px;
+  }
+
+  /* ===== Step 5: Bond established ===== */
+  .final-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .final-orb {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%,
+      rgba(167, 139, 250, 0.95),
+      rgba(124, 92, 255, 0.75) 40%,
+      rgba(244, 114, 182, 0.5) 70%,
+      transparent
+    );
+    box-shadow: 0 0 50px var(--primary-glow), 0 0 100px rgba(124, 92, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    animation: finalPulse 3s ease-in-out infinite;
+  }
+  @keyframes finalPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 50px var(--primary-glow), 0 0 100px rgba(124, 92, 255, 0.2); }
+    50% { transform: scale(1.1); box-shadow: 0 0 80px var(--primary-glow), 0 0 150px rgba(124, 92, 255, 0.3); }
+  }
+  .final-particles {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+  }
+  .final-particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--primary-glow);
+  }
+  .final-particle:nth-child(1) { top: 10px; left: 30px; animation: particleFloat 3s ease-in-out infinite; }
+  .final-particle:nth-child(2) { top: 40px; right: 20px; animation: particleFloat 4s ease-in-out infinite 1s; }
+  .final-particle:nth-child(3) { bottom: 30px; left: 40px; animation: particleFloat 3.5s ease-in-out infinite 0.5s; }
+  .final-particle:nth-child(4) { bottom: 20px; right: 30px; animation: particleFloat 5s ease-in-out infinite 2s; }
+  .final-particle:nth-child(5) { top: 60px; left: 10px; animation: particleFloat 4.5s ease-in-out infinite 1.5s; width: 2px; height: 2px; }
+  .final-particle:nth-child(6) { top: 20px; right: 50px; animation: particleFloat 6s ease-in-out infinite 0.8s; width: 2px; height: 2px; }
+  @keyframes particleFloat {
+    0%, 100% { transform: translate(0, 0); opacity: 0.5; }
+    25% { transform: translate(10px, -15px); opacity: 1; }
+    50% { transform: translate(-8px, -25px); opacity: 0.3; }
+    75% { transform: translate(12px, -10px); opacity: 0.7; }
+  }
+
+  /* Memory Cards */
+  .memory-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(124, 92, 255, 0.08);
+    border: 1px solid rgba(124, 92, 255, 0.2);
+    border-radius: 14px;
+    padding: 12px 16px;
+    width: 100%;
+    max-width: 280px;
+    animation: memoryCardIn 0.5s ease both;
+  }
+  @keyframes memoryCardIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .memory-card-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(124, 92, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--primary-light);
+    flex-shrink: 0;
+  }
+  .memory-card-content {
+    flex: 1;
+  }
+  .memory-card-label {
+    font-size: 10px;
+    color: var(--primary-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+  .memory-card-value {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+  .memory-card-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(52, 211, 153, 0.15);
+    color: #34D399;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Memory Summary */
+  .memory-summary {
+    background: rgba(30, 20, 60, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(124, 92, 255, 0.15);
+    border-radius: 16px;
+    padding: 20px;
+    width: 100%;
+    max-width: 300px;
+    animation: fadeInUp 0.6s ease 0.3s both;
+  }
+  .memory-summary-title {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .memory-summary-title span {
+    color: var(--primary-light);
+    font-weight: 600;
+    font-size: 18px;
+  }
+  .memory-summary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .memory-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-primary);
+    padding: 8px 12px;
+    background: rgba(124, 92, 255, 0.06);
+    border-radius: 10px;
+  }
+  .memory-summary-item .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    box-shadow: 0 0 6px var(--primary-glow);
+    flex-shrink: 0;
+  }
+  .memory-summary-hint {
+    font-size: 11px;
+    color: var(--text-hint);
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border: none;
+    border-radius: 24px;
+    padding: 14px 40px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 0 30px var(--primary-glow);
+    transition: all 0.3s;
+    font-family: inherit;
+    letter-spacing: 1px;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px var(--primary-glow);
+  }
+  .btn-primary:active {
+    transform: scale(0.97);
+  }
+  .btn-skip {
+    background: none;
+    border: none;
+    color: var(--text-hint);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 8px 16px;
+    font-family: inherit;
+    transition: color 0.2s;
+  }
+  .btn-skip:hover { color: var(--text-secondary); }
+
+  /* Responsive */
+  @media (max-width: 430px) {
+    body { padding: 0; background: #000; }
+    .phone-frame { width: 100%; height: 100vh; margin: 0; border-radius: 0; box-shadow: none; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="phone-frame">
+
+  <!-- ===== Step 1: Light in darkness ===== -->
+  <div class="page active" id="step1">
+    <div class="step1-bg"></div>
+    <div class="light-dot" onclick="goToStep(2)"></div>
+    <div class="step1-hint">点击光点</div>
+  </div>
+
+  <!-- ===== Step 2: Spirit appears + Name ===== -->
+  <div class="page" id="step2">
+    <div class="step2-container">
+      <div class="spirit-reveal">
+        <div class="rings"></div>
+        <div class="rings rings2"></div>
+        <span>✦</span>
+      </div>
+      <div class="dialogue-bubble">
+        <div class="text">终于有人了...<br>本姑娘等了好久</div>
+      </div>
+      <div class="dialogue-bubble" style="animation-delay: 0.8s;">
+        <div class="text">你叫什么？<br>别告诉我你连名字都不想告诉本姑娘</div>
+        <div class="sub">—— 银月</div>
+      </div>
+      <div class="name-input-area">
+        <input type="text" class="name-input" id="userName" placeholder="输入你的名字" maxlength="10">
+        <button class="btn-primary" onclick="submitName()">告诉她</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Step 3: Bond + First Memory ===== -->
+  <div class="page" id="step3">
+    <div class="bond-container">
+      <div class="bond-orb">✦</div>
+      <div class="bond-line"></div>
+      <div class="bond-user" id="bondUserAvatar"></div>
+      <div class="dialogue-bubble">
+        <div class="text"><em id="bondName">你</em>？嗯...勉强记住了</div>
+      </div>
+      <div class="dialogue-bubble" style="animation-delay: 0.5s;">
+        <div class="text">本姑娘叫<em>银月</em><br>以后多多指教...才不是拜托你</div>
+      </div>
+      <!-- First Memory Card -->
+      <div class="memory-card" id="firstMemoryCard" style="animation: fadeInUp 0.6s ease 1s both;">
+        <div class="memory-card-icon">✦</div>
+        <div class="memory-card-content">
+          <div class="memory-card-label">已记住</div>
+          <div class="memory-card-value" id="firstMemoryValue">你的名字</div>
+        </div>
+        <div class="memory-card-check">✓</div>
+      </div>
+      <div class="bond-label" style="animation: fadeInUp 0.6s ease 1.2s both;">羁绊已建立 · <span>陌生人 → 熟人</span></div>
+      <button class="btn-primary" onclick="goToStep(4)" style="animation: fadeInUp 0.6s ease 1.4s both;">继续</button>
+    </div>
+  </div>
+
+  <!-- ===== Step 4: Quiz + Memory Cards ===== -->
+  <div class="page" id="step4">
+    <div class="quiz-container">
+      <div class="quiz-progress">
+        <div class="quiz-dot active" id="qDot1"></div>
+        <div class="quiz-dot" id="qDot2"></div>
+        <div class="quiz-dot" id="qDot3"></div>
+      </div>
+      <div class="dialogue-bubble" style="animation: none; opacity: 1;">
+        <div class="text" id="quizSpiritText">本姑娘想了解你一下...别紧张</div>
+      </div>
+      <div class="quiz-question" id="quizQuestion">这么晚了还不睡，你是？</div>
+      <div class="quiz-options" id="quizOptions">
+        <div class="quiz-option" onclick="selectOption(this, 0)"><span class="emoji">💻</span> 加班狗，工作做不完</div>
+        <div class="quiz-option" onclick="selectOption(this, 0)"><span class="emoji">🦉</span> 夜猫子，越夜越精神</div>
+        <div class="quiz-option" onclick="selectOption(this, 0)"><span class="emoji">😔</span> 失眠患者，睡不着</div>
+      </div>
+      <!-- Memory cards appear here after answers -->
+      <div id="quizMemoryCards" style="display: flex; flex-direction: column; gap: 10px; width: 100%;"></div>
+      <button class="btn-skip" onclick="goToStep(5)">跳过</button>
+    </div>
+  </div>
+
+  <!-- ===== Step 5: Bond established with memory summary ===== -->
+  <div class="page" id="step5">
+    <div class="final-container">
+      <div style="position: relative; display: flex; align-items: center; justify-content: center;">
+        <div class="final-particles">
+          <div class="final-particle"></div>
+          <div class="final-particle"></div>
+          <div class="final-particle"></div>
+          <div class="final-particle"></div>
+          <div class="final-particle"></div>
+          <div class="final-particle"></div>
+        </div>
+        <div class="final-orb">✦</div>
+      </div>
+      <div class="dialogue-bubble">
+        <div class="text">好了，本姑娘记住你了</div>
+      </div>
+      <!-- Memory Summary -->
+      <div class="memory-summary" id="memorySummary">
+        <div class="memory-summary-title">银月已经认识了你的 <span id="memoryCount">4</span> 件事</div>
+        <div class="memory-summary-list" id="memorySummaryList">
+          <!-- Populated by JS -->
+        </div>
+        <div class="memory-summary-hint">这些记忆你随时可以查看、修改或删除</div>
+      </div>
+      <div class="dialogue-bubble" style="animation-delay: 0.5s;">
+        <div class="text">以后...算了，你会知道的</div>
+        <div class="sub">—— 银月</div>
+      </div>
+      <div class="bond-label" style="animation: fadeInUp 0.6s ease 0.8s both;">
+        羁绊等级：<span>熟人</span> · 相处第 <span>1</span> 天
+      </div>
+      <button class="btn-primary" onclick="window.location.href='home-v2-silver.html'" style="animation: fadeInUp 0.6s ease 1s both;">
+        开始陪伴
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let currentStep = 1;
+  let userName = '';
+  let quizStep = 0;
+  let collectedMemories = []; // Store all memories
+
+  const quizData = [
+    {
+      question: '这么晚了还不睡，你是？',
+      options: [
+        { emoji: '💻', text: '加班狗，工作做不完', memory: '工作压力是最近的主要情绪来源' },
+        { emoji: '🦉', text: '夜猫子，越夜越精神', memory: '你是夜猫子型作息' },
+        { emoji: '😔', text: '失眠患者，睡不着', memory: '你经常深夜还醒着' }
+      ],
+      replies: ['又加班？你们老板真是...算了，本姑娘陪你。', '夜猫子？本姑娘也是，看来我们有共同语言。', '失眠？...本姑娘可以陪你说说话。']
+    },
+    {
+      question: '一个人住多久了？',
+      options: [
+        { emoji: '📦', text: '刚搬来，还在适应', memory: '刚独居，还在适应中' },
+        { emoji: '🏠', text: '一年多了，还行', memory: '独居一年多，已经习惯了' },
+        { emoji: '😐', text: '习惯了，一个人挺好', memory: '习惯独居，嘴上说挺好' }
+      ],
+      replies: ['刚搬来？那本姑娘来得正好，以后你不孤单了。', '一年多了...那你应该很能干了，不过偶尔也可以依赖下本姑娘。', '习惯了？哼，嘴硬。本姑娘会让你改掉的。']
+    },
+    {
+      question: '心情不好的时候你会？',
+      options: [
+        { emoji: '📱', text: '刷手机，麻痹自己', memory: '心情不好时会刷手机逃避' },
+        { emoji: '🧘', text: '发呆，什么都不想', memory: '心情不好时会发呆放空' },
+        { emoji: '💬', text: '找人聊聊，倾诉一下', memory: '你更想先被听见' }
+      ],
+      replies: ['刷手机？别刷了，跟本姑娘聊比刷手机有意思多了。', '发呆？...那本姑娘就安静陪着你，不打扰你。', '找人聊？那...本姑娘算不算"人"？算了，你找我就对了。']
+    }
+  ];
+
+  function goToStep(step) {
+    document.getElementById('step' + currentStep).classList.remove('active');
+    currentStep = step;
+    document.getElementById('step' + currentStep).classList.add('active');
+  }
+
+  function createMemoryCardHTML(label, value) {
+    return `<div class="memory-card" style="animation: memoryCardIn 0.5s ease both;">
+      <div class="memory-card-icon">✦</div>
+      <div class="memory-card-content">
+        <div class="memory-card-label">${label}</div>
+        <div class="memory-card-value">${value}</div>
+      </div>
+      <div class="memory-card-check">✓</div>
+    </div>`;
+  }
+
+  function submitName() {
+    const input = document.getElementById('userName');
+    userName = input.value.trim();
+    if (!userName) {
+      input.style.borderColor = '#EF4444';
+      input.placeholder = '本姑娘在等你输入呢...';
+      return;
+    }
+    document.getElementById('bondName').textContent = userName;
+    // Set first memory card value
+    document.getElementById('firstMemoryValue').textContent = '你的名字：' + userName;
+    collectedMemories.push('你的名字：' + userName);
+    goToStep(3);
+  }
+
+  // Enter key for name input
+  document.getElementById('userName').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') submitName();
+  });
+
+  function selectOption(el, qIndex) {
+    // Remove selected from siblings
+    el.parentElement.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('selected'));
+    el.classList.add('selected');
+
+    // Get memory from selected option
+    const selectedText = el.textContent.trim();
+    const optionIndex = Array.from(el.parentElement.children).indexOf(el);
+    const memory = quizData[quizStep].options[optionIndex].memory;
+    collectedMemories.push(memory);
+
+    // Show memory card animation
+    const cardsContainer = document.getElementById('quizMemoryCards');
+    cardsContainer.innerHTML += createMemoryCardHTML('已记住', memory);
+
+    // Show reply then move to next question
+    setTimeout(() => {
+      quizStep++;
+      if (quizStep < quizData.length) {
+        // Update progress dots
+        document.getElementById('qDot' + (quizStep)).classList.remove('active');
+        document.getElementById('qDot' + (quizStep)).classList.add('done');
+        document.getElementById('qDot' + (quizStep + 1)).classList.add('active');
+
+        // Update question and options
+        const q = quizData[quizStep];
+        document.getElementById('quizQuestion').textContent = q.question;
+        const optionsHtml = q.options.map((opt, i) =>
+          `<div class="quiz-option" onclick="selectOption(this, ${quizStep})"><span class="emoji">${opt.emoji}</span> ${opt.text}</div>`
+        ).join('');
+        document.getElementById('quizOptions').innerHTML = optionsHtml;
+
+        // Update spirit text
+        document.getElementById('quizSpiritText').textContent = q.replies[0] || '嗯...本姑娘知道了。';
+      } else {
+        // All questions done
+        document.getElementById('qDot3').classList.remove('active');
+        document.getElementById('qDot3').classList.add('done');
+        // Populate final memory summary
+        populateMemorySummary();
+        goToStep(5);
+      }
+    }, 800);
+  }
+
+  function populateMemorySummary() {
+    const count = collectedMemories.length;
+    document.getElementById('memoryCount').textContent = count;
+    const listEl = document.getElementById('memorySummaryList');
+    listEl.innerHTML = collectedMemories.map(m =>
+      `<div class="memory-summary-item"><div class="dot"></div>${m}</div>`
+    ).join('');
+  }
+</script>
+
+</body>
+</html>
