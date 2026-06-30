@@ -1,13 +1,28 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.database import async_session
 from app.routers import auth, characters, chat, memory, settings as settings_router
+from app.services.seed import seed_characters
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: seed characters if not exist
+    async with async_session() as db:
+        await seed_characters(db)
+    yield
+    # Shutdown
+
 
 app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
     docs_url="/docs" if settings.debug else None,
+    lifespan=lifespan,
 )
 
 # CORS

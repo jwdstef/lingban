@@ -8,6 +8,7 @@ pydantic-settings==2.7.1
 sqlalchemy==2.0.36
 asyncpg==0.30.0
 alembic==1.14.1
+pgvector==0.3.6
 
 # Redis & Celery
 redis==5.2.1
@@ -17,19 +18,14 @@ celery==5.4.0
 anthropic==0.44.0
 openai==1.58.1
 
-# Vector DB
-qdrant-client==1.12.1
-
 # Auth
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 python-multipart==0.0.20
 
-# WebSocket
-websockets==14.1
-
 # Push Notification
-firebase-admin==6.6.0
+jpush==4.1.0
 
 # Utils
 python-dotenv==1.0.1

@@ -23,14 +23,9 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     openai_api_key: str = ""
 
-    # Vector DB
-    qdrant_url: str = "http://localhost:6333"
-    qdrant_api_key: str = ""
-
-    # Push
-    firebase_project_id: str = ""
-    firebase_private_key: str = ""
-    firebase_client_email: str = ""
+    # Push (极光推送)
+    jpush_app_key: str = ""
+    jpush_master_secret: str = ""
 
     # TTS
     fish_audio_api_key: str = ""
@@ -39,6 +34,10 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "change-me"
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 1440
+
+    # Embedding
+    embedding_model: str = "text-embedding-3-small"
+    embedding_dimensions: int = 1536
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
