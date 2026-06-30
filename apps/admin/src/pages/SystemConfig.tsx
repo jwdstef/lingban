@@ -1,4 +1,4 @@
-import { Card, Form, Input, Button, Switch, Select, Divider, message } from 'antd';
+import { Card, Form, Input, Button, Switch, Select, message } from 'antd';
 
 export default function SystemConfig() {
   const [form] = Form.useForm();
