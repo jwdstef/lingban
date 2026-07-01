@@ -28,43 +28,30 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // 背景渐变
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF1A1A2E),
-                  Color(0xFF0F0F1A),
-                ],
+                colors: [Color(0xFF0F0F1A), Color(0xFF0A0A0F)],
               ),
             ),
           ),
-
-          // 内容
           Column(
             children: [
               const SizedBox(height: 60),
-
-              // Logo / 标题
               _buildHeader(),
-
-              // 页面内容
               Expanded(
                 child: PageView(
                   controller: _pageController,
-                  onPageChanged: (page) {
-                    setState(() => _currentPage = page);
-                  },
+                  onPageChanged: (page) => setState(() => _currentPage = page),
                   children: [
                     _buildWelcomePage(),
+                    _buildAuthPage(),
                     _buildCharacterSelectPage(),
                   ],
                 ),
               ),
-
-              // 指示器 + 按钮
               _buildBottomBar(),
             ],
           ),
@@ -78,23 +65,21 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          // Logo
           Container(
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppTheme.primaryColor, AppTheme.accentColor],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  AppTheme.spiritGlow.withOpacity(0.6),
+                  AppTheme.spiritGlow.withOpacity(0.1),
+                  Colors.transparent,
+                ],
+                stops: const [0.3, 0.7, 1.0],
               ),
-              borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(
-              Icons.auto_awesome,
-              size: 40,
-              color: Colors.white,
-            ),
+            child: const Icon(Icons.auto_awesome, size: 36, color: AppTheme.spiritGlow),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -102,7 +87,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppTheme.primaryColor,
+              letterSpacing: 8,
             ),
           ),
           const SizedBox(height: 8),
@@ -110,7 +96,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             '被 AI 惦记的感觉',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white.withOpacity(0.7),
+              color: AppTheme.primaryColor.withOpacity(0.6),
             ),
           ),
         ],
@@ -158,10 +144,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.2),
+            color: AppTheme.spiritGlow.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.spiritGlow.withOpacity(0.2),
+              width: 0.5,
+            ),
           ),
-          child: Icon(icon, color: AppTheme.primaryColor, size: 24),
+          child: Icon(icon, color: AppTheme.spiritGlow, size: 24),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -173,7 +163,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: AppTheme.primaryColor,
                 ),
               ),
               const SizedBox(height: 4),
@@ -181,7 +171,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 description,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.6),
+                  color: AppTheme.primaryColor.withOpacity(0.5),
                 ),
               ),
             ],
@@ -191,14 +181,28 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     );
   }
 
+  // 登录/注册页面
+  Widget _buildAuthPage() {
+    return const _AuthForm();
+  }
+
   Widget _buildCharacterSelectPage() {
+    final authState = ref.watch(authStateProvider);
+    if (!authState.isAuthenticated) {
+      return Center(
+        child: Text(
+          '请先登录',
+          style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5)),
+        ),
+      );
+    }
+
     return FutureBuilder(
       future: apiClient.getCharacters(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-
         if (snapshot.hasError) {
           return Center(
             child: Text(
@@ -220,7 +224,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: AppTheme.primaryColor,
                 ),
               ),
               const SizedBox(height: 8),
@@ -228,17 +232,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 'TA 会陪你聊天，记住你的一切',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.6),
+                  color: AppTheme.primaryColor.withOpacity(0.5),
                 ),
               ),
               const SizedBox(height: 24),
               Expanded(
                 child: ListView.builder(
                   itemCount: characters.length,
-                  itemBuilder: (context, index) {
-                    final char = characters[index];
-                    return _buildCharacterCard(char);
-                  },
+                  itemBuilder: (context, index) =>
+                      _buildCharacterCard(characters[index]),
                 ),
               ),
             ],
@@ -249,77 +251,74 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   Widget _buildCharacterCard(Map<String, dynamic> char) {
-    final color = Color(char['color'] ?? 0xFF8B5CF6);
+    final color = Color(char['color'] ?? 0xFF34D399);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: () => _onCharacterSelected(char['id']),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // 头像
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [color, color.withOpacity(0.6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // 信息
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      char['name'] ?? '',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '来自《${char['source'] ?? ''}》',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.5),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      char['description'] ?? '',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.7),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // 箭头
-              Icon(
-                Icons.chevron_right,
-                color: Colors.white.withOpacity(0.3),
-              ),
-            ],
+    return GestureDetector(
+      onTap: () => _onCharacterSelected(char['id']),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppTheme.primaryColor.withOpacity(0.1),
+            width: 0.5,
           ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [color.withOpacity(0.4), color.withOpacity(0.1)],
+                ),
+                border: Border.all(color: color.withOpacity(0.3), width: 1),
+              ),
+              child: Icon(Icons.auto_awesome, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    char['name'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '来自《${char['source'] ?? ''}》',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.primaryColor.withOpacity(0.4),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    char['description'] ?? '',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.primaryColor.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: AppTheme.primaryColor.withOpacity(0.3),
+            ),
+          ],
         ),
       ),
     );
@@ -332,7 +331,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         children: [
           // 指示器
           Row(
-            children: List.generate(2, (index) {
+            children: List.generate(3, (index) {
               final isActive = index == _currentPage;
               return Container(
                 width: isActive ? 24 : 8,
@@ -340,8 +339,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 margin: const EdgeInsets.only(right: 4),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? AppTheme.primaryColor
-                      : Colors.white.withOpacity(0.3),
+                      ? AppTheme.spiritGlow
+                      : AppTheme.primaryColor.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -349,7 +348,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           ),
           const Spacer(),
           // 按钮
-          if (_currentPage == 0)
+          if (_currentPage < 2)
             ElevatedButton(
               onPressed: () {
                 _pageController.nextPage(
@@ -357,19 +356,21 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   curve: Curves.easeInOut,
                 );
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.spiritGlow,
+                foregroundColor: Colors.black,
+              ),
               child: const Text('开始'),
             )
           else
             ElevatedButton(
-              onPressed: () {
-                // 返回上一页
-                _pageController.previousPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                );
-              },
+              onPressed: () => _pageController.previousPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.1),
+                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                foregroundColor: AppTheme.primaryColor,
               ),
               child: const Text('返回'),
             ),
@@ -379,35 +380,220 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   Future<void> _onCharacterSelected(String characterId) async {
-    final authState = ref.read(authProvider);
     final authNotifier = ref.read(authProvider.notifier);
-
-    // 如果未登录，先注册/登录
-    if (!authState.isAuthenticated) {
-      final registered = await authNotifier.register(
-        nickname: '灵伴用户',
-        password: 'default123', // TODO: 实际登录流程
-      );
-      if (!registered) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('注册失败，请重试')),
-          );
-        }
-        return;
-      }
-    }
-
-    // 选择角色
     try {
       await authNotifier.selectCharacter(characterId);
-      if (mounted) {
-        context.go('/home');
-      }
+      if (mounted) context.go('/home');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('选择失败: $e')),
+        );
+      }
+    }
+  }
+}
+
+// 登录/注册表单
+class _AuthForm extends ConsumerStatefulWidget {
+  const _AuthForm();
+
+  @override
+  ConsumerState<_AuthForm> createState() => _AuthFormState();
+}
+
+class _AuthFormState extends ConsumerState<_AuthForm> {
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _nicknameController = TextEditingController();
+  bool _isLogin = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _nicknameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 40),
+          // 切换标签
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildTab('登录', _isLogin),
+              const SizedBox(width: 24),
+              _buildTab('注册', !_isLogin),
+            ],
+          ),
+          const SizedBox(height: 32),
+          // 手机号
+          TextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            style: const TextStyle(color: AppTheme.primaryColor),
+            decoration: InputDecoration(
+              hintText: '手机号',
+              hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.3)),
+              prefixIcon: Icon(Icons.phone_outlined, color: AppTheme.primaryColor.withOpacity(0.5)),
+              filled: true,
+              fillColor: AppTheme.cardColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 昵称（注册时显示）
+          if (!_isLogin) ...[
+            TextField(
+              controller: _nicknameController,
+              style: const TextStyle(color: AppTheme.primaryColor),
+              decoration: InputDecoration(
+                hintText: '昵称',
+                hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.3)),
+                prefixIcon: Icon(Icons.person_outline, color: AppTheme.primaryColor.withOpacity(0.5)),
+                filled: true,
+                fillColor: AppTheme.cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+          // 密码
+          TextField(
+            controller: _passwordController,
+            obscureText: true,
+            style: const TextStyle(color: AppTheme.primaryColor),
+            decoration: InputDecoration(
+              hintText: '密码',
+              hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.3)),
+              prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor.withOpacity(0.5)),
+              filled: true,
+              fillColor: AppTheme.cardColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // 提交按钮
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.spiritGlow,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                    )
+                  : Text(_isLogin ? '登录' : '注册'),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => setState(() => _isLogin = !_isLogin),
+            child: Text(
+              _isLogin ? '没有账号？去注册' : '已有账号？去登录',
+              style: TextStyle(
+                color: AppTheme.primaryColor.withOpacity(0.5),
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(String label, bool isActive) {
+    return GestureDetector(
+      onTap: () => setState(() => _isLogin = label == '登录'),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              color: isActive
+                  ? AppTheme.primaryColor
+                  : AppTheme.primaryColor.withOpacity(0.4),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: 24,
+            height: 2,
+            decoration: BoxDecoration(
+              color: isActive ? AppTheme.spiritGlow : Colors.transparent,
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+    final nickname = _nicknameController.text.trim();
+
+    if (phone.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请填写手机号和密码')),
+      );
+      return;
+    }
+    if (!_isLogin && nickname.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请填写昵称')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final authNotifier = ref.read(authProvider.notifier);
+
+    bool success;
+    if (_isLogin) {
+      success = await authNotifier.login(phone: phone, password: password);
+    } else {
+      success = await authNotifier.register(
+        phone: phone,
+        password: password,
+        nickname: nickname,
+      );
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_isLogin ? '登录失败，请检查账号密码' : '注册失败，请重试')),
         );
       }
     }

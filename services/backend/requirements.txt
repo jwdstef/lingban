@@ -24,8 +24,8 @@ passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
 python-multipart==0.0.20
 
-# Push Notification
-jpush==4.1.0
+# Push Notification (MVP 用 httpx 直接调用极光推送 REST API)
+# jpush SDK 安装有问题，已改用 httpx 直接调用
 
 # Utils
 python-dotenv==1.0.1

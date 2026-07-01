@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color primaryColor = Color(0xFF8B5CF6);
-  static const Color backgroundColor = Color(0xFF0F0F1A);
-  static const Color surfaceColor = Color(0xFF1A1A2E);
-  static const Color cardColor = Color(0xFF252538);
+  // 银色主题色
+  static const Color primaryColor = Color(0xFFC0C0C0);
+  static const Color accentColor = Color(0xFFE8E8E8);
+  static const Color backgroundColor = Color(0xFF0A0A0F);
+  static const Color surfaceColor = Color(0xFF141420);
+  static const Color cardColor = Color(0xFF1E1E2E);
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFF9CA3AF);
-  static const Color accentColor = Color(0xFFC084FC);
+  static const Color spiritGlow = Color(0xFF34D399);
+  static const Color emotionCalm = Color(0xFF34D399);
+  static const Color emotionHappy = Color(0xFFFBBF24);
+  static const Color emotionWorried = Color(0xFFA78BFA);
+  static const Color emotionExcited = Color(0xFFF472B6);
+  static const Color emotionThinking = Color(0xFF22D3EE);
 
   static ThemeData get darkTheme => ThemeData(
         brightness: Brightness.dark,
@@ -17,7 +24,6 @@ class AppTheme {
           primary: primaryColor,
           secondary: accentColor,
           surface: surfaceColor,
-          background: backgroundColor,
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
@@ -28,6 +34,7 @@ class AppTheme {
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
+          iconTheme: IconThemeData(color: primaryColor),
         ),
         cardTheme: CardThemeData(
           color: cardColor,
@@ -39,11 +46,11 @@ class AppTheme {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: primaryColor,
-            foregroundColor: Colors.white,
+            foregroundColor: Colors.black,
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(28),
             ),
             textStyle: const TextStyle(
               fontSize: 16,
@@ -72,18 +79,9 @@ class AppTheme {
             fontWeight: FontWeight.w500,
             color: textPrimary,
           ),
-          bodyLarge: TextStyle(
-            fontSize: 16,
-            color: textPrimary,
-          ),
-          bodyMedium: TextStyle(
-            fontSize: 14,
-            color: textSecondary,
-          ),
-          bodySmall: TextStyle(
-            fontSize: 12,
-            color: textSecondary,
-          ),
+          bodyLarge: TextStyle(color: textPrimary),
+          bodyMedium: TextStyle(color: textSecondary),
+          bodySmall: TextStyle(color: textSecondary, fontSize: 12),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,

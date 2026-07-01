@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/api/sse_client.dart';
 import '../../core/theme/app_theme.dart';
+import '../auth/providers/auth_provider.dart';
 
 class ChatPage extends ConsumerStatefulWidget {
   final String characterId;
-
   const ChatPage({super.key, required this.characterId});
 
   @override
@@ -44,9 +45,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         (c) => c['id'] == widget.characterId,
         orElse: () => {},
       );
-      if (mounted) {
-        setState(() => _characterName = char['name'] ?? '灵伴');
-      }
+      if (mounted) setState(() => _characterName = char['name'] ?? '灵伴');
     } catch (e) {
       debugPrint('加载角色名失败: $e');
     }
@@ -57,7 +56,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       final response = await apiClient.getChatHistory(widget.characterId);
       final data = response.data;
       final messages = List<Map<String, dynamic>>.from(data['messages'] ?? []);
-
       if (mounted) {
         setState(() {
           _messages.clear();
@@ -74,9 +72,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         _scrollToBottom();
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -99,29 +95,24 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     setState(() => _isSending = true);
     _messageController.clear();
 
-    // 添加用户消息
-    final userMsg = _ChatMessage(
+    _messages.add(_ChatMessage(
       id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
       role: 'user',
       content: content,
       createdAt: DateTime.now(),
-    );
-    setState(() => _messages.add(userMsg));
+    ));
     _scrollToBottom();
 
-    // 添加 AI 消息占位
     final aiMsgIndex = _messages.length;
-    final aiMsg = _ChatMessage(
+    _messages.add(_ChatMessage(
       id: 'temp_ai_${DateTime.now().millisecondsSinceEpoch}',
       role: 'assistant',
       content: '',
       createdAt: DateTime.now(),
       isStreaming: true,
-    );
-    setState(() => _messages.add(aiMsg));
+    ));
     _scrollToBottom();
 
-    // SSE 流式接收
     try {
       final stream = SSEClient.sendMessage(
         characterId: widget.characterId,
@@ -135,14 +126,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         } else {
           fullResponse += chunk;
         }
-
         if (mounted) {
           setState(() {
             _messages[aiMsgIndex] = _ChatMessage(
-              id: aiMsg.id,
+              id: _messages[aiMsgIndex].id,
               role: 'assistant',
               content: fullResponse,
-              createdAt: aiMsg.createdAt,
+              createdAt: _messages[aiMsgIndex].createdAt,
               isStreaming: true,
             );
           });
@@ -150,14 +140,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         }
       }
 
-      // 流结束
       if (mounted) {
         setState(() {
           _messages[aiMsgIndex] = _ChatMessage(
-            id: aiMsg.id,
+            id: _messages[aiMsgIndex].id,
             role: 'assistant',
             content: fullResponse,
-            createdAt: aiMsg.createdAt,
+            createdAt: _messages[aiMsgIndex].createdAt,
             isStreaming: false,
           );
           _isSending = false;
@@ -167,10 +156,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       if (mounted) {
         setState(() {
           _messages[aiMsgIndex] = _ChatMessage(
-            id: aiMsg.id,
+            id: _messages[aiMsgIndex].id,
             role: 'assistant',
             content: '[发送失败: $e]',
-            createdAt: aiMsg.createdAt,
+            createdAt: _messages[aiMsgIndex].createdAt,
             isStreaming: false,
           );
           _isSending = false;
@@ -182,27 +171,66 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: Text(_characterName ?? '聊天'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () => _showMoreOptions(),
-          ),
-        ],
+      backgroundColor: Colors.transparent,
+      // 自定义顶栏，不用 AppBar
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 自定义顶栏
+            _buildTopBar(),
+            // 消息列表
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _buildMessageList(),
+            ),
+            // 输入栏
+            _buildInputBar(),
+          ],
+        ),
       ),
-      body: Column(
-        children: [
-          // 消息列表
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _buildMessageList(),
-          ),
+    );
+  }
 
-          // 输入栏
-          _buildInputBar(),
+  Widget _buildTopBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => context.pop(),
+            child: Icon(Icons.arrow_back_ios, color: AppTheme.primaryColor.withOpacity(0.7), size: 20),
+          ),
+          const SizedBox(width: 8),
+          // 角色头像
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  AppTheme.spiritGlow.withOpacity(0.4),
+                  AppTheme.spiritGlow.withOpacity(0.1),
+                ],
+              ),
+            ),
+            child: const Icon(Icons.auto_awesome, color: AppTheme.spiritGlow, size: 16),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            _characterName ?? '聊天',
+            style: const TextStyle(
+              color: AppTheme.primaryColor,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: _showMoreOptions,
+            child: Icon(Icons.more_horiz, color: AppTheme.primaryColor.withOpacity(0.5)),
+          ),
         ],
       ),
     );
@@ -214,18 +242,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 64,
-              color: Colors.white.withOpacity(0.3),
-            ),
+            Icon(Icons.chat_bubble_outline, size: 48, color: AppTheme.primaryColor.withOpacity(0.2)),
             const SizedBox(height: 16),
             Text(
               '开始和 ${_characterName ?? 'TA'} 聊天吧',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 16,
-              ),
+              style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.4), fontSize: 14),
             ),
           ],
         ),
@@ -236,10 +257,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: _messages.length,
-      itemBuilder: (context, index) {
-        final message = _messages[index];
-        return _buildMessageBubble(message);
-      },
+      itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
     );
   }
 
@@ -252,8 +270,23 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isUser) _buildAvatar(),
-          if (!isUser) const SizedBox(width: 8),
+          if (!isUser) ...[
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppTheme.spiritGlow.withOpacity(0.3),
+                    AppTheme.spiritGlow.withOpacity(0.05),
+                  ],
+                ),
+              ),
+              child: const Icon(Icons.auto_awesome, color: AppTheme.spiritGlow, size: 14),
+            ),
+            const SizedBox(width: 8),
+          ],
           Flexible(
             child: Container(
               constraints: BoxConstraints(
@@ -262,7 +295,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: isUser
-                    ? AppTheme.primaryColor
+                    ? AppTheme.primaryColor.withOpacity(0.15)
                     : AppTheme.cardColor,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(18),
@@ -270,33 +303,22 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   bottomLeft: Radius.circular(isUser ? 18 : 4),
                   bottomRight: Radius.circular(isUser ? 4 : 18),
                 ),
+                border: Border.all(
+                  color: isUser
+                      ? AppTheme.primaryColor.withOpacity(0.2)
+                      : AppTheme.primaryColor.withOpacity(0.08),
+                  width: 0.5,
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message.content.isEmpty && message.isStreaming
-                        ? '...'
-                        : message.content,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      height: 1.4,
-                    ),
-                  ),
-                  if (message.isStreaming)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 4),
-                      child: SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white54,
-                        ),
-                      ),
-                    ),
-                ],
+              child: Text(
+                message.content.isEmpty && message.isStreaming
+                    ? '...'
+                    : message.content,
+                style: TextStyle(
+                  color: AppTheme.primaryColor.withOpacity(isUser ? 0.9 : 0.85),
+                  fontSize: 15,
+                  height: 1.5,
+                ),
               ),
             ),
           ),
@@ -306,39 +328,14 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     );
   }
 
-  Widget _buildAvatar() {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppTheme.primaryColor, AppTheme.accentColor],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Icon(
-        Icons.auto_awesome,
-        color: Colors.white,
-        size: 18,
-      ),
-    );
-  }
-
   Widget _buildInputBar() {
     return Container(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        12,
-        16,
-        12 + MediaQuery.of(context).padding.bottom,
-      ),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: AppTheme.surfaceColor.withOpacity(0.95),
         border: Border(
           top: BorderSide(
-            color: Colors.white.withOpacity(0.1),
+            color: AppTheme.primaryColor.withOpacity(0.1),
             width: 0.5,
           ),
         ),
@@ -348,20 +345,17 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           Expanded(
             child: TextField(
               controller: _messageController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppTheme.primaryColor),
               decoration: InputDecoration(
                 hintText: '输入消息...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.3)),
                 filled: true,
                 fillColor: AppTheme.cardColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
-                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
               maxLines: 4,
               minLines: 1,
@@ -377,14 +371,22 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               height: 44,
               decoration: BoxDecoration(
                 color: _isSending
-                    ? Colors.grey
-                    : AppTheme.primaryColor,
+                    ? AppTheme.primaryColor.withOpacity(0.2)
+                    : AppTheme.spiritGlow.withOpacity(0.3),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: _isSending
+                      ? AppTheme.primaryColor.withOpacity(0.1)
+                      : AppTheme.spiritGlow.withOpacity(0.5),
+                  width: 1,
+                ),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.send,
-                color: Colors.white,
-                size: 20,
+                color: _isSending
+                    ? AppTheme.primaryColor.withOpacity(0.3)
+                    : AppTheme.spiritGlow,
+                size: 18,
               ),
             ),
           ),
@@ -394,19 +396,23 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   void _showMoreOptions() {
+    final characterId = ref.read(authStateProvider).selectedCharacterId ?? widget.characterId;
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.psychology, color: Colors.white70),
-              title: const Text('查看记忆', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.psychology, color: AppTheme.primaryColor.withOpacity(0.7)),
+              title: Text('查看记忆', style: TextStyle(color: AppTheme.primaryColor)),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: 跳转到记忆页
+                context.push('/memory/$characterId');
               },
             ),
             ListTile(
@@ -428,17 +434,27 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('确认清空'),
         content: const Text('清空后无法恢复，确定要清空所有对话吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
+            child: Text('取消', style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5))),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              setState(() => _messages.clear());
+              try {
+                await apiClient.clearChatHistory(widget.characterId);
+                if (mounted) setState(() => _messages.clear());
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('清空失败: $e')),
+                  );
+                }
+              }
             },
             child: const Text('确认', style: TextStyle(color: Colors.redAccent)),
           ),

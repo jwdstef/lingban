@@ -1,26 +1,17 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ApiClient {
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8000'; // Chrome/Web
-    }
-    return 'http://10.0.2.2:8000'; // Android emulator
-    // return 'http://localhost:8000'; // iOS simulator
-  }
+import '../config/app_config.dart';
 
+class ApiClient {
   late final Dio _dio;
 
   ApiClient() {
     _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
+      baseUrl: AppConfig.baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 30),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
     ));
 
     _dio.interceptors.add(InterceptorsWrapper(
@@ -43,7 +34,6 @@ class ApiClient {
 
   void _onError(DioException error, ErrorInterceptorHandler handler) {
     if (error.response?.statusCode == 401) {
-      // Token expired, redirect to login
       SharedPreferences.getInstance().then((prefs) {
         prefs.remove('access_token');
       });
@@ -68,11 +58,11 @@ class ApiClient {
         'push_platform': platform,
       });
 
+  Future<Response> updateSettings(Map<String, dynamic> settings) =>
+      _dio.put('/api/v1/settings', data: {'settings': settings});
+
   // Characters
   Future<Response> getCharacters() => _dio.get('/api/v1/characters');
-
-  Future<Response> getCharactersWithRelation() =>
-      _dio.get('/api/v1/characters/with-relation');
 
   Future<Response> selectCharacter(String characterId) =>
       _dio.post('/api/v1/characters/select', data: {
@@ -89,6 +79,9 @@ class ApiClient {
         'offset': offset,
       });
 
+  Future<Response> clearChatHistory(String characterId) =>
+      _dio.delete('/api/v1/chat/$characterId/all');
+
   // Memory
   Future<Response> getMemories(String characterId, {String? category}) =>
       _dio.get('/api/v1/memory/$characterId', queryParameters: {
@@ -98,11 +91,8 @@ class ApiClient {
   Future<Response> deleteMemory(String characterId, String memoryId) =>
       _dio.delete('/api/v1/memory/$characterId/$memoryId');
 
-  // Settings
-  Future<Response> getSettings() => _dio.get('/api/v1/settings');
-
-  Future<Response> updateSettings(Map<String, dynamic> settings) =>
-      _dio.put('/api/v1/settings', data: {'settings': settings});
+  Future<Response> clearAllMemories(String characterId) =>
+      _dio.delete('/api/v1/memory/$characterId/all');
 }
 
 final apiClient = ApiClient();

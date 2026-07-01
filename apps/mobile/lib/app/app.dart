@@ -9,6 +9,7 @@ import '../features/home/home_page.dart';
 import '../features/chat/chat_page.dart';
 import '../features/memory/memory_page.dart';
 import '../features/settings/settings_page.dart';
+import '../features/shell/app_shell.dart';
 
 class LingbanApp extends ConsumerWidget {
   const LingbanApp({super.key});
@@ -36,27 +37,32 @@ class LingbanApp extends ConsumerWidget {
           path: '/onboarding',
           builder: (context, state) => const OnboardingPage(),
         ),
-        GoRoute(
-          path: '/home',
-          builder: (context, state) => const HomePage(),
-        ),
-        GoRoute(
-          path: '/chat/:characterId',
-          builder: (context, state) {
-            final characterId = state.pathParameters['characterId']!;
-            return ChatPage(characterId: characterId);
-          },
-        ),
-        GoRoute(
-          path: '/memory/:characterId',
-          builder: (context, state) {
-            final characterId = state.pathParameters['characterId']!;
-            return MemoryPage(characterId: characterId);
-          },
-        ),
-        GoRoute(
-          path: '/settings',
-          builder: (context, state) => const SettingsPage(),
+        ShellRoute(
+          builder: (context, state, child) => AppShell(child: child),
+          routes: [
+            GoRoute(
+              path: '/home',
+              builder: (context, state) => const HomePage(),
+            ),
+            GoRoute(
+              path: '/chat/:characterId',
+              builder: (context, state) {
+                final characterId = state.pathParameters['characterId']!;
+                return ChatPage(characterId: characterId);
+              },
+            ),
+            GoRoute(
+              path: '/memory/:characterId',
+              builder: (context, state) {
+                final characterId = state.pathParameters['characterId']!;
+                return MemoryPage(characterId: characterId);
+              },
+            ),
+            GoRoute(
+              path: '/settings',
+              builder: (context, state) => const SettingsPage(),
+            ),
+          ],
         ),
       ],
     );

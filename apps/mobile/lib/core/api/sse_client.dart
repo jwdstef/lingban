@@ -1,18 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SSEClient {
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8000'; // Chrome/Web
-    }
-    return 'http://10.0.2.2:8000'; // Android emulator
-  }
+import '../config/app_config.dart';
 
+class SSEClient {
   /// 发送消息并接收 SSE 流式响应
+  /// 使用 utf8.decoder + LineSplitter 确保中文多字节安全
   static Stream<String> sendMessage({
     required String characterId,
     required String content,
@@ -22,7 +17,7 @@ class SSEClient {
     final token = prefs.getString('access_token');
 
     final dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
+      baseUrl: AppConfig.baseUrl,
       headers: {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
@@ -40,30 +35,28 @@ class SSEClient {
         options: Options(responseType: ResponseType.stream),
       );
 
-      final stream = response.data!.stream;
-      final buffer = StringBuffer();
+      // 用 utf8.decoder + LineSplitter 安全处理流式数据
+      final byteStream = response.data!.stream;
+      final decodedStream =
+          byteStream.transform(const Utf8Decoder(allowMalformed: true));
+      final lineStream = decodedStream.transform(const LineSplitter());
 
-      await for (final chunk in stream) {
-        final text = utf8.decode(chunk);
-        buffer.write(text);
+      await for (final line in lineStream) {
+        if (line.startsWith('data: ')) {
+          final data = line.substring(6);
 
-        // 解析 SSE 格式
-        final lines = buffer.toString().split('\n');
-        buffer.clear();
+          // 跳过 [DONE] 信号
+          if (data == '[DONE]') {
+            return;
+          }
 
-        for (final line in lines) {
-          if (line.startsWith('data: ')) {
-            final data = line.substring(6);
-            if (data == '[DONE]') {
-              return;
-            }
-            if (data.isNotEmpty) {
-              yield data;
-            }
-          } else if (line.isNotEmpty) {
-            // 不完整的行，放回缓冲区
-            buffer.write(line);
-            buffer.write('\n');
+          // 跳过 message_id JSON 协议数据
+          if (data.startsWith('{') && data.contains('message_id')) {
+            continue;
+          }
+
+          if (data.isNotEmpty) {
+            yield data;
           }
         }
       }
