@@ -15,7 +15,6 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   List<Map<String, dynamic>> _characters = [];
-  bool _loadingCharacters = true;
 
   @override
   void initState() {
@@ -27,12 +26,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     try {
       final response = await apiClient.getCharacters();
       final list = List<Map<String, dynamic>>.from(response.data);
-      if (mounted) setState(() {
-        _characters = list;
-        _loadingCharacters = false;
-      });
+      if (mounted) {
+        setState(() {
+          _characters = list;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() => _loadingCharacters = false);
+      // ignore
     }
   }
 

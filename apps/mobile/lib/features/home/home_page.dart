@@ -55,21 +55,59 @@ class _HomePageState extends ConsumerState<HomePage>
 
     final emotion = _emotions[_currentEmotion];
 
-    return SafeArea(
-      child: Column(
-        children: [
-          // 顶部栏
-          _buildTopBar(context, authState),
-
-          // 灵体展示区域
-          Expanded(
-            child: _buildCharacterDisplay(context, characterId, emotion),
+    return Stack(
+      children: [
+        // 背景光斑
+        Positioned(
+          top: -60,
+          right: -40,
+          child: Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  AppTheme.spiritGlow.withOpacity(0.08),
+                  Colors.transparent,
+                ],
+                stops: const [0.4, 1.0],
+              ),
+            ),
           ),
-
-          // 底部留空给导航栏
-          const SizedBox(height: 60),
-        ],
-      ),
+        ),
+        Positioned(
+          bottom: 100,
+          left: -60,
+          child: Container(
+            width: 160,
+            height: 160,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  AppTheme.emotionThinking.withOpacity(0.06),
+                  Colors.transparent,
+                ],
+                stops: const [0.4, 1.0],
+              ),
+            ),
+          ),
+        ),
+        // 内容
+        SafeArea(
+          child: Column(
+            children: [
+              // 顶部栏
+              _buildTopBar(context, authState),
+              // 灵体展示区域
+              Expanded(
+                child: _buildCharacterDisplay(context, characterId, emotion),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

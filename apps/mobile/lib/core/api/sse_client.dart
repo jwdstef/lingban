@@ -36,9 +36,8 @@ class SSEClient {
       );
 
       // 用 utf8.decoder + LineSplitter 安全处理流式数据
-      final byteStream = response.data!.stream;
-      final decodedStream =
-          byteStream.transform(const Utf8Decoder(allowMalformed: true));
+      final byteStream = response.data!.stream.cast<List<int>>();
+      final decodedStream = byteStream.transform(utf8.decoder);
       final lineStream = decodedStream.transform(const LineSplitter());
 
       await for (final line in lineStream) {
