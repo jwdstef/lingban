@@ -3,7 +3,6 @@ import { Card, Col, Row, Statistic, message } from 'antd';
 import {
   UserOutlined,
   MessageOutlined,
-  RobotOutlined,
   HeartOutlined,
 } from '@ant-design/icons';
 import api from '../services/api';
