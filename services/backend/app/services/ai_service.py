@@ -98,19 +98,31 @@ class AIService:
         db: AsyncSession,
         top_k: int = 5,
     ) -> list[Memory]:
-        """召回相关记忆"""
-        # MVP: 先按重要度+时间排序召回，后续接入 pgvector 语义检索
-        result = await db.execute(
-            select(Memory)
-            .where(
-                Memory.user_id == user_id,
-                Memory.character_id == character_id,
-                Memory.is_active == True,
+        """召回相关记忆 - 使用语义检索"""
+        from app.services.memory_service import memory_service
+
+        if not query:
+            # 没有查询文本时，按重要度召回
+            result = await db.execute(
+                select(Memory)
+                .where(
+                    Memory.user_id == user_id,
+                    Memory.character_id == character_id,
+                    Memory.is_active == True,
+                )
+                .order_by(Memory.importance.desc(), Memory.created_at.desc())
+                .limit(top_k)
             )
-            .order_by(Memory.importance.desc(), Memory.created_at.desc())
-            .limit(top_k)
+            return list(result.scalars().all())
+
+        # 使用 pgvector 语义检索
+        return await memory_service.recall_memories(
+            user_id=user_id,
+            character_id=character_id,
+            query=query,
+            db=db,
+            top_k=top_k,
         )
-        return list(result.scalars().all())
 
     def _assemble_prompt(
         self,
