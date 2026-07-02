@@ -239,16 +239,28 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
             ),
           )
         else
-          ..._memories.take(5).map((memory) => _buildTimelineItem(memory)),
+          ..._memories.take(5).toList().asMap().entries.map((entry) => _buildTimelineItem(entry.key, entry.value)),
       ],
     );
   }
 
-  Widget _buildTimelineItem(Map<String, dynamic> memory) {
+  // 时间轴圆点颜色
+  static const _dotColors = [
+    Color(0xFF8B5CF6), // 紫色
+    Color(0xFFEC4899), // 粉色
+    Color(0xFF06B6D4), // 青色
+    Color(0xFFF59E0B), // 黄色
+    Color(0xFF10B981), // 绿色
+  ];
+
+  Widget _buildTimelineItem(int index, Map<String, dynamic> memory) {
     final emotionTags = List<String>.from(memory['emotion_tags'] ?? []);
     final tag = emotionTags.isNotEmpty ? emotionTags.first : '';
     final date = memory['created_at'] ?? '';
     final dateStr = _formatDate(date);
+    final dotColor = _dotColors[index % _dotColors.length];
+    final totalItems = _memories.length > 5 ? 5 : _memories.length;
+    final isLast = index == totalItems - 1;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -263,20 +275,30 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
                 height: 10,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppTheme.spiritGlow,
+                  color: dotColor,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.spiritGlow.withValues(alpha: 0.4),
+                      color: dotColor.withValues(alpha: 0.4),
                       blurRadius: 8,
                     ),
                   ],
                 ),
               ),
-              Container(
-                width: 1,
-                height: 50,
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              ),
+              if (!isLast)
+                Container(
+                  width: 1,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        dotColor.withValues(alpha: 0.3),
+                        dotColor.withValues(alpha: 0.05),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(width: 12),

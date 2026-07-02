@@ -138,9 +138,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            childAspectRatio: 0.72,
-            crossAxisSpacing: 8,
+            crossAxisCount: 2,
+            childAspectRatio: 1.4,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
           ),
           itemCount: _characters.length + 1, // +1 for custom
           itemBuilder: (context, index) {
@@ -185,10 +186,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
           color: AppTheme.cardColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isActive
                 ? AppTheme.spiritGlow.withValues(alpha: 0.4)
@@ -196,67 +197,68 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             width: isActive ? 1.5 : 0.5,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    color.withValues(alpha: 0.6),
-                    color.withValues(alpha: 0.1),
-                  ],
+            // Active 勾选标记
+            if (isActive)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: AppTheme.spiritGlow,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, size: 14, color: Colors.black),
                 ),
               ),
-              child: Center(
-                child: Text(
-                  icon,
-                  style: TextStyle(color: color, fontSize: 16),
+            // 卡片内容
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        color.withValues(alpha: 0.6),
+                        color.withValues(alpha: 0.1),
+                      ],
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      icon,
+                      style: TextStyle(color: color, fontSize: 20),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              name,
-              style: TextStyle(
-                color: AppTheme.primaryColor.withValues(alpha: 0.9),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              desc,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                fontSize: 9,
-                height: 1.3,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: isActive
-                    ? AppTheme.spiritGlow.withValues(alpha: 0.15)
-                    : AppTheme.primaryColor.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                tag,
-                style: TextStyle(
-                  color: isActive
-                      ? AppTheme.spiritGlow
-                      : AppTheme.primaryColor.withValues(alpha: 0.4),
-                  fontSize: 9,
+                const SizedBox(height: 8),
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.9),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 4),
+                Text(
+                  desc,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                    fontSize: 11,
+                    height: 1.3,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
