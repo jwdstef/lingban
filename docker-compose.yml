@@ -1,14 +1,13 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  # PostgreSQL (with pgvector)
   postgres:
     image: pgvector/pgvector:pg16
     container_name: lingban-postgres
     environment:
-      POSTGRES_DB: lingban
       POSTGRES_USER: lingban
       POSTGRES_PASSWORD: lingban
+      POSTGRES_DB: lingban
     ports:
       - "5432:5432"
     volumes:
@@ -19,7 +18,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis
   redis:
     image: redis:7-alpine
     container_name: lingban-redis
@@ -27,50 +25,11 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-
-  # FastAPI Backend
-  backend:
-    build:
-      context: ./services/backend
-      dockerfile: Dockerfile
-    container_name: lingban-backend
-    ports:
-      - "8000:8000"
-    env_file:
-      - ./services/backend/.env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    volumes:
-      - ./services/backend:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-
-  # Celery Worker
-  celery-worker:
-    build:
-      context: ./services/backend
-      dockerfile: Dockerfile
-    container_name: lingban-celery
-    env_file:
-      - ./services/backend/.env
-    depends_on:
-      - redis
-      - postgres
-    command: celery -A app.services.tasks worker --loglevel=info
-
-  # Celery Beat (定时任务调度)
-  celery-beat:
-    build:
-      context: ./services/backend
-      dockerfile: Dockerfile
-    container_name: lingban-celery-beat
-    env_file:
-      - ./services/backend/.env
-    depends_on:
-      - redis
-    command: celery -A app.services.tasks beat --loglevel=info
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
