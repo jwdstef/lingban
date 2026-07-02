@@ -38,6 +38,10 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(const AuthState()) {
     _checkAuth();
+    // 注册 401 回调
+    apiClient.onUnauthorized = () {
+      state = const AuthState();
+    };
   }
 
   Future<void> _checkAuth() async {

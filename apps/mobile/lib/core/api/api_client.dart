@@ -1,10 +1,14 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
 
 class ApiClient {
   late final Dio _dio;
+
+  /// 401 时调用的回调，用于通知 auth provider 清除状态
+  VoidCallback? onUnauthorized;
 
   ApiClient() {
     _dio = Dio(BaseOptions(
@@ -37,6 +41,7 @@ class ApiClient {
       SharedPreferences.getInstance().then((prefs) {
         prefs.remove('access_token');
       });
+      onUnauthorized?.call();
     }
     handler.next(error);
   }
@@ -59,7 +64,7 @@ class ApiClient {
       });
 
   Future<Response> updateSettings(Map<String, dynamic> settings) =>
-      _dio.put('/api/v1/settings', data: {'settings': settings});
+      _dio.put('/api/v1/auth/settings', data: {'settings': settings});
 
   // Characters
   Future<Response> getCharacters() => _dio.get('/api/v1/characters');
@@ -80,7 +85,7 @@ class ApiClient {
       });
 
   Future<Response> clearChatHistory(String characterId) =>
-      _dio.delete('/api/v1/chat/$characterId/all');
+      _dio.delete('/api/v1/chat/$characterId/history');
 
   // Memory
   Future<Response> getMemories(String characterId, {String? category}) =>

@@ -605,13 +605,37 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     color: AppTheme.primaryColor.withValues(alpha: 0.5))),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _unbindCharacter(characterId);
+            },
             child: const Text('确认解除',
                 style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _unbindCharacter(String characterId) async {
+    try {
+      // 清空记忆和对话历史
+      await apiClient.clearAllMemories(characterId);
+      await apiClient.clearChatHistory(characterId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已解除绑定')),
+        );
+        // 刷新页面
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('解除失败: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _selectCharacter(String characterId) async {
@@ -632,7 +656,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         return '傲娇毒舌\n外冷内热';
       case 'babata':
         return '沉稳睿智\n亦师亦友';
-      case 'heihaung':
+      case 'heihuang':
         return '贱萌搞笑\n仗义忠诚';
       default:
         return '专属伙伴';

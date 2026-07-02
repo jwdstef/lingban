@@ -11,66 +11,94 @@ import '../features/memory/memory_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/shell/app_shell.dart';
 
-class LingbanApp extends ConsumerWidget {
+// GoRouter 只创建一次，避免每次 auth 状态变化都重建路由栈
+final _rootNavigatorKey = GlobalKey<NavigatorState>();
+
+GoRouter _createRouter(Ref ref) {
+  return GoRouter(
+    navigatorKey: _rootNavigatorKey,
+    initialLocation: '/onboarding',
+    redirect: (context, state) {
+      final authState = ref.read(authProvider);
+      final isAuthenticated = authState.isAuthenticated;
+      final isOnboarding = state.matchedLocation == '/onboarding';
+
+      if (!isAuthenticated && !isOnboarding) {
+        return '/onboarding';
+      }
+      if (isAuthenticated && isOnboarding) {
+        return '/home';
+      }
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingPage(),
+      ),
+      ShellRoute(
+        builder: (context, state, child) => AppShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/home',
+            builder: (context, state) => const HomePage(),
+          ),
+          GoRoute(
+            path: '/chat/:characterId',
+            builder: (context, state) {
+              final characterId = state.pathParameters['characterId']!;
+              return ChatPage(characterId: characterId);
+            },
+          ),
+          GoRoute(
+            path: '/memory/:characterId',
+            builder: (context, state) {
+              final characterId = state.pathParameters['characterId']!;
+              return MemoryPage(characterId: characterId);
+            },
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) => const SettingsPage(),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+class LingbanApp extends ConsumerStatefulWidget {
   const LingbanApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authStateProvider);
+  ConsumerState<LingbanApp> createState() => _LingbanAppState();
+}
 
-    final router = GoRouter(
-      initialLocation: authState.isAuthenticated ? '/home' : '/onboarding',
-      redirect: (context, state) {
-        final isAuthenticated = authState.isAuthenticated;
-        final isOnboarding = state.matchedLocation == '/onboarding';
+class _LingbanAppState extends ConsumerState<LingbanApp> {
+  late final GoRouter _router;
 
-        if (!isAuthenticated && !isOnboarding) {
-          return '/onboarding';
-        }
-        if (isAuthenticated && isOnboarding) {
-          return '/home';
-        }
-        return null;
-      },
-      routes: [
-        GoRoute(
-          path: '/onboarding',
-          builder: (context, state) => const OnboardingPage(),
-        ),
-        ShellRoute(
-          builder: (context, state, child) => AppShell(child: child),
-          routes: [
-            GoRoute(
-              path: '/home',
-              builder: (context, state) => const HomePage(),
-            ),
-            GoRoute(
-              path: '/chat/:characterId',
-              builder: (context, state) {
-                final characterId = state.pathParameters['characterId']!;
-                return ChatPage(characterId: characterId);
-              },
-            ),
-            GoRoute(
-              path: '/memory/:characterId',
-              builder: (context, state) {
-                final characterId = state.pathParameters['characterId']!;
-                return MemoryPage(characterId: characterId);
-              },
-            ),
-            GoRoute(
-              path: '/settings',
-              builder: (context, state) => const SettingsPage(),
-            ),
-          ],
-        ),
-      ],
-    );
+  @override
+  void initState() {
+    super.initState();
+    _router = _createRouter(ref);
+    // 监听 auth 状态变化，触发 GoRouter redirect 重新评估
+    ref.listen(authProvider, (_, __) {
+      _router.go(_router.routerDelegate.currentConfiguration.uri.toString());
+    });
+  }
 
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp.router(
       title: '灵伴',
       theme: AppTheme.darkTheme,
-      routerConfig: router,
+      routerConfig: _router,
       debugShowCheckedModeBanner: false,
     );
   }

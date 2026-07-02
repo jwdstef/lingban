@@ -45,6 +45,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 child: PageView(
                   controller: _pageController,
                   onPageChanged: (page) => setState(() => _currentPage = page),
+                  physics: const NeverScrollableScrollPhysics(), // 禁止滑动，只能通过按钮导航
                   children: [
                     _buildWelcomePage(),
                     _buildAuthPage(),
@@ -183,7 +184,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   // 登录/注册页面
   Widget _buildAuthPage() {
-    return const _AuthForm();
+    return _AuthForm(onLoginSuccess: () {
+      // 登录成功后自动跳到角色选择页
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   Widget _buildCharacterSelectPage() {
@@ -325,6 +332,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   Widget _buildBottomBar() {
+    final authState = ref.watch(authStateProvider);
+    final isLoggedIn = authState.isAuthenticated;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
       child: Row(
@@ -347,8 +357,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             }),
           ),
           const Spacer(),
-          // 按钮
-          if (_currentPage < 2)
+          // 按钮逻辑：
+          // 第0页（欢迎）→ "开始" 到登录页
+          // 第1页（登录）→ 已登录则到角色选择，未登录显示"登录"提示
+          // 第2页（角色选择）→ "返回" 到登录页
+          if (_currentPage == 0)
             ElevatedButton(
               onPressed: () {
                 _pageController.nextPage(
@@ -362,7 +375,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               ),
               child: const Text('开始'),
             )
-          else
+          else if (_currentPage == 1 && !isLoggedIn)
+            Text(
+              '请先登录或注册',
+              style: TextStyle(
+                color: AppTheme.primaryColor.withOpacity(0.5),
+                fontSize: 14,
+              ),
+            )
+          else if (_currentPage == 2)
             ElevatedButton(
               onPressed: () => _pageController.previousPage(
                 duration: const Duration(milliseconds: 300),
@@ -373,7 +394,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 foregroundColor: AppTheme.primaryColor,
               ),
               child: const Text('返回'),
-            ),
+            )
+          else
+            const SizedBox.shrink(),
         ],
       ),
     );
@@ -396,7 +419,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
 // 登录/注册表单
 class _AuthForm extends ConsumerStatefulWidget {
-  const _AuthForm();
+  final VoidCallback onLoginSuccess;
+  const _AuthForm({required this.onLoginSuccess});
 
   @override
   ConsumerState<_AuthForm> createState() => _AuthFormState();
@@ -578,22 +602,41 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
     setState(() => _isLoading = true);
     final authNotifier = ref.read(authProvider.notifier);
 
-    bool success;
-    if (_isLogin) {
-      success = await authNotifier.login(phone: phone, password: password);
-    } else {
-      success = await authNotifier.register(
-        phone: phone,
-        password: password,
-        nickname: nickname,
-      );
-    }
+    try {
+      bool success;
+      if (_isLogin) {
+        success = await authNotifier.login(phone: phone, password: password);
+      } else {
+        success = await authNotifier.register(
+          phone: phone,
+          password: password,
+          nickname: nickname,
+        );
+      }
 
-    if (mounted) {
-      setState(() => _isLoading = false);
-      if (!success) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        if (success) {
+          widget.onLoginSuccess();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_isLogin ? '登录失败，请检查账号密码' : '注册失败，请重试')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        // 显示后端返回的具体错误信息
+        final errorMsg = e.toString().contains('已注册')
+            ? '该手机号已注册'
+            : e.toString().contains('未注册')
+                ? '该手机号未注册'
+                : e.toString().contains('密码错误')
+                    ? '密码错误'
+                    : (_isLogin ? '登录失败，请重试' : '注册失败，请重试');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_isLogin ? '登录失败，请检查账号密码' : '注册失败，请重试')),
+          SnackBar(content: Text(errorMsg)),
         );
       }
     }
