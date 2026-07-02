@@ -21,20 +21,36 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   final List<_ChatMessage> _messages = [];
   bool _isLoading = true;
   bool _isSending = false;
+  bool _isLoadingMore = false;
+  bool _hasMoreMessages = true;
+  int _currentPage = 0;
   String? _characterName;
+
+  static const int _pageSize = 20;
 
   @override
   void initState() {
     super.initState();
     _loadHistory();
     _loadCharacterName();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    // 滚动到顶部时加载更多历史消息
+    if (_scrollController.position.pixels <= 0 &&
+        !_isLoadingMore &&
+        _hasMoreMessages) {
+      _loadMoreHistory();
+    }
   }
 
   Future<void> _loadCharacterName() async {
@@ -53,7 +69,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   Future<void> _loadHistory() async {
     try {
-      final response = await apiClient.getChatHistory(widget.characterId);
+      final response = await apiClient.getChatHistory(
+        widget.characterId,
+        limit: _pageSize,
+        offset: 0,
+      );
       final data = response.data;
       final messages = List<Map<String, dynamic>>.from(data['messages'] ?? []);
       if (mounted) {
@@ -68,11 +88,51 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             ));
           }
           _isLoading = false;
+          _hasMoreMessages = messages.length >= _pageSize;
+          _currentPage = 0;
         });
         _scrollToBottom();
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadMoreHistory() async {
+    if (_isLoadingMore || !_hasMoreMessages) return;
+
+    setState(() => _isLoadingMore = true);
+
+    try {
+      final nextPage = _currentPage + 1;
+      final response = await apiClient.getChatHistory(
+        widget.characterId,
+        limit: _pageSize,
+        offset: nextPage * _pageSize,
+      );
+      final data = response.data;
+      final olderMessages = List<Map<String, dynamic>>.from(data['messages'] ?? []);
+
+      if (mounted) {
+        setState(() {
+          // 将旧消息插入到列表顶部
+          final newMessages = <_ChatMessage>[];
+          for (final msg in olderMessages) {
+            newMessages.add(_ChatMessage(
+              id: msg['id'] ?? '',
+              role: msg['role'] ?? 'user',
+              content: msg['content'] ?? '',
+              createdAt: DateTime.tryParse(msg['created_at'] ?? '') ?? DateTime.now(),
+            ));
+          }
+          _messages.insertAll(0, newMessages);
+          _currentPage = nextPage;
+          _isLoadingMore = false;
+          _hasMoreMessages = olderMessages.length >= _pageSize;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingMore = false);
     }
   }
 
@@ -256,8 +316,24 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      itemCount: _messages.length,
-      itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
+      itemCount: _messages.length + (_isLoadingMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        // 顶部加载更多指示器
+        if (_isLoadingMore && index == 0) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+        final msgIndex = _isLoadingMore ? index - 1 : index;
+        return _buildMessageBubble(_messages[msgIndex]);
+      },
     );
   }
 

@@ -19,6 +19,11 @@ class _HomePageState extends ConsumerState<HomePage>
   late AnimationController _animController;
   int _currentEmotion = 0;
 
+  // 缓存 API Future，避免每次 rebuild 都重新请求
+  late Future<List<Map<String, dynamic>>> _charactersFuture;
+  late Future<Map<String, dynamic>> _relationFuture;
+  String? _cachedCharacterId;
+
   static const _emotions = [
     {'name': '平静', 'face': '✦', 'color': AppTheme.emotionCalm},
     {'name': '开心', 'face': '✧', 'color': AppTheme.emotionHappy},
@@ -42,6 +47,25 @@ class _HomePageState extends ConsumerState<HomePage>
     super.dispose();
   }
 
+  /// 确保 Future 只在角色变化时重新创建
+  void _ensureFutures(String characterId) {
+    if (_cachedCharacterId != characterId) {
+      _cachedCharacterId = characterId;
+      _charactersFuture = _fetchCharacters();
+      _relationFuture = _fetchRelation(characterId);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchCharacters() async {
+    final response = await apiClient.getCharacters();
+    return List<Map<String, dynamic>>.from(response.data);
+  }
+
+  Future<Map<String, dynamic>> _fetchRelation(String characterId) async {
+    final response = await apiClient.getRelation(characterId);
+    return Map<String, dynamic>.from(response.data);
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
@@ -52,6 +76,9 @@ class _HomePageState extends ConsumerState<HomePage>
         body: Center(child: Text('未选择角色')),
       );
     }
+
+    // 只在角色变化时重新创建 Future
+    _ensureFutures(characterId);
 
     final emotion = _emotions[_currentEmotion];
 
@@ -142,13 +169,11 @@ class _HomePageState extends ConsumerState<HomePage>
               children: [
                 const Icon(Icons.favorite, color: AppTheme.spiritGlow, size: 14),
                 const SizedBox(width: 6),
-                FutureBuilder(
-                  future: apiClient.getRelation(
-                    authState.selectedCharacterId ?? '',
-                  ),
+                FutureBuilder<Map<String, dynamic>>(
+                  future: _relationFuture,
                   builder: (context, snapshot) {
                     if (snapshot.hasData) {
-                      final data = snapshot.data!.data;
+                      final data = snapshot.data!;
                       return Text(
                         'Lv.${data['level']} ${data['label']}',
                         style: const TextStyle(
@@ -180,14 +205,14 @@ class _HomePageState extends ConsumerState<HomePage>
     String characterId,
     Map<String, dynamic> emotion,
   ) {
-    return FutureBuilder(
-      future: apiClient.getCharacters(),
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _charactersFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final characters = List<Map<String, dynamic>>.from(snapshot.data!.data);
+        final characters = snapshot.data!;
         final character = characters.firstWhere(
           (c) => c['id'] == characterId,
           orElse: () => {},
