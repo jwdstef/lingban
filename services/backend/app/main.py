@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import async_session
-from app.routers import auth, characters, chat, memory, settings as settings_router
+from app.routers import auth, characters, chat, memory, settings as settings_router, admin
 from app.services.seed import seed_characters
 
 
@@ -40,6 +40,7 @@ app.include_router(characters.router, prefix="/api/v1/characters", tags=["Charac
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["Chat"])
 app.include_router(memory.router, prefix="/api/v1/memory", tags=["Memory"])
 app.include_router(settings_router.router, prefix="/api/v1/settings", tags=["Settings"])
+app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
 
 
 @app.get("/health")

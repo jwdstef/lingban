@@ -54,11 +54,17 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // 目前后端没有管理后台专用的用户列表 API，先用角色列表接口
-      // TODO: 后端添加 /api/v1/admin/users 接口
-      await api.get('/characters');
-      // 暂时用 mock 数据演示
-      setUsers([]);
+      const response = await api.get('/admin/users', {
+        params: {
+          page: pagination.current,
+          page_size: pagination.pageSize,
+        },
+      });
+      setUsers(response.data.items || []);
+      setPagination({
+        ...pagination,
+        total: response.data.total || 0,
+      });
     } catch (error) {
       message.error('加载用户列表失败');
     } finally {
@@ -86,13 +92,13 @@ export default function UserManagement() {
     }
   };
 
-  const handleBan = (_userId: string) => {
+  const handleBan = (userId: string) => {
     Modal.confirm({
       title: '确认封禁',
       content: '确定要封禁该用户吗？封禁后用户将无法登录。',
       onOk: async () => {
         try {
-          // TODO: 后端添加封禁接口
+          await api.post(`/admin/users/${userId}/ban`);
           message.success('封禁成功');
           fetchUsers();
         } catch (error) {
