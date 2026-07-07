@@ -22,6 +22,7 @@ class _HomePageState extends ConsumerState<HomePage>
   // 缓存 API Future，避免每次 rebuild 都重新请求
   late Future<List<Map<String, dynamic>>> _charactersFuture;
   late Future<Map<String, dynamic>> _relationFuture;
+  late Future<List<Map<String, dynamic>>> _careMessagesFuture;
   String? _cachedCharacterId;
 
   static const _emotions = [
@@ -53,6 +54,7 @@ class _HomePageState extends ConsumerState<HomePage>
       _cachedCharacterId = characterId;
       _charactersFuture = _fetchCharacters();
       _relationFuture = _fetchRelation(characterId);
+      _careMessagesFuture = _fetchLatestCareMessages(characterId);
     }
   }
 
@@ -64,6 +66,34 @@ class _HomePageState extends ConsumerState<HomePage>
   Future<Map<String, dynamic>> _fetchRelation(String characterId) async {
     final response = await apiClient.getRelation(characterId);
     return Map<String, dynamic>.from(response.data);
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchLatestCareMessages(
+    String characterId,
+  ) async {
+    try {
+      final response =
+          await apiClient.getCareMessages(limit: 1, characterId: characterId);
+      final data = Map<String, dynamic>.from(response.data);
+      return List<Map<String, dynamic>>.from(data['messages'] ?? []);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  String _formatTriggerType(String triggerType) {
+    switch (triggerType) {
+      case 'time_morning':
+        return '早安问候';
+      case 'time_night':
+        return '晚安问候';
+      case 'silence':
+        return '久未联系';
+      case 'emotion':
+        return '情绪关怀';
+      default:
+        return '主动关怀';
+    }
   }
 
   @override
@@ -167,7 +197,8 @@ class _HomePageState extends ConsumerState<HomePage>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.favorite, color: AppTheme.spiritGlow, size: 14),
+                const Icon(Icons.favorite,
+                    color: AppTheme.spiritGlow, size: 14),
                 const SizedBox(width: 6),
                 FutureBuilder<Map<String, dynamic>>(
                   future: _relationFuture,
@@ -418,85 +449,109 @@ class _HomePageState extends ConsumerState<HomePage>
   }
 
   Widget _buildSilverMessageCard(BuildContext context, String characterId) {
-    return GestureDetector(
-      onTap: () => context.push('/chat/$characterId'),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 32),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.primaryColor.withOpacity(0.08),
-              AppTheme.primaryColor.withOpacity(0.03),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.15),
-            width: 0.5,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 头部
-            Row(
-              children: [
-                Text(
-                  '✦',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.spiritGlow,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'TA 刚刚想起你',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.primaryColor.withOpacity(0.7),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            // 内容
-            Text(
-              '你上次说最近睡得晚，今天好点了吗？别硬撑，只是顺手问问。',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.primaryColor.withOpacity(0.9),
-                height: 1.5,
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _careMessagesFuture,
+      builder: (context, snapshot) {
+        final latest =
+            (snapshot.data?.isNotEmpty ?? false) ? snapshot.data!.first : null;
+        final latestContent = latest?['content'] as String?;
+        final latestTrigger = latest?['trigger_type'] as String?;
+
+        return GestureDetector(
+          onTap: () async {
+            final messageId = latest?['id'] as String?;
+            if (messageId != null) {
+              try {
+                await apiClient.markCareMessageClicked(messageId);
+              } catch (_) {
+                // Opening chat should not depend on analytics/writeback success.
+              }
+            }
+            if (context.mounted) {
+              context.push('/chat/$characterId');
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.primaryColor.withOpacity(0.08),
+                  AppTheme.primaryColor.withOpacity(0.03),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppTheme.primaryColor.withOpacity(0.15),
+                width: 0.5,
               ),
             ),
-            const SizedBox(height: 10),
-            // 来源
-            Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.spiritGlow.withOpacity(0.6),
+                // 头部
+                Row(
+                  children: [
+                    Text(
+                      '✦',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.spiritGlow,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'TA 刚刚想起你',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.primaryColor.withOpacity(0.7),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // 内容
+                Text(
+                  latestContent ?? '你上次说最近睡得晚，今天好点了吗？别硬撑，只是顺手问问。',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppTheme.primaryColor.withOpacity(0.9),
+                    height: 1.5,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  '来自 3 天前的对话 · 作息',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppTheme.primaryColor.withOpacity(0.4),
-                  ),
+                const SizedBox(height: 10),
+                // 来源
+                Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.spiritGlow.withOpacity(0.6),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      latestTrigger != null
+                          ? '来自主动关怀 · ${_formatTriggerType(latestTrigger)}'
+                          : '来自 3 天前的对话 · 作息',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.primaryColor.withOpacity(0.4),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -537,7 +592,8 @@ class _HomePageState extends ConsumerState<HomePage>
             runSpacing: 8,
             children: items.map((item) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(12),

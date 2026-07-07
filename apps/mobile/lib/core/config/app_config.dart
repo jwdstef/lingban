@@ -1,14 +1,16 @@
-import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 
 class AppConfig {
+  static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
+
   static String get baseUrl {
-    // 开发环境
+    if (_configuredBaseUrl.isNotEmpty) return _configuredBaseUrl;
+
     if (kDebugMode) {
       if (kIsWeb) return 'http://localhost:8000';
-      // Android 模拟器用 10.0.2.2 访问宿主机
       return 'http://10.0.2.2:8000';
     }
-    // 生产环境 - 部署时替换
+
     return 'https://api.lingban.app';
   }
 }

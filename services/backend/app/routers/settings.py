@@ -1,8 +1,16 @@
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
 
 router = APIRouter()
+
+
+class UpdateSettingsRequest(BaseModel):
+    settings: dict
 
 
 @router.get("")
@@ -15,4 +23,16 @@ async def get_settings(user: User = Depends(get_current_user)):
         "dnd_end": "08:00",
         "proactive_level": "medium",
     }
-    return {**defaults, **user.settings}
+    return {**defaults, **(user.settings or {})}
+
+
+@router.put("")
+async def update_settings(
+    data: UpdateSettingsRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update current user settings."""
+    user.settings = {**(user.settings or {}), **data.settings}
+    await db.flush()
+    return {"status": "ok", "settings": user.settings}

@@ -14,7 +14,7 @@ import '../features/shell/app_shell.dart';
 // GoRouter 只创建一次，避免每次 auth 状态变化都重建路由栈
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-GoRouter _createRouter(Ref ref) {
+GoRouter _createRouter(WidgetRef ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/onboarding',

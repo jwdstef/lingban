@@ -49,6 +49,12 @@ class AIService:
         )
 
         # 5. 流式调用 Claude
+        if not settings.anthropic_api_key.strip():
+            reply = self._build_local_reply(character_id, messages, memories)
+            for chunk in self._chunk_text(reply):
+                yield chunk
+            return
+
         try:
             async with self.client.messages.stream(
                 model="claude-sonnet-4-20250514",
@@ -176,6 +182,51 @@ class AIService:
 """)
 
         return "\n".join(parts)
+
+    def _build_local_reply(
+        self,
+        character_id: str,
+        messages: list[dict],
+        memories: list[Memory],
+    ) -> str:
+        """Deterministic reply for local development without external AI keys."""
+        user_text = ""
+        for message in reversed(messages):
+            if message.get("role") == "user":
+                user_text = str(message.get("content", "")).strip()
+                break
+
+        if not user_text:
+            user_text = "今天想聊点什么"
+
+        memory_hint = ""
+        if memories:
+            memory_hint = f"我还记得：{memories[0].content}。"
+
+        templates = {
+            "yinyue": (
+                "{memory_hint}你说「{user_text}」。哼，本姑娘只是顺手听一下，"
+                "但别硬撑，先把今晚撑过去再说。"
+            ),
+            "babata": (
+                "{memory_hint}宿主，你说「{user_text}」。本座建议先把问题拆小，"
+                "让自己缓一口气，再决定下一步。"
+            ),
+            "heihaung": (
+                "{memory_hint}主人，你说「{user_text}」。这点事先交给本皇陪你扛着，"
+                "咱们慢慢拆招。"
+            ),
+        }
+        template = templates.get(
+            character_id,
+            "{memory_hint}我听见你说「{user_text}」。先别急，我们一点点聊。",
+        )
+        return template.format(memory_hint=memory_hint, user_text=user_text)
+
+    def _chunk_text(self, text: str, chunk_size: int = 12):
+        """Split local fallback text so SSE behavior remains stream-like."""
+        for start in range(0, len(text), chunk_size):
+            yield text[start : start + chunk_size]
 
     def invalidate_cache(self, character_id: str | None = None):
         """清除角色缓存"""

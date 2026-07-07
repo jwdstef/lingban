@@ -165,6 +165,9 @@ class MemoryService:
 
         user_text = "\n".join(user_messages)
 
+        if not settings.openai_api_key.strip():
+            return self._extract_memories_locally(user_messages)
+
         try:
             response = await self._openai.chat.completions.create(
                 model="gpt-4o-mini",
@@ -204,6 +207,9 @@ class MemoryService:
     async def _get_embedding(self, text: str) -> list[float] | None:
         """获取文本 embedding"""
         try:
+            if not settings.openai_api_key.strip():
+                return None
+
             response = await self._openai.embeddings.create(
                 model=settings.embedding_model,
                 input=text,
@@ -216,6 +222,43 @@ class MemoryService:
     def _format_vector(self, vector: list[float]) -> str:
         """格式化向量为 pgvector 字符串"""
         return "[" + ",".join(str(v) for v in vector) + "]"
+
+    def _extract_memories_locally(self, user_messages: list[str]) -> list[dict]:
+        """Rule-based memory extraction for local development without OpenAI."""
+        memories = []
+        for text_value in user_messages[-3:]:
+            content = text_value.strip()
+            if len(content) < 4:
+                continue
+
+            category = "daily"
+            importance = 5
+            emotion_tags: list[str] = []
+
+            if any(word in content for word in ("压力", "焦虑", "难过", "累", "崩溃", "孤独")):
+                category = "emotion"
+                importance = 7
+                if "压力" in content:
+                    emotion_tags.append("压力")
+                if "焦虑" in content:
+                    emotion_tags.append("焦虑")
+                if "累" in content:
+                    emotion_tags.append("疲惫")
+            elif any(word in content for word in ("喜欢", "讨厌", "想吃", "偏好")):
+                category = "preference"
+                importance = 6
+            elif any(word in content for word in ("朋友", "同事", "妈妈", "爸爸", "家人")):
+                category = "person"
+                importance = 6
+
+            memories.append({
+                "category": category,
+                "content": f"用户提到：{content}",
+                "importance": importance,
+                "emotion_tags": emotion_tags,
+            })
+
+        return memories
 
 
 # 单例

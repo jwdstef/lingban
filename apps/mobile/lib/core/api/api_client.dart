@@ -64,7 +64,9 @@ class ApiClient {
       });
 
   Future<Response> updateSettings(Map<String, dynamic> settings) =>
-      _dio.put('/api/v1/auth/settings', data: {'settings': settings});
+      _dio.put('/api/v1/settings', data: {'settings': settings});
+
+  Future<Response> getSettings() => _dio.get('/api/v1/settings');
 
   // Characters
   Future<Response> getCharacters() => _dio.get('/api/v1/characters');
@@ -78,7 +80,8 @@ class ApiClient {
       _dio.get('/api/v1/characters/$characterId/relation');
 
   // Chat
-  Future<Response> getChatHistory(String characterId, {int limit = 50, int offset = 0}) =>
+  Future<Response> getChatHistory(String characterId,
+          {int limit = 50, int offset = 0}) =>
       _dio.get('/api/v1/chat/$characterId/history', queryParameters: {
         'limit': limit,
         'offset': offset,
@@ -98,6 +101,24 @@ class ApiClient {
 
   Future<Response> clearAllMemories(String characterId) =>
       _dio.delete('/api/v1/memory/$characterId/all');
+
+  // Proactive care
+  Future<Response> getCareMessages({
+    int limit = 20,
+    int offset = 0,
+    String? characterId,
+  }) =>
+      _dio.get('/api/v1/care/messages', queryParameters: {
+        'limit': limit,
+        'offset': offset,
+        if (characterId != null) 'character_id': characterId,
+      });
+
+  Future<Response> markCareMessageClicked(String messageId) =>
+      _dio.post('/api/v1/care/messages/$messageId/click');
+
+  Future<Response> markCareMessageReplied(String messageId) =>
+      _dio.post('/api/v1/care/messages/$messageId/reply');
 }
 
 final apiClient = ApiClient();
