@@ -11,6 +11,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_user, get_current_user_optional
 from app.models.character import Character, UserCharacterRelation
 from app.models.user import User
+from app.routers.relationship import RelationResponse, serialize_relation
 from app.services.relationship_service import relationship_service
 
 router = APIRouter()
@@ -33,17 +34,6 @@ class CharacterResponse(BaseModel):
 class CharacterWithRelationResponse(CharacterResponse):
     """角色信息 + 用户关系"""
     relation: dict | None = None  # 包含 level/label/intimacy/consecutive_days
-
-
-class RelationResponse(BaseModel):
-    character_id: str
-    level: int
-    label: str
-    intimacy: int
-    consecutive_days: int
-    first_chat_at: datetime | None
-    last_chat_at: datetime | None
-    milestones: list[dict]
 
 
 class SelectCharacterRequest(BaseModel):
@@ -208,6 +198,7 @@ async def get_character(
 # ── 关系查询 ──
 
 @router.get("/{character_id}/relation", response_model=RelationResponse)
+@router.get("/{character_id}/relationship", response_model=RelationResponse)
 async def get_relation(
     character_id: str,
     user: User = Depends(get_current_user),
@@ -215,14 +206,4 @@ async def get_relation(
 ):
     """获取用户与角色的关系信息"""
     relation = await relationship_service.get_or_create(user.id, character_id, db)
-
-    return RelationResponse(
-        character_id=character_id,
-        level=relation.level,
-        label=relation.label,
-        intimacy=relation.intimacy,
-        consecutive_days=relation.consecutive_days,
-        first_chat_at=relation.first_chat_at,
-        last_chat_at=relation.last_chat_at,
-        milestones=relation.milestones or [],
-    )
+    return serialize_relation(character_id, relation)

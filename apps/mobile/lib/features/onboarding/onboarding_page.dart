@@ -33,7 +33,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF0F0F1A), Color(0xFF0A0A0F)],
+                colors: [Color(0xFF0F0B1E), Color(0xFF080515)],
               ),
             ),
           ),
@@ -45,7 +45,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 child: PageView(
                   controller: _pageController,
                   onPageChanged: (page) => setState(() => _currentPage = page),
-                  physics: const NeverScrollableScrollPhysics(), // 禁止滑动，只能通过按钮导航
+                  physics:
+                      const NeverScrollableScrollPhysics(), // 禁止滑动，只能通过按钮导航
                   children: [
                     _buildWelcomePage(),
                     _buildAuthPage(),
@@ -73,14 +74,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  AppTheme.spiritGlow.withOpacity(0.6),
-                  AppTheme.spiritGlow.withOpacity(0.1),
+                  AppTheme.spiritGlow.withValues(alpha: 0.6),
+                  AppTheme.spiritGlow.withValues(alpha: 0.1),
                   Colors.transparent,
                 ],
                 stops: const [0.3, 0.7, 1.0],
               ),
             ),
-            child: const Icon(Icons.auto_awesome, size: 36, color: AppTheme.spiritGlow),
+            child: const Icon(Icons.auto_awesome,
+                size: 36, color: AppTheme.spiritGlow),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -97,7 +99,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             '被 AI 惦记的感觉',
             style: TextStyle(
               fontSize: 16,
-              color: AppTheme.primaryColor.withOpacity(0.6),
+              color: AppTheme.primaryColor.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -145,10 +147,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: AppTheme.spiritGlow.withOpacity(0.1),
+            color: AppTheme.spiritGlow.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppTheme.spiritGlow.withOpacity(0.2),
+              color: AppTheme.spiritGlow.withValues(alpha: 0.2),
               width: 0.5,
             ),
           ),
@@ -172,7 +174,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 description,
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppTheme.primaryColor.withOpacity(0.5),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.5),
                 ),
               ),
             ],
@@ -199,7 +201,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       return Center(
         child: Text(
           '请先登录',
-          style: TextStyle(color: AppTheme.primaryColor.withOpacity(0.5)),
+          style: TextStyle(color: AppTheme.primaryColor.withValues(alpha: 0.5)),
         ),
       );
     }
@@ -219,7 +221,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           );
         }
 
-        final characters = List<Map<String, dynamic>>.from(snapshot.data?.data ?? []);
+        final characters =
+            List<Map<String, dynamic>>.from(snapshot.data?.data ?? []);
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -239,7 +242,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 'TA 会陪你聊天，记住你的一切',
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppTheme.primaryColor.withOpacity(0.5),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.5),
                 ),
               ),
               const SizedBox(height: 24),
@@ -269,7 +272,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
           color: AppTheme.cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             width: 0.5,
           ),
         ),
@@ -281,9 +284,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [color.withOpacity(0.4), color.withOpacity(0.1)],
+                  colors: [
+                    color.withValues(alpha: 0.4),
+                    color.withValues(alpha: 0.1)
+                  ],
                 ),
-                border: Border.all(color: color.withOpacity(0.3), width: 1),
+                border:
+                    Border.all(color: color.withValues(alpha: 0.3), width: 1),
               ),
               child: Icon(Icons.auto_awesome, color: color, size: 24),
             ),
@@ -305,7 +312,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     '来自《${char['source'] ?? ''}》',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.primaryColor.withOpacity(0.4),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.4),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -315,7 +322,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 13,
-                      color: AppTheme.primaryColor.withOpacity(0.6),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -323,7 +330,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             ),
             Icon(
               Icons.chevron_right,
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
             ),
           ],
         ),
@@ -350,7 +357,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 decoration: BoxDecoration(
                   color: isActive
                       ? AppTheme.spiritGlow
-                      : AppTheme.primaryColor.withOpacity(0.2),
+                      : AppTheme.primaryColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -379,7 +386,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             Text(
               '请先登录或注册',
               style: TextStyle(
-                color: AppTheme.primaryColor.withOpacity(0.5),
+                color: AppTheme.primaryColor.withValues(alpha: 0.5),
                 fontSize: 14,
               ),
             )
@@ -390,7 +397,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 curve: Curves.easeInOut,
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                 foregroundColor: AppTheme.primaryColor,
               ),
               child: const Text('返回'),
@@ -430,6 +437,7 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nicknameController = TextEditingController();
+  DateTime? _birthDate;
   bool _isLogin = true;
   bool _isLoading = false;
 
@@ -466,8 +474,10 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
             style: const TextStyle(color: AppTheme.primaryColor),
             decoration: InputDecoration(
               hintText: '手机号',
-              hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.3)),
-              prefixIcon: Icon(Icons.phone_outlined, color: AppTheme.primaryColor.withOpacity(0.5)),
+              hintStyle: TextStyle(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+              prefixIcon: Icon(Icons.phone_outlined,
+                  color: AppTheme.primaryColor.withValues(alpha: 0.5)),
               filled: true,
               fillColor: AppTheme.cardColor,
               border: OutlineInputBorder(
@@ -484,14 +494,27 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
               style: const TextStyle(color: AppTheme.primaryColor),
               decoration: InputDecoration(
                 hintText: '昵称',
-                hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.3)),
-                prefixIcon: Icon(Icons.person_outline, color: AppTheme.primaryColor.withOpacity(0.5)),
+                hintStyle: TextStyle(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+                prefixIcon: Icon(Icons.person_outline,
+                    color: AppTheme.primaryColor.withValues(alpha: 0.5)),
                 filled: true,
                 fillColor: AppTheme.cardColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildBirthDateField(),
+            const SizedBox(height: 8),
+            Text(
+              '灵伴仅面向 18 岁以上用户。生日只用于年龄验证，不会保存完整日期。',
+              style: TextStyle(
+                color: AppTheme.primaryColor.withValues(alpha: 0.45),
+                fontSize: 12,
+                height: 1.4,
               ),
             ),
             const SizedBox(height: 16),
@@ -503,8 +526,10 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
             style: const TextStyle(color: AppTheme.primaryColor),
             decoration: InputDecoration(
               hintText: '密码',
-              hintStyle: TextStyle(color: AppTheme.primaryColor.withOpacity(0.3)),
-              prefixIcon: Icon(Icons.lock_outline, color: AppTheme.primaryColor.withOpacity(0.5)),
+              hintStyle: TextStyle(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+              prefixIcon: Icon(Icons.lock_outline,
+                  color: AppTheme.primaryColor.withValues(alpha: 0.5)),
               filled: true,
               fillColor: AppTheme.cardColor,
               border: OutlineInputBorder(
@@ -531,7 +556,8 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.black),
                     )
                   : Text(_isLogin ? '登录' : '注册'),
             ),
@@ -542,7 +568,7 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
             child: Text(
               _isLogin ? '没有账号？去注册' : '已有账号？去登录',
               style: TextStyle(
-                color: AppTheme.primaryColor.withOpacity(0.5),
+                color: AppTheme.primaryColor.withValues(alpha: 0.5),
                 fontSize: 13,
               ),
             ),
@@ -564,7 +590,7 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
               fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               color: isActive
                   ? AppTheme.primaryColor
-                  : AppTheme.primaryColor.withOpacity(0.4),
+                  : AppTheme.primaryColor.withValues(alpha: 0.4),
             ),
           ),
           const SizedBox(height: 4),
@@ -581,10 +607,84 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
     );
   }
 
+  Widget _buildBirthDateField() {
+    final label =
+        _birthDate == null ? '出生日期（18+ 验证）' : _formatDate(_birthDate!);
+
+    return InkWell(
+      onTap: _pickBirthDate,
+      borderRadius: BorderRadius.circular(12),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          prefixIcon: Icon(Icons.calendar_month_outlined,
+              color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+          filled: true,
+          fillColor: AppTheme.cardColor,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: _birthDate == null
+                      ? AppTheme.primaryColor.withValues(alpha: 0.3)
+                      : AppTheme.primaryColor,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            Icon(Icons.expand_more,
+                color: AppTheme.primaryColor.withValues(alpha: 0.4)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickBirthDate() async {
+    final today = DateTime.now();
+    final initialDate =
+        _birthDate ?? DateTime(today.year - 18, today.month, today.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: today,
+      helpText: '选择出生日期',
+      cancelText: '取消',
+      confirmText: '确定',
+    );
+
+    if (picked != null && mounted) {
+      setState(() => _birthDate = picked);
+    }
+  }
+
+  bool _isAtLeast18(DateTime birthDate) {
+    final today = DateTime.now();
+    final cutoff = DateTime(today.year - 18, today.month, today.day);
+    return !birthDate.isAfter(cutoff);
+  }
+
+  String _formatDate(DateTime value) {
+    final year = value.year.toString().padLeft(4, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
+
   Future<void> _submit() async {
     final phone = _phoneController.text.trim();
     final password = _passwordController.text.trim();
     final nickname = _nicknameController.text.trim();
+    final birthDate = _birthDate;
 
     if (phone.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -595,6 +695,18 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
     if (!_isLogin && nickname.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('请填写昵称')),
+      );
+      return;
+    }
+    if (!_isLogin && birthDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请选择出生日期完成 18+ 验证')),
+      );
+      return;
+    }
+    if (!_isLogin && !_isAtLeast18(birthDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('未满 18 岁暂不能注册')),
       );
       return;
     }
@@ -611,6 +723,7 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
           phone: phone,
           password: password,
           nickname: nickname,
+          birthDate: birthDate!,
         );
       }
 

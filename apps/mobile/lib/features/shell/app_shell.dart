@@ -26,8 +26,8 @@ class AppShell extends ConsumerWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFF0F0F1A),
-                  Color(0xFF0A0A0F),
+                  Color(0xFF0F0B1E),
+                  Color(0xFF080515),
                 ],
               ),
             ),
@@ -74,6 +74,12 @@ class AppShell extends ConsumerWidget {
         'route': characterId.isNotEmpty ? '/memory/$characterId' : '/home',
       },
       {
+        'path': '/emotion',
+        'icon': Icons.mood_outlined,
+        'label': '情绪',
+        'route': '/emotion',
+      },
+      {
         'path': '/settings',
         'icon': Icons.settings_outlined,
         'label': '设置',
@@ -96,14 +102,16 @@ class AppShell extends ConsumerWidget {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: items.map((item) {
-          final isActive = location.startsWith(item['path'] as String);
-          return GestureDetector(
-            onTap: () => context.go(item['route'] as String),
-            behavior: HitTestBehavior.opaque,
-            child: SizedBox(
-              width: 64,
+          final path = item['path'] as String;
+          final isSettingsChild = path == '/settings' &&
+              const ['/subscription', '/about', '/privacy', '/terms']
+                  .contains(location);
+          final isActive = location.startsWith(path) || isSettingsChild;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => context.go(item['route'] as String),
+              behavior: HitTestBehavior.opaque,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -132,9 +140,8 @@ class AppShell extends ConsumerWidget {
                     height: 4,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isActive
-                          ? AppTheme.primaryColor
-                          : Colors.transparent,
+                      color:
+                          isActive ? AppTheme.primaryColor : Colors.transparent,
                     ),
                   ),
                 ],

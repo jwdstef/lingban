@@ -7,8 +7,11 @@ import '../features/auth/providers/auth_provider.dart';
 import '../features/onboarding/onboarding_page.dart';
 import '../features/home/home_page.dart';
 import '../features/chat/chat_page.dart';
+import '../features/emotion/emotion_diary_page.dart';
 import '../features/memory/memory_page.dart';
+import '../features/settings/about_page.dart';
 import '../features/settings/settings_page.dart';
+import '../features/settings/subscription_page.dart';
 import '../features/shell/app_shell.dart';
 
 // GoRouter 只创建一次，避免每次 auth 状态变化都重建路由栈
@@ -21,12 +24,16 @@ GoRouter _createRouter(WidgetRef ref) {
     redirect: (context, state) {
       final authState = ref.read(authProvider);
       final isAuthenticated = authState.isAuthenticated;
+      final hasSelectedCharacter = authState.selectedCharacterId != null;
       final isOnboarding = state.matchedLocation == '/onboarding';
 
       if (!isAuthenticated && !isOnboarding) {
         return '/onboarding';
       }
-      if (isAuthenticated && isOnboarding) {
+      if (isAuthenticated && !hasSelectedCharacter && !isOnboarding) {
+        return '/onboarding';
+      }
+      if (isAuthenticated && hasSelectedCharacter && isOnboarding) {
         return '/home';
       }
       return null;
@@ -47,7 +54,11 @@ GoRouter _createRouter(WidgetRef ref) {
             path: '/chat/:characterId',
             builder: (context, state) {
               final characterId = state.pathParameters['characterId']!;
-              return ChatPage(characterId: characterId);
+              final careMessageId = state.uri.queryParameters['careMessageId'];
+              return ChatPage(
+                characterId: characterId,
+                careMessageId: careMessageId,
+              );
             },
           ),
           GoRoute(
@@ -58,8 +69,32 @@ GoRouter _createRouter(WidgetRef ref) {
             },
           ),
           GoRoute(
+            path: '/emotion',
+            builder: (context, state) => const EmotionDiaryPage(),
+          ),
+          GoRoute(
             path: '/settings',
             builder: (context, state) => const SettingsPage(),
+          ),
+          GoRoute(
+            path: '/subscription',
+            builder: (context, state) => const SubscriptionPage(),
+          ),
+          GoRoute(
+            path: '/about',
+            builder: (context, state) => const AboutPage(),
+          ),
+          GoRoute(
+            path: '/privacy',
+            builder: (context, state) => const LegalPage(
+              document: LegalDocument.privacy,
+            ),
+          ),
+          GoRoute(
+            path: '/terms',
+            builder: (context, state) => const LegalPage(
+              document: LegalDocument.terms,
+            ),
           ),
         ],
       ),
@@ -76,19 +111,21 @@ class LingbanApp extends ConsumerStatefulWidget {
 
 class _LingbanAppState extends ConsumerState<LingbanApp> {
   late final GoRouter _router;
+  late final ProviderSubscription<AuthState> _authSubscription;
 
   @override
   void initState() {
     super.initState();
     _router = _createRouter(ref);
     // 监听 auth 状态变化，触发 GoRouter redirect 重新评估
-    ref.listen(authProvider, (_, __) {
+    _authSubscription = ref.listenManual(authProvider, (_, __) {
       _router.go(_router.routerDelegate.currentConfiguration.uri.toString());
     });
   }
 
   @override
   void dispose() {
+    _authSubscription.close();
     _router.dispose();
     super.dispose();
   }

@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // 银色主题色
-  static const Color primaryColor = Color(0xFFC0C0C0);
-  static const Color accentColor = Color(0xFFE8E8E8);
-  static const Color backgroundColor = Color(0xFF0A0A0F);
-  static const Color surfaceColor = Color(0xFF141420);
-  static const Color cardColor = Color(0xFF1E1E2E);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFF9CA3AF);
-  static const Color spiritGlow = Color(0xFF34D399);
-  static const Color emotionCalm = Color(0xFF34D399);
+  // 原型的紫银暗色主题
+  static const String fontFamily = 'NotoSansSC';
+
+  static const Color primaryColor = Color(0xFFF8FAFC);
+  static const Color accentColor = Color(0xFFF472B6);
+  static const Color backgroundColor = Color(0xFF080515);
+  static const Color surfaceColor = Color(0xFF0F0B1E);
+  static const Color cardColor = Color(0xFF1E143C);
+  static const Color textPrimary = Color(0xFFF8FAFC);
+  static const Color textSecondary = Color(0xFF94A3B8);
+  static const Color spiritGlow = Color(0xFFA78BFA);
+  static const Color emotionCalm = Color(0xFFA78BFA);
   static const Color emotionHappy = Color(0xFFFBBF24);
   static const Color emotionWorried = Color(0xFFA78BFA);
   static const Color emotionExcited = Color(0xFFF472B6);
@@ -18,6 +20,7 @@ class AppTheme {
 
   static ThemeData get darkTheme => ThemeData(
         brightness: Brightness.dark,
+        fontFamily: fontFamily,
         primaryColor: primaryColor,
         scaffoldBackgroundColor: backgroundColor,
         colorScheme: const ColorScheme.dark(
@@ -31,6 +34,7 @@ class AppTheme {
           centerTitle: true,
           titleTextStyle: TextStyle(
             color: textPrimary,
+            fontFamily: fontFamily,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -53,6 +57,7 @@ class AppTheme {
               borderRadius: BorderRadius.circular(28),
             ),
             textStyle: const TextStyle(
+              fontFamily: fontFamily,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -60,28 +65,36 @@ class AppTheme {
         ),
         textTheme: const TextTheme(
           displayLarge: TextStyle(
+            fontFamily: fontFamily,
             fontSize: 32,
             fontWeight: FontWeight.bold,
             color: textPrimary,
           ),
           headlineMedium: TextStyle(
+            fontFamily: fontFamily,
             fontSize: 24,
             fontWeight: FontWeight.w600,
             color: textPrimary,
           ),
           titleLarge: TextStyle(
+            fontFamily: fontFamily,
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: textPrimary,
           ),
           titleMedium: TextStyle(
+            fontFamily: fontFamily,
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: textPrimary,
           ),
-          bodyLarge: TextStyle(color: textPrimary),
-          bodyMedium: TextStyle(color: textSecondary),
-          bodySmall: TextStyle(color: textSecondary, fontSize: 12),
+          bodyLarge: TextStyle(fontFamily: fontFamily, color: textPrimary),
+          bodyMedium: TextStyle(fontFamily: fontFamily, color: textSecondary),
+          bodySmall: TextStyle(
+            fontFamily: fontFamily,
+            color: textSecondary,
+            fontSize: 12,
+          ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
@@ -94,7 +107,10 @@ class AppTheme {
             horizontal: 16,
             vertical: 14,
           ),
-          hintStyle: const TextStyle(color: textSecondary),
+          hintStyle: const TextStyle(
+            fontFamily: fontFamily,
+            color: textSecondary,
+          ),
         ),
       );
 }

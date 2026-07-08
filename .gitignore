@@ -36,3 +36,6 @@ flutter_assets/
 
 # Docker
 docker-compose.override.yml
+
+# Local verification artifacts
+tmp_visual_checks/

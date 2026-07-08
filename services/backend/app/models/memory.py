@@ -4,6 +4,7 @@ from datetime import datetime
 from sqlalchemy import String, Text, Integer, DateTime, Boolean, Index, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
+from pgvector.sqlalchemy import Vector
 
 from app.core.database import Base
 
@@ -31,14 +32,13 @@ class Memory(Base):
         UUID(as_uuid=True), nullable=True
     )
 
-    # pgvector embedding 列
-    # 数据库中实际类型为 vector(1536)，ORM 层不直接读写此列
-    # 通过 memory_service 中的 raw SQL 操作
-    embedding = mapped_column(
+    # pgvector embedding column. Deferred so regular memory queries avoid
+    # loading the large vector payload.
+    embedding: Mapped[list[float] | None] = mapped_column(
         "embedding",
-        Text,
+        Vector(1536),
         nullable=True,
-        deferred=True,  # 延迟加载，避免查询时加载大向量
+        deferred=True,
     )
 
     # 召回统计

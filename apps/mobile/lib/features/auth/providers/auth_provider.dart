@@ -66,6 +66,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> register({
     required String nickname,
     required String password,
+    required DateTime birthDate,
     String? phone,
     String? email,
   }) async {
@@ -74,6 +75,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final response = await apiClient.register({
         'nickname': nickname,
         'password': password,
+        'birth_date': _formatDate(birthDate),
         if (phone != null && phone.isNotEmpty) 'phone': phone,
         if (email != null && email.isNotEmpty) 'email': email,
       });
@@ -127,6 +129,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', token);
+  }
+
+  String _formatDate(DateTime value) {
+    final year = value.year.toString().padLeft(4, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 }
 

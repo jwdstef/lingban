@@ -68,6 +68,30 @@ class ApiClient {
 
   Future<Response> getSettings() => _dio.get('/api/v1/settings');
 
+  Future<Response> updateMemoryEnabled(bool enabled) =>
+      _dio.put('/api/v1/memory/toggle', data: {
+        'memory_enabled': enabled,
+      });
+
+  Future<Response> exportUserData() => _dio.get('/api/v1/data/export');
+
+  Future<Response> deleteAccount({
+    required String confirm,
+    String? reason,
+  }) =>
+      _dio.post('/api/v1/data/delete-account', data: {
+        'confirm': confirm,
+        if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+      });
+
+  Future<Response> getSubscription() => _dio.get('/api/v1/subscription');
+
+  Future<Response> createSubscription(String plan) =>
+      _dio.post('/api/v1/subscription/create', data: {'plan': plan});
+
+  Future<Response> cancelSubscription() =>
+      _dio.post('/api/v1/subscription/cancel');
+
   // Characters
   Future<Response> getCharacters() => _dio.get('/api/v1/characters');
 
@@ -90,17 +114,56 @@ class ApiClient {
   Future<Response> clearChatHistory(String characterId) =>
       _dio.delete('/api/v1/chat/$characterId/history');
 
+  Future<Response> sendVoiceMessage(
+    String characterId, {
+    required Uint8List audioBytes,
+    String filename = 'voice.wav',
+    String contentType = 'audio/wav',
+    String? transcript,
+    bool includeTts = false,
+  }) {
+    final formData = FormData.fromMap({
+      if (transcript != null && transcript.trim().isNotEmpty)
+        'transcript': transcript.trim(),
+      'include_tts': includeTts.toString(),
+      'audio': MultipartFile.fromBytes(
+        audioBytes,
+        filename: filename,
+        contentType: DioMediaType.parse(contentType),
+      ),
+    });
+    return _dio.post('/api/v1/chat/$characterId/voice', data: formData);
+  }
+
   // Memory
-  Future<Response> getMemories(String characterId, {String? category}) =>
+  Future<Response> getMemories(String characterId,
+          {String? category, String? query}) =>
       _dio.get('/api/v1/memory/$characterId', queryParameters: {
         if (category != null) 'category': category,
+        if (query != null && query.isNotEmpty) 'query': query,
       });
+
+  Future<Response> updateMemory(
+          String characterId, String memoryId, Map<String, dynamic> data) =>
+      _dio.put('/api/v1/memory/$characterId/$memoryId', data: data);
 
   Future<Response> deleteMemory(String characterId, String memoryId) =>
       _dio.delete('/api/v1/memory/$characterId/$memoryId');
 
   Future<Response> clearAllMemories(String characterId) =>
       _dio.delete('/api/v1/memory/$characterId/all');
+
+  // Emotion diary
+  Future<Response> getEmotionDiary({int limit = 30, int offset = 0}) =>
+      _dio.get('/api/v1/emotion/diary', queryParameters: {
+        'limit': limit,
+        'offset': offset,
+      });
+
+  Future<Response> getEmotionTrend({int days = 14}) =>
+      _dio.get('/api/v1/emotion/trend', queryParameters: {
+        'days': days,
+      });
 
   // Proactive care
   Future<Response> getCareMessages({
@@ -119,6 +182,22 @@ class ApiClient {
 
   Future<Response> markCareMessageReplied(String messageId) =>
       _dio.post('/api/v1/care/messages/$messageId/reply');
+
+  Future<Response> updateCareFrequency(String proactiveLevel) =>
+      _dio.put('/api/v1/care/frequency', data: {
+        'proactive_level': proactiveLevel,
+      });
+
+  Future<Response> updateCareDnd({
+    required bool enabled,
+    required String start,
+    required String end,
+  }) =>
+      _dio.put('/api/v1/care/dnd', data: {
+        'dnd_enabled': enabled,
+        'dnd_start': start,
+        'dnd_end': end,
+      });
 }
 
 final apiClient = ApiClient();

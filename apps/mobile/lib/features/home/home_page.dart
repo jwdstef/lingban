@@ -125,7 +125,7 @@ class _HomePageState extends ConsumerState<HomePage>
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  AppTheme.spiritGlow.withOpacity(0.08),
+                  AppTheme.spiritGlow.withValues(alpha: 0.08),
                   Colors.transparent,
                 ],
                 stops: const [0.4, 1.0],
@@ -143,7 +143,7 @@ class _HomePageState extends ConsumerState<HomePage>
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  AppTheme.emotionThinking.withOpacity(0.06),
+                  AppTheme.emotionThinking.withValues(alpha: 0.06),
                   Colors.transparent,
                 ],
                 stops: const [0.4, 1.0],
@@ -178,7 +178,7 @@ class _HomePageState extends ConsumerState<HomePage>
             onTap: () => context.push('/settings'),
             child: Icon(
               Icons.settings_outlined,
-              color: AppTheme.primaryColor.withOpacity(0.7),
+              color: AppTheme.primaryColor.withValues(alpha: 0.7),
               size: 24,
             ),
           ),
@@ -187,10 +187,10 @@ class _HomePageState extends ConsumerState<HomePage>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.2),
+                color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 width: 0.5,
               ),
             ),
@@ -286,7 +286,7 @@ class _HomePageState extends ConsumerState<HomePage>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: emotionColor.withOpacity(0.1),
+                                  color: emotionColor.withValues(alpha: 0.1),
                                   width: 1,
                                 ),
                               ),
@@ -298,7 +298,7 @@ class _HomePageState extends ConsumerState<HomePage>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: emotionColor.withOpacity(0.2),
+                                  color: emotionColor.withValues(alpha: 0.2),
                                   width: 1.5,
                                 ),
                               ),
@@ -310,7 +310,7 @@ class _HomePageState extends ConsumerState<HomePage>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: emotionColor.withOpacity(0.3),
+                                  color: emotionColor.withValues(alpha: 0.3),
                                   width: 2,
                                 ),
                               ),
@@ -323,15 +323,15 @@ class _HomePageState extends ConsumerState<HomePage>
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    emotionColor.withOpacity(0.8),
-                                    emotionColor.withOpacity(0.3),
-                                    emotionColor.withOpacity(0.05),
+                                    emotionColor.withValues(alpha: 0.8),
+                                    emotionColor.withValues(alpha: 0.3),
+                                    emotionColor.withValues(alpha: 0.05),
                                   ],
                                   stops: const [0.3, 0.7, 1.0],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: emotionColor.withOpacity(0.4),
+                                    color: emotionColor.withValues(alpha: 0.4),
                                     blurRadius: 40,
                                     spreadRadius: 10,
                                   ),
@@ -360,8 +360,8 @@ class _HomePageState extends ConsumerState<HomePage>
                                   height: 6,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: emotionColor.withOpacity(
-                                      0.3 + _animController.value * 0.4,
+                                    color: emotionColor.withValues(
+                                      alpha: 0.3 + _animController.value * 0.4,
                                     ),
                                   ),
                                 ),
@@ -402,7 +402,7 @@ class _HomePageState extends ConsumerState<HomePage>
                       color: emotionColor,
                       boxShadow: [
                         BoxShadow(
-                          color: emotionColor.withOpacity(0.5),
+                          color: emotionColor.withValues(alpha: 0.5),
                           blurRadius: 10,
                         ),
                       ],
@@ -413,7 +413,7 @@ class _HomePageState extends ConsumerState<HomePage>
                     emotion['name'] as String,
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppTheme.primaryColor.withOpacity(0.8),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.8),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -421,7 +421,7 @@ class _HomePageState extends ConsumerState<HomePage>
                     '· 点击灵体切换情绪',
                     style: TextStyle(
                       fontSize: 12,
-                      color: AppTheme.primaryColor.withOpacity(0.4),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.4),
                     ),
                   ),
                 ],
@@ -430,12 +430,12 @@ class _HomePageState extends ConsumerState<HomePage>
               const SizedBox(height: 32),
 
               // 银色消息卡 - 主动关怀
-              _buildSilverMessageCard(context, characterId),
+              _buildSilverMessageCard(context, characterId, name),
 
               const SizedBox(height: 20),
 
               // 她正在惦记的事
-              _buildThinkingOfSection(),
+              _buildThinkingOfSection(name),
 
               const SizedBox(height: 24),
 
@@ -448,7 +448,11 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
-  Widget _buildSilverMessageCard(BuildContext context, String characterId) {
+  Widget _buildSilverMessageCard(
+    BuildContext context,
+    String characterId,
+    String characterName,
+  ) {
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _careMessagesFuture,
       builder: (context, snapshot) {
@@ -468,7 +472,13 @@ class _HomePageState extends ConsumerState<HomePage>
               }
             }
             if (context.mounted) {
-              context.push('/chat/$characterId');
+              final uri = Uri(
+                path: '/chat/$characterId',
+                queryParameters: {
+                  if (messageId != null) 'careMessageId': messageId,
+                },
+              );
+              context.push(uri.toString());
             }
           },
           child: Container(
@@ -477,15 +487,15 @@ class _HomePageState extends ConsumerState<HomePage>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppTheme.primaryColor.withOpacity(0.08),
-                  AppTheme.primaryColor.withOpacity(0.03),
+                  AppTheme.primaryColor.withValues(alpha: 0.08),
+                  AppTheme.primaryColor.withValues(alpha: 0.03),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.15),
+                color: AppTheme.primaryColor.withValues(alpha: 0.15),
                 width: 0.5,
               ),
             ),
@@ -495,7 +505,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 // 头部
                 Row(
                   children: [
-                    Text(
+                    const Text(
                       '✦',
                       style: TextStyle(
                         fontSize: 14,
@@ -504,10 +514,10 @@ class _HomePageState extends ConsumerState<HomePage>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'TA 刚刚想起你',
+                      '$characterName刚刚想起你',
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.primaryColor.withOpacity(0.7),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -519,7 +529,7 @@ class _HomePageState extends ConsumerState<HomePage>
                   latestContent ?? '你上次说最近睡得晚，今天好点了吗？别硬撑，只是顺手问问。',
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppTheme.primaryColor.withOpacity(0.9),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.9),
                     height: 1.5,
                   ),
                 ),
@@ -532,7 +542,7 @@ class _HomePageState extends ConsumerState<HomePage>
                       height: 6,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppTheme.spiritGlow.withOpacity(0.6),
+                        color: AppTheme.spiritGlow.withValues(alpha: 0.6),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -542,7 +552,7 @@ class _HomePageState extends ConsumerState<HomePage>
                           : '来自 3 天前的对话 · 作息',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.primaryColor.withOpacity(0.4),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.4),
                       ),
                     ),
                   ],
@@ -555,8 +565,9 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
-  Widget _buildThinkingOfSection() {
-    final items = ['最近睡得晚', '想吃火锅', '工作压力大', '周末想休息'];
+  Widget _buildThinkingOfSection(String characterName) {
+    final items = ['周三汇报', '最近睡得晚', '想吃火锅', '和老板的第 5 次改需求'];
+    final title = characterName == '银月' ? '她正在惦记的事' : '$characterName 正在惦记的事';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -569,17 +580,17 @@ class _HomePageState extends ConsumerState<HomePage>
               Container(
                 width: 6,
                 height: 6,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppTheme.spiritGlow,
                 ),
               ),
               const SizedBox(width: 8),
               Text(
-                'TA 正在惦记的事',
+                title,
                 style: TextStyle(
                   fontSize: 13,
-                  color: AppTheme.primaryColor.withOpacity(0.6),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.6),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -595,10 +606,10 @@ class _HomePageState extends ConsumerState<HomePage>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.05),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     width: 0.5,
                   ),
                 ),
@@ -610,7 +621,7 @@ class _HomePageState extends ConsumerState<HomePage>
                       height: 4,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppTheme.primaryColor.withOpacity(0.4),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.4),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -618,7 +629,7 @@ class _HomePageState extends ConsumerState<HomePage>
                       item,
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppTheme.primaryColor.withOpacity(0.7),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -641,25 +652,25 @@ class _HomePageState extends ConsumerState<HomePage>
           shape: BoxShape.circle,
           gradient: LinearGradient(
             colors: [
-              AppTheme.primaryColor.withOpacity(0.2),
-              AppTheme.primaryColor.withOpacity(0.1),
+              AppTheme.primaryColor.withValues(alpha: 0.2),
+              AppTheme.primaryColor.withValues(alpha: 0.1),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(0.15),
+              color: AppTheme.primaryColor.withValues(alpha: 0.15),
               blurRadius: 20,
               spreadRadius: 5,
             ),
           ],
         ),
-        child: Icon(
+        child: const Icon(
           Icons.chat_bubble_outline,
           color: AppTheme.primaryColor,
           size: 24,

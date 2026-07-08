@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, theme } from 'antd';
+import { Button, Layout, Menu, theme } from 'antd';
 import {
   DashboardOutlined,
   UserOutlined,
   RobotOutlined,
   DatabaseOutlined,
+  SafetyCertificateOutlined,
   SettingOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -16,6 +18,7 @@ const menuItems = [
   { key: '/users', icon: <UserOutlined />, label: '用户管理' },
   { key: '/characters', icon: <RobotOutlined />, label: '角色管理' },
   { key: '/memories', icon: <DatabaseOutlined />, label: '记忆管理' },
+  { key: '/operations', icon: <SafetyCertificateOutlined />, label: '运营排查' },
   { key: '/settings', icon: <SettingOutlined />, label: '系统配置' },
 ];
 
@@ -24,6 +27,10 @@ export default function BasicLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { token } = theme.useToken();
+  const handleLogout = () => {
+    localStorage.removeItem('admin_token');
+    navigate('/login', { replace: true });
+  };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -66,7 +73,9 @@ export default function BasicLayout() {
           }}
         >
           <span style={{ fontSize: 16, fontWeight: 500 }}>灵伴 AI Companion</span>
-          <span style={{ color: token.colorTextSecondary }}>管理员</span>
+          <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout}>
+            退出
+          </Button>
         </Header>
         <Content style={{ margin: 24 }}>
           <Outlet />

@@ -1,3 +1,5 @@
+from datetime import date, datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -6,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import hash_password, verify_password, create_access_token
 from app.core.deps import get_current_user
+from app.core.user_settings import merge_user_settings
 from app.models.user import User
 
 router = APIRouter()
@@ -18,6 +21,7 @@ class RegisterRequest(BaseModel):
     email: str | None = None
     nickname: str
     password: str
+    birth_date: date | None = None
 
 
 class LoginRequest(BaseModel):
@@ -53,6 +57,35 @@ class UpdateSettingsRequest(BaseModel):
     settings: dict
 
 
+MINIMUM_REGISTRATION_AGE = 18
+
+
+def _is_at_least_age(
+    birth_date: date,
+    today: date | None = None,
+    minimum_age: int = MINIMUM_REGISTRATION_AGE,
+) -> bool:
+    reference_date = today or datetime.now(timezone.utc).date()
+    try:
+        cutoff = reference_date.replace(year=reference_date.year - minimum_age)
+    except ValueError:
+        cutoff = reference_date.replace(
+            year=reference_date.year - minimum_age,
+            month=2,
+            day=28,
+        )
+    return birth_date <= cutoff
+
+
+def _age_verification_settings(birth_date: date) -> dict:
+    return {
+        "age_verified": True,
+        "age_verified_at": datetime.now(timezone.utc).isoformat(),
+        "age_verification_method": "birth_date",
+        "birth_year": birth_date.year,
+    }
+
+
 # ── Auth Endpoints ──
 
 @router.post("/register", response_model=TokenResponse)
@@ -60,6 +93,15 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
     """注册新用户"""
     if not data.phone and not data.email:
         raise HTTPException(status_code=400, detail="手机号或邮箱至少填一个")
+
+    if data.birth_date is None:
+        raise HTTPException(
+            status_code=400,
+            detail="注册需完成 18 岁以上年龄验证",
+        )
+
+    if not _is_at_least_age(data.birth_date):
+        raise HTTPException(status_code=400, detail="18 岁以下用户禁止注册")
 
     if data.phone:
         result = await db.execute(select(User).where(User.phone == data.phone))
@@ -76,6 +118,7 @@ async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
         email=data.email,
         nickname=data.nickname,
         password_hash=hash_password(data.password),
+        settings=_age_verification_settings(data.birth_date),
     )
     db.add(user)
     await db.flush()
@@ -141,6 +184,6 @@ async def update_settings(
     db: AsyncSession = Depends(get_db),
 ):
     """更新用户设置"""
-    user.settings = {**user.settings, **data.settings}
+    user.settings = merge_user_settings(user.settings, data.settings)
     await db.flush()
     return {"status": "ok", "settings": user.settings}

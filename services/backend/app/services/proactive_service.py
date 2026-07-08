@@ -169,6 +169,7 @@ class ProactiveService:
 
         # 检查是否有持续负面情绪
         negative_emotions = ["焦虑", "悲伤", "愤怒", "孤独", "疲惫"]
+        negative_emotions.extend(["anxious", "sad", "angry", "lonely", "tired"])
         negative_count = 0
         recent_triggers = []
 

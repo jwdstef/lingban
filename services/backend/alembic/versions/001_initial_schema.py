@@ -48,7 +48,7 @@ def upgrade() -> None:
         sa.Column("source", sa.String(200), nullable=False),
         sa.Column("description", sa.Text, nullable=False),
         sa.Column("avatar_url", sa.String(500), server_default=""),
-        sa.Column("color", sa.Integer, server_default="0"),
+        sa.Column("color", sa.BigInteger, server_default="0"),
         sa.Column("personality", JSONB, nullable=False),
         sa.Column("system_prompt", sa.Text, nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),

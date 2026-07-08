@@ -1,0 +1,927 @@
+2026-07-08 01:35:41,879 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-07-08 01:35:41,880 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-07-08 01:35:42,061 INFO sqlalchemy.engine.Engine select current_schema()
+2026-07-08 01:35:42,062 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-07-08 01:35:42,235 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-07-08 01:35:42,244 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-07-08 01:35:42,374 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:42,392 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters 
+WHERE characters.id = $1::VARCHAR
+2026-07-08 01:35:42,393 INFO sqlalchemy.engine.Engine [generated in 0.00080s] ('yinyue',)
+2026-07-08 01:35:42,532 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters 
+WHERE characters.id = $1::VARCHAR
+2026-07-08 01:35:42,533 INFO sqlalchemy.engine.Engine [cached since 0.1407s ago] ('babata',)
+2026-07-08 01:35:42,577 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters 
+WHERE characters.id = $1::VARCHAR
+2026-07-08 01:35:42,579 INFO sqlalchemy.engine.Engine [cached since 0.1867s ago] ('heihaung',)
+2026-07-08 01:35:42,622 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:49688 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49696 - "GET /health HTTP/1.1" 200 OK
+2026-07-08 01:35:45,373 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:45,377 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-07-08 01:35:45,377 INFO sqlalchemy.engine.Engine [generated in 0.00072s] ('codex-api-1783445743-d56b8b24@example.test',)
+2026-07-08 01:35:46,010 INFO sqlalchemy.engine.Engine INSERT INTO users (id, phone, email, nickname, avatar_url, password_hash, selected_character_id, push_token, push_platform, emotion_profile, settings) VALUES ($1::UUID, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::VARCHAR, $8::VARCHAR, $9::VARCHAR, $10::JSONB, $11::JSONB) RETURNING users.created_at, users.updated_at
+2026-07-08 01:35:46,010 INFO sqlalchemy.engine.Engine [generated in 0.00102s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), None, 'codex-api-1783445743-d56b8b24@example.test', 'Codex API Smoke', '', '$2b$12$dLxWKzmZ2SuC4QaAi2sDbOm6StnV4/7c//tZouGIb0eAwqAy.7N3q', None, None, None, '{}', '{"age_verified": true, "age_verified_at": "2026-07-07T17:35:46.005558+00:00", "age_verification_method": "birth_date", "birth_year": 1990}')
+2026-07-08 01:35:46,112 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:49698 - "POST /api/v1/auth/register HTTP/1.1" 200 OK
+2026-07-08 01:35:46,173 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:46,174 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-07-08 01:35:46,175 INFO sqlalchemy.engine.Engine [cached since 0.7982s ago] ('codex-api-1783445743-d56b8b24@example.test',)
+2026-07-08 01:35:46,706 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:49702 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+2026-07-08 01:35:46,767 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:46,770 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:46,771 INFO sqlalchemy.engine.Engine [generated in 0.00080s] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:46,912 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:32419 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+2026-07-08 01:35:46,962 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:46,964 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters ORDER BY characters.created_at
+2026-07-08 01:35:46,964 INFO sqlalchemy.engine.Engine [generated in 0.00069s] ()
+2026-07-08 01:35:47,105 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4640 - "GET /api/v1/characters HTTP/1.1" 200 OK
+2026-07-08 01:35:47,178 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:47,178 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:47,179 INFO sqlalchemy.engine.Engine [cached since 0.4093s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:47,271 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters 
+WHERE characters.id = $1::VARCHAR
+2026-07-08 01:35:47,271 INFO sqlalchemy.engine.Engine [cached since 4.88s ago] ('yinyue',)
+2026-07-08 01:35:47,316 INFO sqlalchemy.engine.Engine UPDATE users SET selected_character_id=$1::VARCHAR, updated_at=now() WHERE users.id = $2::UUID
+2026-07-08 01:35:47,317 INFO sqlalchemy.engine.Engine [generated in 0.00078s] ('yinyue', UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:35:47,414 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:35:47,415 INFO sqlalchemy.engine.Engine [generated in 0.00086s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:35:47,516 INFO sqlalchemy.engine.Engine INSERT INTO user_character_relations (id, user_id, character_id, level, label, intimacy, milestones, first_chat_at, last_chat_at, consecutive_days) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::INTEGER, $5::VARCHAR, $6::INTEGER, $7::JSONB, $8::TIMESTAMP WITH TIME ZONE, $9::TIMESTAMP WITH TIME ZONE, $10::INTEGER) RETURNING user_character_relations.created_at, user_character_relations.updated_at
+2026-07-08 01:35:47,518 INFO sqlalchemy.engine.Engine [generated in 0.00119s] (UUID('226a4394-d573-4cb9-938c-dcb1a8466208'), UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 1, '陌生', 0, '[]', None, None, 0)
+2026-07-08 01:35:47,619 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4643 - "POST /api/v1/characters/select HTTP/1.1" 200 OK
+2026-07-08 01:35:47,676 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:47,677 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:47,677 INFO sqlalchemy.engine.Engine [cached since 0.9074s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:47,766 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters 
+WHERE characters.id = $1::VARCHAR
+2026-07-08 01:35:47,767 INFO sqlalchemy.engine.Engine [cached since 5.375s ago] ('yinyue',)
+2026-07-08 01:35:47,810 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4645 - "GET /api/v1/characters/current/selected HTTP/1.1" 200 OK
+2026-07-08 01:35:47,865 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:47,866 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:47,866 INFO sqlalchemy.engine.Engine [cached since 1.097s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:47,955 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:35:47,956 INFO sqlalchemy.engine.Engine [cached since 0.5414s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:35:47,998 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4647 - "GET /api/v1/characters/yinyue/relation HTTP/1.1" 200 OK
+2026-07-08 01:35:48,060 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:48,061 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:48,062 INFO sqlalchemy.engine.Engine [cached since 1.292s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:48,145 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:35:48,147 INFO sqlalchemy.engine.Engine [cached since 0.7323s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:35:48,189 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4649 - "GET /api/v1/relationship/yinyue HTTP/1.1" 200 OK
+2026-07-08 01:35:48,242 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:48,243 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:48,243 INFO sqlalchemy.engine.Engine [cached since 1.474s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:48,324 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:35:48,325 INFO sqlalchemy.engine.Engine [cached since 0.9103s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:35:48,368 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4654 - "GET /api/v1/characters/yinyue/relationship HTTP/1.1" 200 OK
+2026-07-08 01:35:48,421 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:48,422 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:48,422 INFO sqlalchemy.engine.Engine [cached since 1.653s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:48,510 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4656 - "GET /api/v1/settings HTTP/1.1" 200 OK
+2026-07-08 01:35:48,561 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:48,562 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:48,562 INFO sqlalchemy.engine.Engine [cached since 1.793s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:48,652 INFO sqlalchemy.engine.Engine UPDATE users SET settings=$1::JSONB, updated_at=now() WHERE users.id = $2::UUID
+2026-07-08 01:35:48,653 INFO sqlalchemy.engine.Engine [generated in 0.00101s] ('{"birth_year": 1990, "age_verified": true, "age_verified_at": "2026-07-07T17:35:46.005558+00:00", "age_verification_method": "birth_date", "proactive_level": "high"}', UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:35:48,750 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4658 - "PUT /api/v1/settings HTTP/1.1" 200 OK
+2026-07-08 01:35:48,805 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:48,805 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:48,806 INFO sqlalchemy.engine.Engine [cached since 2.036s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:48,904 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID AND chat_messages.role = $2::VARCHAR AND chat_messages.created_at >= $3::TIMESTAMP WITH TIME ZONE AND chat_messages.created_at < $4::TIMESTAMP WITH TIME ZONE
+2026-07-08 01:35:48,905 INFO sqlalchemy.engine.Engine [generated in 0.00092s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'user', datetime.datetime(2026, 7, 7, 0, 0, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 7, 8, 0, 0, tzinfo=datetime.timezone.utc))
+2026-07-08 01:35:49,006 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4660 - "GET /api/v1/subscription HTTP/1.1" 200 OK
+2026-07-08 01:35:49,078 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:49,079 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:49,079 INFO sqlalchemy.engine.Engine [cached since 2.31s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:49,173 INFO sqlalchemy.engine.Engine UPDATE users SET settings=$1::JSONB, updated_at=now() WHERE users.id = $2::UUID
+2026-07-08 01:35:49,174 INFO sqlalchemy.engine.Engine [cached since 0.5224s ago] ('{"birth_year": 1990, "age_verified": true, "age_verified_at": "2026-07-07T17:35:46.005558+00:00", "proactive_level": "high", "age_verification_method": "birth_date", "memory_enabled": false, "memory_disabled_at": "2026-07-07T17:35:49.173309+00:00"}', UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:35:49,225 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4662 - "PUT /api/v1/memory/toggle HTTP/1.1" 200 OK
+2026-07-08 01:35:49,280 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:49,280 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:49,280 INFO sqlalchemy.engine.Engine [cached since 2.511s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:49,381 INFO sqlalchemy.engine.Engine UPDATE users SET settings=$1::JSONB, updated_at=now() WHERE users.id = $2::UUID
+2026-07-08 01:35:49,382 INFO sqlalchemy.engine.Engine [cached since 0.7302s ago] ('{"birth_year": 1990, "age_verified": true, "memory_enabled": true, "age_verified_at": "2026-07-07T17:35:46.005558+00:00", "proactive_level": "high", "age_verification_method": "birth_date"}', UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:35:49,462 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4664 - "PUT /api/v1/memory/toggle HTTP/1.1" 200 OK
+2026-07-08 01:35:49,520 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:49,520 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:49,520 INFO sqlalchemy.engine.Engine [cached since 2.751s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:49,621 INFO sqlalchemy.engine.Engine UPDATE users SET push_token=$1::VARCHAR, push_platform=$2::VARCHAR, settings=$3::JSONB, updated_at=now() WHERE users.id = $4::UUID
+2026-07-08 01:35:49,621 INFO sqlalchemy.engine.Engine [generated in 0.00110s] ('smoke-token-4d1761eac30b4dac9a6cf0bc0462334a', 'jpush', '{"push_enabled": true, "push_permission_status": "granted", "birth_year": 1990, "age_verified": true, "memory_enabled": true, "age_verified_at": "202 ... (74 characters truncated) ... on_method": "birth_date", "push_device_id": "codex-smoke-device", "push_app_version": "smoke", "push_updated_at": "2026-07-07T17:35:49.619600+00:00"}', UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:35:49,726 INFO sqlalchemy.engine.Engine SELECT push_tokens.id, push_tokens.user_id, push_tokens.platform, push_tokens.provider, push_tokens.token, push_tokens.permission_status, push_tokens.device_id, push_tokens.app_version, push_tokens.is_active, push_tokens.created_at, push_tokens.updated_at 
+FROM push_tokens 
+WHERE push_tokens.provider = $1::VARCHAR AND push_tokens.token = $2::VARCHAR
+2026-07-08 01:35:49,727 INFO sqlalchemy.engine.Engine [generated in 0.00083s] ('jpush', 'smoke-token-4d1761eac30b4dac9a6cf0bc0462334a')
+2026-07-08 01:35:49,834 INFO sqlalchemy.engine.Engine INSERT INTO push_tokens (id, user_id, platform, provider, token, permission_status, device_id, app_version, is_active) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::VARCHAR, $8::VARCHAR, $9::BOOLEAN) RETURNING push_tokens.created_at, push_tokens.updated_at
+2026-07-08 01:35:49,835 INFO sqlalchemy.engine.Engine [generated in 0.00126s] (UUID('d2e42293-5435-47d4-929e-542d5df926c4'), UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'jpush', 'jpush', 'smoke-token-4d1761eac30b4dac9a6cf0bc0462334a', 'granted', 'codex-smoke-device', 'smoke', True)
+2026-07-08 01:35:49,975 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:4668 - "POST /api/v1/push/tokens HTTP/1.1" 200 OK
+2026-07-08 01:35:50,048 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:50,048 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:50,049 INFO sqlalchemy.engine.Engine [cached since 3.279s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:50,136 INFO sqlalchemy.engine.Engine UPDATE users SET push_token=$1::VARCHAR, push_platform=$2::VARCHAR, settings=$3::JSONB, updated_at=now() WHERE users.id = $4::UUID
+2026-07-08 01:35:50,137 INFO sqlalchemy.engine.Engine [cached since 0.516s ago] ('smoke-token-6127b16b9c23412986630b65fb092b4d', 'fcm', '{"push_enabled": true, "push_permission_status": "granted", "birth_year": 1990, "age_verified": true, "memory_enabled": true, "push_device_id": "code ... (76 characters truncated) ... roactive_level": "high", "push_updated_at": "2026-07-07T17:35:50.136040+00:00", "push_app_version": "smoke", "age_verification_method": "birth_date"}', UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:35:50,190 INFO sqlalchemy.engine.Engine SELECT push_tokens.id, push_tokens.user_id, push_tokens.platform, push_tokens.provider, push_tokens.token, push_tokens.permission_status, push_tokens.device_id, push_tokens.app_version, push_tokens.is_active, push_tokens.created_at, push_tokens.updated_at 
+FROM push_tokens 
+WHERE push_tokens.provider = $1::VARCHAR AND push_tokens.token = $2::VARCHAR
+2026-07-08 01:35:50,191 INFO sqlalchemy.engine.Engine [cached since 0.4649s ago] ('fcm', 'smoke-token-6127b16b9c23412986630b65fb092b4d')
+2026-07-08 01:35:50,237 INFO sqlalchemy.engine.Engine INSERT INTO push_tokens (id, user_id, platform, provider, token, permission_status, device_id, app_version, is_active) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::VARCHAR, $8::VARCHAR, $9::BOOLEAN) RETURNING push_tokens.created_at, push_tokens.updated_at
+2026-07-08 01:35:50,238 INFO sqlalchemy.engine.Engine [cached since 0.4036s ago] (UUID('30d32f92-1df0-434f-94c9-45d065c0a019'), UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'fcm', 'fcm', 'smoke-token-6127b16b9c23412986630b65fb092b4d', 'granted', 'codex-smoke-device-2', 'smoke', True)
+2026-07-08 01:35:50,288 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:55195 - "POST /api/v1/push/tokens HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55197 - "GET /api/v1/admin/dashboard/stats HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:55199 - "POST /api/v1/admin/auth/verify HTTP/1.1" 200 OK
+2026-07-08 01:35:50,351 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:50,352 INFO sqlalchemy.engine.Engine SELECT count(users.id) AS count_1 
+FROM users
+2026-07-08 01:35:50,352 INFO sqlalchemy.engine.Engine [generated in 0.00042s] ()
+2026-07-08 01:35:50,486 INFO sqlalchemy.engine.Engine SELECT count(distinct(chat_messages.user_id)) AS count_1 
+FROM chat_messages 
+WHERE CURRENT_DATE = date(chat_messages.created_at)
+2026-07-08 01:35:50,486 INFO sqlalchemy.engine.Engine [generated in 0.00083s] ()
+2026-07-08 01:35:50,578 INFO sqlalchemy.engine.Engine SELECT count(chat_messages.id) AS count_1 
+FROM chat_messages
+2026-07-08 01:35:50,578 INFO sqlalchemy.engine.Engine [generated in 0.00072s] ()
+2026-07-08 01:35:50,675 INFO sqlalchemy.engine.Engine SELECT count(memories.id) AS count_1 
+FROM memories
+2026-07-08 01:35:50,676 INFO sqlalchemy.engine.Engine [generated in 0.00094s] ()
+2026-07-08 01:35:50,774 INFO sqlalchemy.engine.Engine SELECT users.selected_character_id, count(users.id) AS count_1 
+FROM users 
+WHERE users.selected_character_id IS NOT NULL GROUP BY users.selected_character_id
+2026-07-08 01:35:50,774 INFO sqlalchemy.engine.Engine [generated in 0.00092s] ()
+2026-07-08 01:35:50,876 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:55201 - "GET /api/v1/admin/dashboard/stats HTTP/1.1" 200 OK
+2026-07-08 01:35:50,937 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:50,937 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:50,938 INFO sqlalchemy.engine.Engine [cached since 4.168s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:51,021 INFO sqlalchemy.engine.Engine UPDATE users SET settings=$1::JSONB, updated_at=now() WHERE users.id = $2::UUID
+2026-07-08 01:35:51,021 INFO sqlalchemy.engine.Engine [cached since 2.37s ago] ('{"push_enabled": true, "voice_call_enabled": false, "dnd_enabled": true, "dnd_start": "23:00", "dnd_end": "08:00", "proactive_level": "quiet", "birth ... (169 characters truncated) ... d_at": "2026-07-07T17:35:50.136040+00:00", "push_app_version": "smoke", "push_permission_status": "granted", "age_verification_method": "birth_date"}', UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:35:51,072 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:55205 - "PUT /api/v1/care/frequency HTTP/1.1" 200 OK
+2026-07-08 01:35:51,124 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:51,125 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:51,125 INFO sqlalchemy.engine.Engine [cached since 4.356s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:51,222 INFO sqlalchemy.engine.Engine UPDATE users SET settings=$1::JSONB, updated_at=now() WHERE users.id = $2::UUID
+2026-07-08 01:35:51,223 INFO sqlalchemy.engine.Engine [cached since 2.571s ago] ('{"push_enabled": true, "voice_call_enabled": false, "dnd_enabled": true, "dnd_start": "22:30", "dnd_end": "07:45", "proactive_level": "quiet", "birth ... (169 characters truncated) ... d_at": "2026-07-07T17:35:50.136040+00:00", "push_app_version": "smoke", "push_permission_status": "granted", "age_verification_method": "birth_date"}', UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:35:51,277 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:55207 - "PUT /api/v1/care/dnd HTTP/1.1" 200 OK
+2026-07-08 01:35:54,359 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:54,360 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:54,360 INFO sqlalchemy.engine.Engine [cached since 7.592s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:54,466 INFO sqlalchemy.engine.Engine SELECT memories.id, memories.user_id, memories.character_id, memories.category, memories.content, memories.importance, memories.emotion_tags, memories.source_message_id, memories.recall_count, memories.is_active, memories.created_at, memories.updated_at 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true AND (memories.content ILIKE $3::VARCHAR OR memories.category ILIKE $4::VARCHAR OR CAST(memories.emotion_tags AS VARCHAR) ILIKE $5::VARCHAR) ORDER BY memories.importance DESC, memories.created_at DESC 
+ LIMIT $6::INTEGER OFFSET $7::INTEGER
+2026-07-08 01:35:54,467 INFO sqlalchemy.engine.Engine [generated in 0.00124s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', '%codex-old-memory-65f29843%', '%codex-old-memory-65f29843%', '%codex-old-memory-65f29843%', 50, 0)
+2026-07-08 01:35:54,574 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true AND (memories.content ILIKE $3::VARCHAR OR memories.category ILIKE $4::VARCHAR OR CAST(memories.emotion_tags AS VARCHAR) ILIKE $5::VARCHAR)
+2026-07-08 01:35:54,575 INFO sqlalchemy.engine.Engine [generated in 0.00115s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', '%codex-old-memory-65f29843%', '%codex-old-memory-65f29843%', '%codex-old-memory-65f29843%')
+2026-07-08 01:35:54,685 INFO sqlalchemy.engine.Engine SELECT memories.category, count(*) AS count_1 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true GROUP BY memories.category
+2026-07-08 01:35:54,686 INFO sqlalchemy.engine.Engine [generated in 0.00088s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:35:54,786 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:10677 - "GET /api/v1/memory/yinyue?query=codex-old-memory-65f29843 HTTP/1.1" 200 OK
+2026-07-08 01:35:54,840 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:54,841 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:54,841 INFO sqlalchemy.engine.Engine [cached since 8.072s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:54,953 INFO sqlalchemy.engine.Engine SELECT memories.id, memories.user_id, memories.character_id, memories.category, memories.content, memories.importance, memories.emotion_tags, memories.source_message_id, memories.recall_count, memories.is_active, memories.created_at, memories.updated_at 
+FROM memories 
+WHERE memories.id = $1::UUID AND memories.user_id = $2::UUID AND memories.character_id = $3::VARCHAR AND memories.is_active = true
+2026-07-08 01:35:54,953 INFO sqlalchemy.engine.Engine [generated in 0.00093s] (UUID('05bf7370-581c-40dd-a2e2-3f457c508a74'), UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:35:55,054 INFO sqlalchemy.engine.Engine UPDATE memories SET category=$1::VARCHAR, content=$2::VARCHAR, importance=$3::INTEGER, emotion_tags=$4::JSONB, embedding=$5, updated_at=$6::TIMESTAMP WITH TIME ZONE WHERE memories.id = $7::UUID
+2026-07-08 01:35:55,055 INFO sqlalchemy.engine.Engine [generated in 0.00091s] ('preference', 'codex-new-memory-f5bae2c5', 8, '["updated", "smoke"]', None, datetime.datetime(2026, 7, 7, 17, 35, 55, 52134, tzinfo=datetime.timezone.utc), UUID('05bf7370-581c-40dd-a2e2-3f457c508a74'))
+2026-07-08 01:35:55,462 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:10681 - "PUT /api/v1/memory/yinyue/05bf7370-581c-40dd-a2e2-3f457c508a74 HTTP/1.1" 200 OK
+2026-07-08 01:35:55,521 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:55,521 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:55,521 INFO sqlalchemy.engine.Engine [cached since 8.752s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:55,617 INFO sqlalchemy.engine.Engine SELECT memories.id, memories.user_id, memories.character_id, memories.category, memories.content, memories.importance, memories.emotion_tags, memories.source_message_id, memories.recall_count, memories.is_active, memories.created_at, memories.updated_at 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true AND (memories.content ILIKE $3::VARCHAR OR memories.category ILIKE $4::VARCHAR OR CAST(memories.emotion_tags AS VARCHAR) ILIKE $5::VARCHAR) ORDER BY memories.importance DESC, memories.created_at DESC 
+ LIMIT $6::INTEGER OFFSET $7::INTEGER
+2026-07-08 01:35:55,618 INFO sqlalchemy.engine.Engine [cached since 1.152s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', '%codex-old-memory-65f29843%', '%codex-old-memory-65f29843%', '%codex-old-memory-65f29843%', 50, 0)
+2026-07-08 01:35:55,670 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true AND (memories.content ILIKE $3::VARCHAR OR memories.category ILIKE $4::VARCHAR OR CAST(memories.emotion_tags AS VARCHAR) ILIKE $5::VARCHAR)
+2026-07-08 01:35:55,671 INFO sqlalchemy.engine.Engine [cached since 1.098s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', '%codex-old-memory-65f29843%', '%codex-old-memory-65f29843%', '%codex-old-memory-65f29843%')
+2026-07-08 01:35:55,725 INFO sqlalchemy.engine.Engine SELECT memories.category, count(*) AS count_1 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true GROUP BY memories.category
+2026-07-08 01:35:55,726 INFO sqlalchemy.engine.Engine [cached since 1.042s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:35:55,768 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:10684 - "GET /api/v1/memory/yinyue?query=codex-old-memory-65f29843 HTTP/1.1" 200 OK
+2026-07-08 01:35:55,817 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:55,817 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:55,818 INFO sqlalchemy.engine.Engine [cached since 9.048s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:55,900 INFO sqlalchemy.engine.Engine SELECT memories.id, memories.user_id, memories.character_id, memories.category, memories.content, memories.importance, memories.emotion_tags, memories.source_message_id, memories.recall_count, memories.is_active, memories.created_at, memories.updated_at 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true AND (memories.content ILIKE $3::VARCHAR OR memories.category ILIKE $4::VARCHAR OR CAST(memories.emotion_tags AS VARCHAR) ILIKE $5::VARCHAR) ORDER BY memories.importance DESC, memories.created_at DESC 
+ LIMIT $6::INTEGER OFFSET $7::INTEGER
+2026-07-08 01:35:55,901 INFO sqlalchemy.engine.Engine [cached since 1.435s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', '%codex-new-memory-f5bae2c5%', '%codex-new-memory-f5bae2c5%', '%codex-new-memory-f5bae2c5%', 50, 0)
+2026-07-08 01:35:55,958 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true AND (memories.content ILIKE $3::VARCHAR OR memories.category ILIKE $4::VARCHAR OR CAST(memories.emotion_tags AS VARCHAR) ILIKE $5::VARCHAR)
+2026-07-08 01:35:55,958 INFO sqlalchemy.engine.Engine [cached since 1.385s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', '%codex-new-memory-f5bae2c5%', '%codex-new-memory-f5bae2c5%', '%codex-new-memory-f5bae2c5%')
+2026-07-08 01:35:56,010 INFO sqlalchemy.engine.Engine SELECT memories.category, count(*) AS count_1 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true GROUP BY memories.category
+2026-07-08 01:35:56,010 INFO sqlalchemy.engine.Engine [cached since 1.325s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:35:56,054 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:10687 - "GET /api/v1/memory/yinyue?query=codex-new-memory-f5bae2c5 HTTP/1.1" 200 OK
+2026-07-08 01:35:57,091 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:57,093 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:57,093 INFO sqlalchemy.engine.Engine [cached since 10.32s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:57,187 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID
+2026-07-08 01:35:57,189 INFO sqlalchemy.engine.Engine [generated in 0.00118s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:35:57,293 INFO sqlalchemy.engine.Engine SELECT emotion_diary.id, emotion_diary.user_id, emotion_diary.date, emotion_diary.dominant_emotion, emotion_diary.intensity, emotion_diary.triggers, emotion_diary.created_at 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID ORDER BY emotion_diary.date DESC, emotion_diary.created_at DESC 
+ LIMIT $2::INTEGER OFFSET $3::INTEGER
+2026-07-08 01:35:57,294 INFO sqlalchemy.engine.Engine [generated in 0.00069s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 30, 0)
+2026-07-08 01:35:57,396 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:10697 - "GET /api/v1/emotion/diary HTTP/1.1" 200 OK
+2026-07-08 01:35:57,449 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:57,449 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:57,449 INFO sqlalchemy.engine.Engine [cached since 10.68s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:57,541 INFO sqlalchemy.engine.Engine SELECT emotion_diary.id, emotion_diary.user_id, emotion_diary.date, emotion_diary.dominant_emotion, emotion_diary.intensity, emotion_diary.triggers, emotion_diary.created_at 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID AND emotion_diary.date >= $2::TIMESTAMP WITHOUT TIME ZONE ORDER BY emotion_diary.date ASC
+2026-07-08 01:35:57,541 INFO sqlalchemy.engine.Engine [generated in 0.00097s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), datetime.datetime(2026, 6, 24, 0, 0))
+2026-07-08 01:35:57,644 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:10699 - "GET /api/v1/emotion/trend?days=14 HTTP/1.1" 200 OK
+2026-07-08 01:35:59,612 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:35:59,615 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:35:59,616 INFO sqlalchemy.engine.Engine [cached since 12.85s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:35:59,706 INFO sqlalchemy.engine.Engine SELECT push_deliveries.id, push_deliveries.user_id, push_deliveries.push_token_id, push_deliveries.proactive_message_id, push_deliveries.provider, push_deliveries.notification_type, push_deliveries.title, push_deliveries.body, push_deliveries.deep_link, push_deliveries.status, push_deliveries.provider_message_id, push_deliveries.failure_reason, push_deliveries.sent_at, push_deliveries.clicked_at, push_deliveries.created_at 
+FROM push_deliveries 
+WHERE push_deliveries.id = $1::UUID AND push_deliveries.user_id = $2::UUID
+2026-07-08 01:35:59,706 INFO sqlalchemy.engine.Engine [generated in 0.00084s] (UUID('a405176b-b017-4f25-b85d-04f55d41b8f9'), UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:35:59,803 INFO sqlalchemy.engine.Engine SELECT proactive_messages.id, proactive_messages.user_id, proactive_messages.character_id, proactive_messages.trigger_type, proactive_messages.content, proactive_messages.delivered, proactive_messages.replied, proactive_messages.push_status, proactive_messages.push_error, proactive_messages.created_at 
+FROM proactive_messages 
+WHERE proactive_messages.id = $1::UUID AND proactive_messages.user_id = $2::UUID
+2026-07-08 01:35:59,805 INFO sqlalchemy.engine.Engine [generated in 0.00105s] (UUID('e132c755-bdf4-451d-b642-c6257516d8df'), UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:35:59,901 INFO sqlalchemy.engine.Engine UPDATE proactive_messages SET push_status=$1::VARCHAR WHERE proactive_messages.id = $2::UUID
+2026-07-08 01:35:59,903 INFO sqlalchemy.engine.Engine [generated in 0.00092s] ('clicked', UUID('e132c755-bdf4-451d-b642-c6257516d8df'))
+2026-07-08 01:35:59,998 INFO sqlalchemy.engine.Engine UPDATE push_deliveries SET status=$1::VARCHAR, clicked_at=$2::TIMESTAMP WITH TIME ZONE WHERE push_deliveries.id = $3::UUID
+2026-07-08 01:35:59,998 INFO sqlalchemy.engine.Engine [generated in 0.00104s] ('clicked', datetime.datetime(2026, 7, 7, 17, 35, 59, 900706, tzinfo=datetime.timezone.utc), UUID('a405176b-b017-4f25-b85d-04f55d41b8f9'))
+2026-07-08 01:36:00,110 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:37694 - "POST /api/v1/push/click HTTP/1.1" 200 OK
+2026-07-08 01:36:01,162 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:01,163 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:01,164 INFO sqlalchemy.engine.Engine [cached since 14.39s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:01,264 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM proactive_messages 
+WHERE proactive_messages.user_id = $1::UUID AND proactive_messages.character_id = $2::VARCHAR
+2026-07-08 01:36:01,264 INFO sqlalchemy.engine.Engine [generated in 0.00087s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:36:01,364 INFO sqlalchemy.engine.Engine SELECT proactive_messages.id, proactive_messages.user_id, proactive_messages.character_id, proactive_messages.trigger_type, proactive_messages.content, proactive_messages.delivered, proactive_messages.replied, proactive_messages.push_status, proactive_messages.push_error, proactive_messages.created_at 
+FROM proactive_messages 
+WHERE proactive_messages.user_id = $1::UUID AND proactive_messages.character_id = $2::VARCHAR ORDER BY proactive_messages.created_at DESC 
+ LIMIT $3::INTEGER OFFSET $4::INTEGER
+2026-07-08 01:36:01,364 INFO sqlalchemy.engine.Engine [generated in 0.00101s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 5, 0)
+2026-07-08 01:36:01,471 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:3895 - "GET /api/v1/care/messages?character_id=yinyue&limit=5 HTTP/1.1" 200 OK
+2026-07-08 01:36:01,526 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:01,526 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:01,526 INFO sqlalchemy.engine.Engine [cached since 14.76s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:01,609 INFO sqlalchemy.engine.Engine SELECT proactive_messages.id, proactive_messages.user_id, proactive_messages.character_id, proactive_messages.trigger_type, proactive_messages.content, proactive_messages.delivered, proactive_messages.replied, proactive_messages.push_status, proactive_messages.push_error, proactive_messages.created_at 
+FROM proactive_messages 
+WHERE proactive_messages.id = $1::UUID AND proactive_messages.user_id = $2::UUID
+2026-07-08 01:36:01,610 INFO sqlalchemy.engine.Engine [cached since 1.806s ago] (UUID('0f301a04-eeae-41ba-abbb-81df06f8e66a'), UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:36:01,657 INFO sqlalchemy.engine.Engine UPDATE proactive_messages SET delivered=$1::BOOLEAN, push_status=$2::VARCHAR WHERE proactive_messages.id = $3::UUID
+2026-07-08 01:36:01,658 INFO sqlalchemy.engine.Engine [generated in 0.00071s] (True, 'clicked', UUID('0f301a04-eeae-41ba-abbb-81df06f8e66a'))
+2026-07-08 01:36:01,757 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:3897 - "POST /api/v1/care/messages/0f301a04-eeae-41ba-abbb-81df06f8e66a/click HTTP/1.1" 200 OK
+2026-07-08 01:36:01,807 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:01,807 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:01,808 INFO sqlalchemy.engine.Engine [cached since 15.04s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:01,901 INFO sqlalchemy.engine.Engine SELECT proactive_messages.id, proactive_messages.user_id, proactive_messages.character_id, proactive_messages.trigger_type, proactive_messages.content, proactive_messages.delivered, proactive_messages.replied, proactive_messages.push_status, proactive_messages.push_error, proactive_messages.created_at 
+FROM proactive_messages 
+WHERE proactive_messages.id = $1::UUID AND proactive_messages.user_id = $2::UUID
+2026-07-08 01:36:01,902 INFO sqlalchemy.engine.Engine [cached since 2.098s ago] (UUID('0f301a04-eeae-41ba-abbb-81df06f8e66a'), UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:36:01,949 INFO sqlalchemy.engine.Engine UPDATE proactive_messages SET replied=$1::BOOLEAN WHERE proactive_messages.id = $2::UUID
+2026-07-08 01:36:01,950 INFO sqlalchemy.engine.Engine [generated in 0.00077s] (True, UUID('0f301a04-eeae-41ba-abbb-81df06f8e66a'))
+2026-07-08 01:36:02,055 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:36:02,056 INFO sqlalchemy.engine.Engine [cached since 14.64s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:36:02,105 INFO sqlalchemy.engine.Engine UPDATE user_character_relations SET intimacy=$1::INTEGER, updated_at=now() WHERE user_character_relations.id = $2::UUID
+2026-07-08 01:36:02,106 INFO sqlalchemy.engine.Engine [generated in 0.00076s] (3, UUID('226a4394-d573-4cb9-938c-dcb1a8466208'))
+2026-07-08 01:36:02,206 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:3901 - "POST /api/v1/care/messages/0f301a04-eeae-41ba-abbb-81df06f8e66a/reply HTTP/1.1" 200 OK
+2026-07-08 01:36:02,279 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:02,280 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:02,280 INFO sqlalchemy.engine.Engine [cached since 15.51s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:02,393 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:36:02,393 INFO sqlalchemy.engine.Engine [cached since 14.98s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:36:02,441 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:3903 - "GET /api/v1/characters/yinyue/relation HTTP/1.1" 200 OK
+2026-07-08 01:36:02,491 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:02,491 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:02,491 INFO sqlalchemy.engine.Engine [cached since 15.72s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:02,589 INFO sqlalchemy.engine.Engine SELECT proactive_messages.id, proactive_messages.user_id, proactive_messages.character_id, proactive_messages.trigger_type, proactive_messages.content, proactive_messages.delivered, proactive_messages.replied, proactive_messages.push_status, proactive_messages.push_error, proactive_messages.created_at 
+FROM proactive_messages 
+WHERE proactive_messages.id = $1::UUID AND proactive_messages.user_id = $2::UUID
+2026-07-08 01:36:02,591 INFO sqlalchemy.engine.Engine [cached since 2.786s ago] (UUID('0f301a04-eeae-41ba-abbb-81df06f8e66a'), UUID('ca891091-0105-4733-be48-31806d91a0b0'))
+2026-07-08 01:36:02,643 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:3905 - "POST /api/v1/care/messages/0f301a04-eeae-41ba-abbb-81df06f8e66a/reply HTTP/1.1" 200 OK
+2026-07-08 01:36:02,715 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:02,715 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:02,716 INFO sqlalchemy.engine.Engine [cached since 15.95s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:02,819 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:36:02,819 INFO sqlalchemy.engine.Engine [cached since 15.41s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:36:02,863 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:3907 - "GET /api/v1/characters/yinyue/relation HTTP/1.1" 200 OK
+2026-07-08 01:36:02,917 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:02,918 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:02,918 INFO sqlalchemy.engine.Engine [cached since 16.15s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:03,002 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID AND chat_messages.role = $2::VARCHAR AND chat_messages.created_at >= $3::TIMESTAMP WITH TIME ZONE AND chat_messages.created_at < $4::TIMESTAMP WITH TIME ZONE
+2026-07-08 01:36:03,003 INFO sqlalchemy.engine.Engine [cached since 14.1s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'user', datetime.datetime(2026, 7, 7, 0, 0, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 7, 8, 0, 0, tzinfo=datetime.timezone.utc))
+2026-07-08 01:36:03,052 INFO sqlalchemy.engine.Engine INSERT INTO chat_messages (id, user_id, character_id, role, content, message_type, emotion_tags, is_proactive) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::JSONB, $8::BOOLEAN) RETURNING chat_messages.created_at
+2026-07-08 01:36:03,053 INFO sqlalchemy.engine.Engine [generated in 0.00119s] (UUID('7da6c845-e6d9-479e-8546-afbdd3bbf5cf'), UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 'user', 'I worked late today and feel tired.', 'text', '[]', False)
+2026-07-08 01:36:03,162 INFO sqlalchemy.engine.Engine SELECT chat_messages.id, chat_messages.user_id, chat_messages.character_id, chat_messages.role, chat_messages.content, chat_messages.message_type, chat_messages.emotion_tags, chat_messages.is_proactive, chat_messages.created_at 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID AND chat_messages.character_id = $2::VARCHAR ORDER BY chat_messages.created_at DESC 
+ LIMIT $3::INTEGER
+2026-07-08 01:36:03,163 INFO sqlalchemy.engine.Engine [generated in 0.00096s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 20)
+2026-07-08 01:36:03,258 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:3910 - "POST /api/v1/chat/yinyue/message HTTP/1.1" 200 OK
+2026-07-08 01:36:03,311 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:03,312 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters 
+WHERE characters.id = $1::VARCHAR
+2026-07-08 01:36:03,312 INFO sqlalchemy.engine.Engine [cached since 20.92s ago] ('yinyue',)
+2026-07-08 01:36:03,406 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:36:03,407 INFO sqlalchemy.engine.Engine [cached since 15.99s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:36:05,245 INFO sqlalchemy.engine.Engine SELECT memories.id, memories.user_id, memories.character_id, memories.category, memories.content, memories.importance, memories.emotion_tags, memories.source_message_id, memories.recall_count, memories.is_active, memories.created_at, memories.updated_at 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true ORDER BY memories.importance DESC, memories.created_at DESC 
+ LIMIT $3::INTEGER
+2026-07-08 01:36:05,246 INFO sqlalchemy.engine.Engine [generated in 0.00126s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 5)
+2026-07-08 01:36:05,341 INFO sqlalchemy.engine.Engine INSERT INTO chat_messages (id, user_id, character_id, role, content, message_type, emotion_tags, is_proactive) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::JSONB, $8::BOOLEAN) RETURNING chat_messages.created_at
+2026-07-08 01:36:05,342 INFO sqlalchemy.engine.Engine [generated in 0.00097s] (UUID('ff36e979-9929-439d-986b-1f1a767bc7ef'), UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 'assistant', '我还记得：codex-new-memory-f5bae2c5。你说「I worked late today and feel tired.」。哼，本姑娘只是顺手听一下，但别硬撑，先把今晚撑过去再说。', 'text', '[]', False)
+2026-07-08 01:36:05,400 INFO sqlalchemy.engine.Engine SELECT emotion_diary.id, emotion_diary.user_id, emotion_diary.date, emotion_diary.dominant_emotion, emotion_diary.intensity, emotion_diary.triggers, emotion_diary.created_at 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID AND emotion_diary.date >= $2::TIMESTAMP WITHOUT TIME ZONE AND emotion_diary.date < $3::TIMESTAMP WITHOUT TIME ZONE
+2026-07-08 01:36:05,400 INFO sqlalchemy.engine.Engine [generated in 0.00078s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), datetime.datetime(2026, 7, 7, 0, 0), datetime.datetime(2026, 7, 8, 0, 0))
+2026-07-08 01:36:05,495 INFO sqlalchemy.engine.Engine INSERT INTO emotion_diary (id, user_id, date, dominant_emotion, intensity, triggers) VALUES ($1::UUID, $2::UUID, $3::TIMESTAMP WITHOUT TIME ZONE, $4::VARCHAR, $5::FLOAT, $6::JSONB) RETURNING emotion_diary.created_at
+2026-07-08 01:36:05,495 INFO sqlalchemy.engine.Engine [generated in 0.00106s] (UUID('f0705ee9-9716-43e0-9c58-ecc94b76fedb'), UUID('ca891091-0105-4733-be48-31806d91a0b0'), datetime.datetime(2026, 7, 7, 0, 0), 'tired', 0.66, '["I worked late today and feel tired."]')
+2026-07-08 01:36:05,600 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:36:05,600 INFO sqlalchemy.engine.Engine [cached since 18.19s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:36:05,644 INFO sqlalchemy.engine.Engine UPDATE user_character_relations SET intimacy=$1::INTEGER, milestones=$2::JSONB, first_chat_at=$3::TIMESTAMP WITH TIME ZONE, last_chat_at=$4::TIMESTAMP WITH TIME ZONE, consecutive_days=$5::INTEGER, updated_at=now() WHERE user_character_relations.id = $6::UUID
+2026-07-08 01:36:05,645 INFO sqlalchemy.engine.Engine [generated in 0.00084s] (18, '[{"event": "first_chat", "date": "2026-07-07T17:36:05.643750+00:00", "description": "\\u7b2c\\u4e00\\u6b21\\u5bf9\\u8bdd"}]', datetime.datetime(2026, 7, 7, 17, 36, 5, 643750, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 7, 7, 17, 36, 5, 643750, tzinfo=datetime.timezone.utc), 1, UUID('226a4394-d573-4cb9-938c-dcb1a8466208'))
+2026-07-08 01:36:05,745 INFO sqlalchemy.engine.Engine COMMIT
+2026-07-08 01:36:06,880 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:06,880 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:06,881 INFO sqlalchemy.engine.Engine [cached since 20.11s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:06,963 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID AND chat_messages.role = $2::VARCHAR AND chat_messages.created_at >= $3::TIMESTAMP WITH TIME ZONE AND chat_messages.created_at < $4::TIMESTAMP WITH TIME ZONE
+2026-07-08 01:36:06,964 INFO sqlalchemy.engine.Engine [cached since 18.06s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'user', datetime.datetime(2026, 7, 7, 0, 0, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 7, 8, 0, 0, tzinfo=datetime.timezone.utc))
+2026-07-08 01:36:07,016 INFO sqlalchemy.engine.Engine INSERT INTO chat_messages (id, user_id, character_id, role, content, message_type, emotion_tags, is_proactive) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::JSONB, $8::BOOLEAN) RETURNING chat_messages.created_at
+2026-07-08 01:36:07,017 INFO sqlalchemy.engine.Engine [cached since 3.965s ago] (UUID('dbee5660-c612-47b6-8031-13948394ffc7'), UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 'user', 'I am anxious but recording this as a voice note.', 'voice', '[]', False)
+2026-07-08 01:36:07,068 INFO sqlalchemy.engine.Engine SELECT chat_messages.id, chat_messages.user_id, chat_messages.character_id, chat_messages.role, chat_messages.content, chat_messages.message_type, chat_messages.emotion_tags, chat_messages.is_proactive, chat_messages.created_at 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID AND chat_messages.character_id = $2::VARCHAR ORDER BY chat_messages.created_at DESC 
+ LIMIT $3::INTEGER
+2026-07-08 01:36:07,069 INFO sqlalchemy.engine.Engine [cached since 3.907s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 20)
+2026-07-08 01:36:07,127 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:36:07,127 INFO sqlalchemy.engine.Engine [cached since 19.71s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:36:08,719 INFO sqlalchemy.engine.Engine SELECT memories.id, memories.user_id, memories.character_id, memories.category, memories.content, memories.importance, memories.emotion_tags, memories.source_message_id, memories.recall_count, memories.is_active, memories.created_at, memories.updated_at 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true ORDER BY memories.importance DESC, memories.created_at DESC 
+ LIMIT $3::INTEGER
+2026-07-08 01:36:08,719 INFO sqlalchemy.engine.Engine [cached since 3.474s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 5)
+2026-07-08 01:36:08,765 INFO sqlalchemy.engine.Engine INSERT INTO chat_messages (id, user_id, character_id, role, content, message_type, emotion_tags, is_proactive) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::JSONB, $8::BOOLEAN) RETURNING chat_messages.created_at
+2026-07-08 01:36:08,765 INFO sqlalchemy.engine.Engine [cached since 3.424s ago] (UUID('0449e9f2-41d3-40fd-8aa3-970452fda62e'), UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 'assistant', '我还记得：codex-new-memory-f5bae2c5。你说「I am anxious but recording this as a voice note.」。哼，本姑娘只是顺手听一下，但别硬撑，先把今晚撑过去再说。', 'text', '[]', False)
+2026-07-08 01:36:08,815 INFO sqlalchemy.engine.Engine SELECT emotion_diary.id, emotion_diary.user_id, emotion_diary.date, emotion_diary.dominant_emotion, emotion_diary.intensity, emotion_diary.triggers, emotion_diary.created_at 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID AND emotion_diary.date >= $2::TIMESTAMP WITHOUT TIME ZONE AND emotion_diary.date < $3::TIMESTAMP WITHOUT TIME ZONE
+2026-07-08 01:36:08,816 INFO sqlalchemy.engine.Engine [cached since 3.417s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), datetime.datetime(2026, 7, 7, 0, 0), datetime.datetime(2026, 7, 8, 0, 0))
+2026-07-08 01:36:08,867 INFO sqlalchemy.engine.Engine UPDATE emotion_diary SET dominant_emotion=$1::VARCHAR, intensity=$2::FLOAT, triggers=$3::JSONB WHERE emotion_diary.id = $4::UUID
+2026-07-08 01:36:08,868 INFO sqlalchemy.engine.Engine [generated in 0.00092s] ('anxious', 0.78, '["I am anxious but recording this as a voice note.", "I worked late today and feel tired."]', UUID('f0705ee9-9716-43e0-9c58-ecc94b76fedb'))
+2026-07-08 01:36:08,965 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:36:08,966 INFO sqlalchemy.engine.Engine [cached since 21.55s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:36:09,016 INFO sqlalchemy.engine.Engine UPDATE user_character_relations SET intimacy=$1::INTEGER, last_chat_at=$2::TIMESTAMP WITH TIME ZONE, updated_at=now() WHERE user_character_relations.id = $3::UUID
+2026-07-08 01:36:09,016 INFO sqlalchemy.engine.Engine [generated in 0.00106s] (28, datetime.datetime(2026, 7, 7, 17, 36, 9, 14367, tzinfo=datetime.timezone.utc), UUID('226a4394-d573-4cb9-938c-dcb1a8466208'))
+2026-07-08 01:36:09,122 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:11433 - "POST /api/v1/chat/yinyue/voice HTTP/1.1" 200 OK
+2026-07-08 01:36:09,226 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:09,227 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:09,227 INFO sqlalchemy.engine.Engine [cached since 22.46s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:09,329 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID
+2026-07-08 01:36:09,330 INFO sqlalchemy.engine.Engine [cached since 12.14s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:09,380 INFO sqlalchemy.engine.Engine SELECT emotion_diary.id, emotion_diary.user_id, emotion_diary.date, emotion_diary.dominant_emotion, emotion_diary.intensity, emotion_diary.triggers, emotion_diary.created_at 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID ORDER BY emotion_diary.date DESC, emotion_diary.created_at DESC 
+ LIMIT $2::INTEGER OFFSET $3::INTEGER
+2026-07-08 01:36:09,381 INFO sqlalchemy.engine.Engine [cached since 12.09s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 30, 0)
+2026-07-08 01:36:09,435 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:11440 - "GET /api/v1/emotion/diary HTTP/1.1" 200 OK
+2026-07-08 01:36:09,490 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:09,490 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:09,492 INFO sqlalchemy.engine.Engine [cached since 22.72s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:09,577 INFO sqlalchemy.engine.Engine SELECT chat_messages.id, chat_messages.user_id, chat_messages.character_id, chat_messages.role, chat_messages.content, chat_messages.message_type, chat_messages.emotion_tags, chat_messages.is_proactive, chat_messages.created_at 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID AND chat_messages.character_id = $2::VARCHAR ORDER BY chat_messages.created_at DESC 
+ LIMIT $3::INTEGER OFFSET $4::INTEGER
+2026-07-08 01:36:09,578 INFO sqlalchemy.engine.Engine [generated in 0.00132s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue', 50, 0)
+2026-07-08 01:36:09,692 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID AND chat_messages.character_id = $2::VARCHAR
+2026-07-08 01:36:09,692 INFO sqlalchemy.engine.Engine [generated in 0.00092s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:36:09,788 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:11442 - "GET /api/v1/chat/yinyue/history HTTP/1.1" 200 OK
+2026-07-08 01:36:11,169 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:11,170 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:11,170 INFO sqlalchemy.engine.Engine [cached since 24.4s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:11,263 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:36:11,264 INFO sqlalchemy.engine.Engine [cached since 23.85s ago] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 'yinyue')
+2026-07-08 01:36:11,315 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID ORDER BY user_character_relations.updated_at DESC
+2026-07-08 01:36:11,316 INFO sqlalchemy.engine.Engine [generated in 0.00089s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:11,430 INFO sqlalchemy.engine.Engine SELECT push_tokens.id, push_tokens.user_id, push_tokens.platform, push_tokens.provider, push_tokens.token, push_tokens.permission_status, push_tokens.device_id, push_tokens.app_version, push_tokens.is_active, push_tokens.created_at, push_tokens.updated_at 
+FROM push_tokens 
+WHERE push_tokens.user_id = $1::UUID ORDER BY push_tokens.updated_at DESC 
+ LIMIT $2::INTEGER
+2026-07-08 01:36:11,431 INFO sqlalchemy.engine.Engine [generated in 0.00134s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'), 10)
+2026-07-08 01:36:11,543 INFO sqlalchemy.engine.Engine SELECT count(chat_messages.id) AS count_1 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID
+2026-07-08 01:36:11,544 INFO sqlalchemy.engine.Engine [generated in 0.00107s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:11,634 INFO sqlalchemy.engine.Engine SELECT count(memories.id) AS count_1 
+FROM memories 
+WHERE memories.user_id = $1::UUID
+2026-07-08 01:36:11,636 INFO sqlalchemy.engine.Engine [generated in 0.00147s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:11,732 INFO sqlalchemy.engine.Engine SELECT count(proactive_messages.id) AS count_1 
+FROM proactive_messages 
+WHERE proactive_messages.user_id = $1::UUID
+2026-07-08 01:36:11,733 INFO sqlalchemy.engine.Engine [generated in 0.00065s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:11,840 INFO sqlalchemy.engine.Engine SELECT count(push_deliveries.id) AS count_1 
+FROM push_deliveries 
+WHERE push_deliveries.user_id = $1::UUID
+2026-07-08 01:36:11,841 INFO sqlalchemy.engine.Engine [generated in 0.00133s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:11,934 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:15114 - "GET /api/v1/admin/users/ca891091-0105-4733-be48-31806d91a0b0 HTTP/1.1" 200 OK
+2026-07-08 01:36:11,990 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:11,993 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT chat_messages.id AS id, chat_messages.user_id AS user_id, chat_messages.character_id AS character_id, chat_messages.role AS role, chat_messages.content AS content, chat_messages.message_type AS message_type, chat_messages.emotion_tags AS emotion_tags, chat_messages.is_proactive AS is_proactive, chat_messages.created_at AS created_at 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID) AS anon_1
+2026-07-08 01:36:11,993 INFO sqlalchemy.engine.Engine [generated in 0.00077s] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:12,130 INFO sqlalchemy.engine.Engine SELECT chat_messages.id, chat_messages.user_id, chat_messages.character_id, chat_messages.role, chat_messages.content, chat_messages.message_type, chat_messages.emotion_tags, chat_messages.is_proactive, chat_messages.created_at 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID ORDER BY chat_messages.created_at DESC 
+ LIMIT $2::INTEGER OFFSET $3::INTEGER
+2026-07-08 01:36:12,130 INFO sqlalchemy.engine.Engine [generated in 0.00087s] ('ca891091-0105-4733-be48-31806d91a0b0', 5, 0)
+2026-07-08 01:36:12,245 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:15118 - "GET /api/v1/admin/messages?user_id=ca891091-0105-4733-be48-31806d91a0b0&page_size=5 HTTP/1.1" 200 OK
+2026-07-08 01:36:12,295 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:12,298 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT proactive_messages.id AS id, proactive_messages.user_id AS user_id, proactive_messages.character_id AS character_id, proactive_messages.trigger_type AS trigger_type, proactive_messages.content AS content, proactive_messages.delivered AS delivered, proactive_messages.replied AS replied, proactive_messages.push_status AS push_status, proactive_messages.push_error AS push_error, proactive_messages.created_at AS created_at 
+FROM proactive_messages 
+WHERE proactive_messages.user_id = $1::UUID) AS anon_1
+2026-07-08 01:36:12,299 INFO sqlalchemy.engine.Engine [generated in 0.00074s] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:12,464 INFO sqlalchemy.engine.Engine SELECT proactive_messages.id, proactive_messages.user_id, proactive_messages.character_id, proactive_messages.trigger_type, proactive_messages.content, proactive_messages.delivered, proactive_messages.replied, proactive_messages.push_status, proactive_messages.push_error, proactive_messages.created_at 
+FROM proactive_messages 
+WHERE proactive_messages.user_id = $1::UUID ORDER BY proactive_messages.created_at DESC 
+ LIMIT $2::INTEGER OFFSET $3::INTEGER
+2026-07-08 01:36:12,466 INFO sqlalchemy.engine.Engine [generated in 0.00098s] ('ca891091-0105-4733-be48-31806d91a0b0', 5, 0)
+2026-07-08 01:36:12,565 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:15121 - "GET /api/v1/admin/care/messages?user_id=ca891091-0105-4733-be48-31806d91a0b0&page_size=5 HTTP/1.1" 200 OK
+2026-07-08 01:36:12,621 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:12,623 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT push_deliveries.id AS id, push_deliveries.user_id AS user_id, push_deliveries.push_token_id AS push_token_id, push_deliveries.proactive_message_id AS proactive_message_id, push_deliveries.provider AS provider, push_deliveries.notification_type AS notification_type, push_deliveries.title AS title, push_deliveries.body AS body, push_deliveries.deep_link AS deep_link, push_deliveries.status AS status, push_deliveries.provider_message_id AS provider_message_id, push_deliveries.failure_reason AS failure_reason, push_deliveries.sent_at AS sent_at, push_deliveries.clicked_at AS clicked_at, push_deliveries.created_at AS created_at 
+FROM push_deliveries 
+WHERE push_deliveries.user_id = $1::UUID) AS anon_1
+2026-07-08 01:36:12,623 INFO sqlalchemy.engine.Engine [generated in 0.00077s] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:12,762 INFO sqlalchemy.engine.Engine SELECT push_deliveries.id, push_deliveries.user_id, push_deliveries.push_token_id, push_deliveries.proactive_message_id, push_deliveries.provider, push_deliveries.notification_type, push_deliveries.title, push_deliveries.body, push_deliveries.deep_link, push_deliveries.status, push_deliveries.provider_message_id, push_deliveries.failure_reason, push_deliveries.sent_at, push_deliveries.clicked_at, push_deliveries.created_at 
+FROM push_deliveries 
+WHERE push_deliveries.user_id = $1::UUID ORDER BY push_deliveries.created_at DESC 
+ LIMIT $2::INTEGER OFFSET $3::INTEGER
+2026-07-08 01:36:12,763 INFO sqlalchemy.engine.Engine [generated in 0.00113s] ('ca891091-0105-4733-be48-31806d91a0b0', 5, 0)
+2026-07-08 01:36:12,866 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:15123 - "GET /api/v1/admin/push/deliveries?user_id=ca891091-0105-4733-be48-31806d91a0b0&page_size=5 HTTP/1.1" 200 OK
+2026-07-08 01:36:12,934 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:12,937 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT safety_events.id AS id, safety_events.user_id AS user_id, safety_events.character_id AS character_id, safety_events.source AS source, safety_events.source_message_id AS source_message_id, safety_events.event_type AS event_type, safety_events.severity AS severity, safety_events.status AS status, safety_events.content_excerpt AS content_excerpt, safety_events.matched_terms AS matched_terms, safety_events.review_note AS review_note, safety_events.reviewed_by AS reviewed_by, safety_events.reviewed_at AS reviewed_at, safety_events.created_at AS created_at, safety_events.updated_at AS updated_at 
+FROM safety_events 
+WHERE safety_events.user_id = $1::UUID) AS anon_1
+2026-07-08 01:36:12,938 INFO sqlalchemy.engine.Engine [generated in 0.00060s] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:13,084 INFO sqlalchemy.engine.Engine SELECT safety_events.id, safety_events.user_id, safety_events.character_id, safety_events.source, safety_events.source_message_id, safety_events.event_type, safety_events.severity, safety_events.status, safety_events.content_excerpt, safety_events.matched_terms, safety_events.review_note, safety_events.reviewed_by, safety_events.reviewed_at, safety_events.created_at, safety_events.updated_at 
+FROM safety_events 
+WHERE safety_events.user_id = $1::UUID ORDER BY safety_events.created_at DESC 
+ LIMIT $2::INTEGER OFFSET $3::INTEGER
+2026-07-08 01:36:13,085 INFO sqlalchemy.engine.Engine [generated in 0.00094s] ('ca891091-0105-4733-be48-31806d91a0b0', 5, 0)
+2026-07-08 01:36:13,181 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:24665 - "GET /api/v1/admin/safety/events?user_id=ca891091-0105-4733-be48-31806d91a0b0&page_size=5 HTTP/1.1" 200 OK
+2026-07-08 01:36:13,236 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:13,238 INFO sqlalchemy.engine.Engine SELECT safety_events.id, safety_events.user_id, safety_events.character_id, safety_events.source, safety_events.source_message_id, safety_events.event_type, safety_events.severity, safety_events.status, safety_events.content_excerpt, safety_events.matched_terms, safety_events.review_note, safety_events.reviewed_by, safety_events.reviewed_at, safety_events.created_at, safety_events.updated_at 
+FROM safety_events 
+WHERE safety_events.id = $1::UUID
+2026-07-08 01:36:13,239 INFO sqlalchemy.engine.Engine [generated in 0.00066s] ('d2f2a8c1-3595-49ba-b756-138d10cd32f1',)
+2026-07-08 01:36:13,381 INFO sqlalchemy.engine.Engine UPDATE safety_events SET status=$1::VARCHAR, review_note=$2::VARCHAR, reviewed_by=$3::VARCHAR, reviewed_at=$4::TIMESTAMP WITH TIME ZONE, updated_at=now() WHERE safety_events.id = $5::UUID
+2026-07-08 01:36:13,382 INFO sqlalchemy.engine.Engine [generated in 0.00108s] ('in_review', 'Smoke test review', 'api-smoke', datetime.datetime(2026, 7, 7, 17, 36, 13, 380427, tzinfo=datetime.timezone.utc), UUID('d2f2a8c1-3595-49ba-b756-138d10cd32f1'))
+2026-07-08 01:36:13,485 INFO sqlalchemy.engine.Engine INSERT INTO audit_logs (id, actor_type, actor_id, action, target_type, target_id, metadata) VALUES ($1::UUID, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::JSONB) RETURNING audit_logs.created_at
+2026-07-08 01:36:13,485 INFO sqlalchemy.engine.Engine [generated in 0.00091s] (UUID('e8fc1134-c18c-4860-8272-af77a9f23288'), 'admin', 'api-smoke', 'safety_event.reviewed', 'safety_event', 'd2f2a8c1-3595-49ba-b756-138d10cd32f1', '{"previous_status": "pending_review", "status": "in_review", "note": "Smoke test review"}')
+2026-07-08 01:36:13,595 INFO sqlalchemy.engine.Engine COMMIT
+2026-07-08 01:36:13,644 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:13,647 INFO sqlalchemy.engine.Engine SELECT safety_events.id, safety_events.user_id, safety_events.character_id, safety_events.source, safety_events.source_message_id, safety_events.event_type, safety_events.severity, safety_events.status, safety_events.content_excerpt, safety_events.matched_terms, safety_events.review_note, safety_events.reviewed_by, safety_events.reviewed_at, safety_events.created_at, safety_events.updated_at 
+FROM safety_events 
+WHERE safety_events.id = $1::UUID
+2026-07-08 01:36:13,648 INFO sqlalchemy.engine.Engine [generated in 0.00070s] (UUID('d2f2a8c1-3595-49ba-b756-138d10cd32f1'),)
+2026-07-08 01:36:13,738 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:53906 - "POST /api/v1/admin/safety/events/d2f2a8c1-3595-49ba-b756-138d10cd32f1/review HTTP/1.1" 200 OK
+2026-07-08 01:36:13,791 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:13,794 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT audit_logs.id AS id, audit_logs.actor_type AS actor_type, audit_logs.actor_id AS actor_id, audit_logs.action AS action, audit_logs.target_type AS target_type, audit_logs.target_id AS target_id, audit_logs.metadata AS metadata, audit_logs.created_at AS created_at 
+FROM audit_logs 
+WHERE audit_logs.target_type = $1::VARCHAR AND audit_logs.target_id = $2::VARCHAR) AS anon_1
+2026-07-08 01:36:13,794 INFO sqlalchemy.engine.Engine [generated in 0.00043s] ('safety_event', 'd2f2a8c1-3595-49ba-b756-138d10cd32f1')
+2026-07-08 01:36:13,925 INFO sqlalchemy.engine.Engine SELECT audit_logs.id, audit_logs.actor_type, audit_logs.actor_id, audit_logs.action, audit_logs.target_type, audit_logs.target_id, audit_logs.metadata, audit_logs.created_at 
+FROM audit_logs 
+WHERE audit_logs.target_type = $1::VARCHAR AND audit_logs.target_id = $2::VARCHAR ORDER BY audit_logs.created_at DESC 
+ LIMIT $3::INTEGER OFFSET $4::INTEGER
+2026-07-08 01:36:13,927 INFO sqlalchemy.engine.Engine [generated in 0.00127s] ('safety_event', 'd2f2a8c1-3595-49ba-b756-138d10cd32f1', 10, 0)
+2026-07-08 01:36:14,026 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:55797 - "GET /api/v1/admin/audit/logs?target_type=safety_event&target_id=d2f2a8c1-3595-49ba-b756-138d10cd32f1&page_size=10 HTTP/1.1" 200 OK
+2026-07-08 01:36:14,079 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:14,079 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:14,079 INFO sqlalchemy.engine.Engine [cached since 27.31s ago] ('ca891091-0105-4733-be48-31806d91a0b0',)
+2026-07-08 01:36:14,168 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID
+2026-07-08 01:36:14,169 INFO sqlalchemy.engine.Engine [generated in 0.00111s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:14,260 INFO sqlalchemy.engine.Engine SELECT chat_messages.id, chat_messages.user_id, chat_messages.character_id, chat_messages.role, chat_messages.content, chat_messages.message_type, chat_messages.emotion_tags, chat_messages.is_proactive, chat_messages.created_at 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID
+2026-07-08 01:36:14,296 INFO sqlalchemy.engine.Engine [generated in 0.03652s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:14,396 INFO sqlalchemy.engine.Engine SELECT memories.id, memories.user_id, memories.character_id, memories.category, memories.content, memories.importance, memories.emotion_tags, memories.source_message_id, memories.recall_count, memories.is_active, memories.created_at, memories.updated_at 
+FROM memories 
+WHERE memories.user_id = $1::UUID
+2026-07-08 01:36:14,398 INFO sqlalchemy.engine.Engine [generated in 0.00079s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:14,493 INFO sqlalchemy.engine.Engine SELECT emotion_diary.id, emotion_diary.user_id, emotion_diary.date, emotion_diary.dominant_emotion, emotion_diary.intensity, emotion_diary.triggers, emotion_diary.created_at 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID
+2026-07-08 01:36:14,494 INFO sqlalchemy.engine.Engine [generated in 0.00104s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:14,596 INFO sqlalchemy.engine.Engine SELECT proactive_messages.id, proactive_messages.user_id, proactive_messages.character_id, proactive_messages.trigger_type, proactive_messages.content, proactive_messages.delivered, proactive_messages.replied, proactive_messages.push_status, proactive_messages.push_error, proactive_messages.created_at 
+FROM proactive_messages 
+WHERE proactive_messages.user_id = $1::UUID
+2026-07-08 01:36:14,597 INFO sqlalchemy.engine.Engine [generated in 0.00094s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:14,689 INFO sqlalchemy.engine.Engine SELECT push_tokens.id, push_tokens.user_id, push_tokens.platform, push_tokens.provider, push_tokens.token, push_tokens.permission_status, push_tokens.device_id, push_tokens.app_version, push_tokens.is_active, push_tokens.created_at, push_tokens.updated_at 
+FROM push_tokens 
+WHERE push_tokens.user_id = $1::UUID
+2026-07-08 01:36:14,689 INFO sqlalchemy.engine.Engine [generated in 0.00060s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:14,787 INFO sqlalchemy.engine.Engine SELECT push_deliveries.id, push_deliveries.user_id, push_deliveries.push_token_id, push_deliveries.proactive_message_id, push_deliveries.provider, push_deliveries.notification_type, push_deliveries.title, push_deliveries.body, push_deliveries.deep_link, push_deliveries.status, push_deliveries.provider_message_id, push_deliveries.failure_reason, push_deliveries.sent_at, push_deliveries.clicked_at, push_deliveries.created_at 
+FROM push_deliveries 
+WHERE push_deliveries.user_id = $1::UUID
+2026-07-08 01:36:14,787 INFO sqlalchemy.engine.Engine [generated in 0.00094s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:14,884 INFO sqlalchemy.engine.Engine SELECT payment_orders.id, payment_orders.user_id, payment_orders.plan, payment_orders.provider, payment_orders.out_trade_no, payment_orders.prepay_id, payment_orders.amount_cents, payment_orders.currency, payment_orders.status, payment_orders.transaction_id, payment_orders.raw_request, payment_orders.raw_response, payment_orders.raw_notify, payment_orders.paid_at, payment_orders.created_at, payment_orders.updated_at 
+FROM payment_orders 
+WHERE payment_orders.user_id = $1::UUID
+2026-07-08 01:36:14,885 INFO sqlalchemy.engine.Engine [generated in 0.00096s] (UUID('ca891091-0105-4733-be48-31806d91a0b0'),)
+2026-07-08 01:36:14,974 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:55801 - "GET /api/v1/data/export HTTP/1.1" 200 OK
+2026-07-08 01:36:15,024 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:15,025 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-07-08 01:36:15,025 INFO sqlalchemy.engine.Engine [cached since 29.65s ago] ('codex-api-delete-1783445743-37dbeeca@example.test',)
+2026-07-08 01:36:15,444 INFO sqlalchemy.engine.Engine INSERT INTO users (id, phone, email, nickname, avatar_url, password_hash, selected_character_id, push_token, push_platform, emotion_profile, settings) VALUES ($1::UUID, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::VARCHAR, $8::VARCHAR, $9::VARCHAR, $10::JSONB, $11::JSONB) RETURNING users.created_at, users.updated_at
+2026-07-08 01:36:15,447 INFO sqlalchemy.engine.Engine [cached since 29.44s ago] (UUID('97d714f0-168c-4467-a8fc-0b39f2712089'), None, 'codex-api-delete-1783445743-37dbeeca@example.test', 'Delete Me', '', '$2b$12$JkO29BKX1gix6V7HqTduxevtr0YuhqCFtzUZEs9ebej/9HXzc9yGO', None, None, None, '{}', '{"age_verified": true, "age_verified_at": "2026-07-07T17:36:15.443670+00:00", "age_verification_method": "birth_date", "birth_year": 1990}')
+2026-07-08 01:36:15,499 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:55803 - "POST /api/v1/auth/register HTTP/1.1" 200 OK
+2026-07-08 01:36:15,545 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:15,546 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:15,547 INFO sqlalchemy.engine.Engine [cached since 28.78s ago] ('97d714f0-168c-4467-a8fc-0b39f2712089',)
+2026-07-08 01:36:15,632 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:58986 - "POST /api/v1/data/delete-account HTTP/1.1" 400 Bad Request
+2026-07-08 01:36:15,705 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:15,706 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:15,706 INFO sqlalchemy.engine.Engine [cached since 28.94s ago] ('97d714f0-168c-4467-a8fc-0b39f2712089',)
+2026-07-08 01:36:15,795 INFO sqlalchemy.engine.Engine UPDATE users SET settings=$1::JSONB, updated_at=now() WHERE users.id = $2::UUID
+2026-07-08 01:36:15,796 INFO sqlalchemy.engine.Engine [cached since 27.14s ago] ('{"birth_year": 1990, "age_verified": true, "age_verified_at": "2026-07-07T17:36:15.443670+00:00", "age_verification_method": "birth_date", "account_s ... (52 characters truncated) ... ted_at": "2026-07-07T17:36:15.795461+00:00", "account_deletion_scheduled_at": "2026-08-06T17:36:15.795461+00:00", "account_deletion_reason": "smoke"}', UUID('97d714f0-168c-4467-a8fc-0b39f2712089'))
+2026-07-08 01:36:15,856 INFO sqlalchemy.engine.Engine UPDATE push_tokens SET permission_status=$1::VARCHAR, is_active=$2::BOOLEAN, updated_at=now() WHERE push_tokens.user_id = $3::UUID
+2026-07-08 01:36:15,856 INFO sqlalchemy.engine.Engine [generated in 0.00063s] ('denied', False, UUID('97d714f0-168c-4467-a8fc-0b39f2712089'))
+2026-07-08 01:36:15,947 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:58988 - "POST /api/v1/data/delete-account HTTP/1.1" 200 OK
+INFO:     127.0.0.1:27633 - "GET /health HTTP/1.1" 200 OK
+2026-07-08 01:36:21,223 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:21,224 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.email = $1::VARCHAR
+2026-07-08 01:36:21,224 INFO sqlalchemy.engine.Engine [cached since 35.85s ago] ('codex-ui-1783445781210-df0355ee@example.test',)
+2026-07-08 01:36:21,721 INFO sqlalchemy.engine.Engine INSERT INTO users (id, phone, email, nickname, avatar_url, password_hash, selected_character_id, push_token, push_platform, emotion_profile, settings) VALUES ($1::UUID, $2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::VARCHAR, $8::VARCHAR, $9::VARCHAR, $10::JSONB, $11::JSONB) RETURNING users.created_at, users.updated_at
+2026-07-08 01:36:21,724 INFO sqlalchemy.engine.Engine [cached since 35.71s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), None, 'codex-ui-1783445781210-df0355ee@example.test', 'Codex UI Smoke', '', '$2b$12$JxjLgrKH3MIxt/BEXXWDLOslNo70x735Ins9SotG6XLlSOEIcsO6S', None, None, None, '{}', '{"age_verified": true, "age_verified_at": "2026-07-07T17:36:21.720431+00:00", "age_verification_method": "birth_date", "birth_year": 1990}')
+2026-07-08 01:36:21,781 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:27634 - "POST /api/v1/auth/register HTTP/1.1" 200 OK
+2026-07-08 01:36:21,831 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:21,832 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:21,833 INFO sqlalchemy.engine.Engine [cached since 35.06s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:21,927 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters 
+WHERE characters.id = $1::VARCHAR
+2026-07-08 01:36:21,928 INFO sqlalchemy.engine.Engine [cached since 39.54s ago] ('yinyue',)
+2026-07-08 01:36:21,973 INFO sqlalchemy.engine.Engine UPDATE users SET selected_character_id=$1::VARCHAR, updated_at=now() WHERE users.id = $2::UUID
+2026-07-08 01:36:21,973 INFO sqlalchemy.engine.Engine [cached since 34.66s ago] ('yinyue', UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'))
+2026-07-08 01:36:22,024 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:36:22,024 INFO sqlalchemy.engine.Engine [cached since 34.61s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'yinyue')
+2026-07-08 01:36:22,070 INFO sqlalchemy.engine.Engine INSERT INTO user_character_relations (id, user_id, character_id, level, label, intimacy, milestones, first_chat_at, last_chat_at, consecutive_days) VALUES ($1::UUID, $2::UUID, $3::VARCHAR, $4::INTEGER, $5::VARCHAR, $6::INTEGER, $7::JSONB, $8::TIMESTAMP WITH TIME ZONE, $9::TIMESTAMP WITH TIME ZONE, $10::INTEGER) RETURNING user_character_relations.created_at, user_character_relations.updated_at
+2026-07-08 01:36:22,070 INFO sqlalchemy.engine.Engine [cached since 34.55s ago] (UUID('0e9b6a00-be79-4761-841c-e246f8356c44'), UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'yinyue', 1, '陌生', 0, '[]', None, None, 0)
+2026-07-08 01:36:22,124 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:27633 - "POST /api/v1/characters/select HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33854 - "OPTIONS /api/v1/auth/me HTTP/1.1" 200 OK
+2026-07-08 01:36:29,778 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:29,778 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:29,778 INFO sqlalchemy.engine.Engine [cached since 43.01s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:29,881 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:33854 - "GET /api/v1/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33854 - "OPTIONS /api/v1/characters HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33854 - "OPTIONS /api/v1/characters/yinyue/relation HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33854 - "OPTIONS /api/v1/care/messages?limit=1&offset=0&character_id=yinyue HTTP/1.1" 200 OK
+2026-07-08 01:36:30,624 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:30,626 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:30,626 INFO sqlalchemy.engine.Engine [cached since 43.86s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:30,746 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters ORDER BY characters.created_at
+2026-07-08 01:36:30,748 INFO sqlalchemy.engine.Engine [cached since 43.78s ago] ()
+2026-07-08 01:36:30,810 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:33854 - "GET /api/v1/characters HTTP/1.1" 200 OK
+2026-07-08 01:36:31,155 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:31,156 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:31,156 INFO sqlalchemy.engine.Engine [cached since 44.39s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:31,251 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters ORDER BY characters.created_at
+2026-07-08 01:36:31,252 INFO sqlalchemy.engine.Engine [cached since 44.29s ago] ()
+2026-07-08 01:36:31,293 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:33854 - "GET /api/v1/characters HTTP/1.1" 200 OK
+2026-07-08 01:36:31,363 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:31,364 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:31,364 INFO sqlalchemy.engine.Engine [cached since 44.59s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:31,419 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:31,421 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:31,422 INFO sqlalchemy.engine.Engine [cached since 44.65s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:31,575 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM proactive_messages 
+WHERE proactive_messages.user_id = $1::UUID AND proactive_messages.character_id = $2::VARCHAR
+2026-07-08 01:36:31,576 INFO sqlalchemy.engine.Engine [cached since 30.31s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'yinyue')
+2026-07-08 01:36:31,658 INFO sqlalchemy.engine.Engine SELECT user_character_relations.id, user_character_relations.user_id, user_character_relations.character_id, user_character_relations.level, user_character_relations.label, user_character_relations.intimacy, user_character_relations.milestones, user_character_relations.first_chat_at, user_character_relations.last_chat_at, user_character_relations.consecutive_days, user_character_relations.created_at, user_character_relations.updated_at 
+FROM user_character_relations 
+WHERE user_character_relations.user_id = $1::UUID AND user_character_relations.character_id = $2::VARCHAR
+2026-07-08 01:36:31,659 INFO sqlalchemy.engine.Engine [cached since 44.24s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'yinyue')
+2026-07-08 01:36:31,685 INFO sqlalchemy.engine.Engine SELECT proactive_messages.id, proactive_messages.user_id, proactive_messages.character_id, proactive_messages.trigger_type, proactive_messages.content, proactive_messages.delivered, proactive_messages.replied, proactive_messages.push_status, proactive_messages.push_error, proactive_messages.created_at 
+FROM proactive_messages 
+WHERE proactive_messages.user_id = $1::UUID AND proactive_messages.character_id = $2::VARCHAR ORDER BY proactive_messages.created_at DESC 
+ LIMIT $3::INTEGER OFFSET $4::INTEGER
+2026-07-08 01:36:31,686 INFO sqlalchemy.engine.Engine [cached since 30.32s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'yinyue', 1, 0)
+2026-07-08 01:36:31,803 INFO sqlalchemy.engine.Engine COMMIT
+2026-07-08 01:36:31,826 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:38167 - "GET /api/v1/characters/yinyue/relation HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1215 - "GET /api/v1/care/messages?limit=1&offset=0&character_id=yinyue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:13661 - "OPTIONS /api/v1/chat/yinyue/history?limit=20&offset=0 HTTP/1.1" 200 OK
+2026-07-08 01:36:35,545 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:35,546 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:35,546 INFO sqlalchemy.engine.Engine [cached since 48.78s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:35,549 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:35,550 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:35,551 INFO sqlalchemy.engine.Engine [cached since 48.78s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:35,655 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters ORDER BY characters.created_at
+2026-07-08 01:36:35,656 INFO sqlalchemy.engine.Engine [cached since 48.69s ago] ()
+2026-07-08 01:36:35,660 INFO sqlalchemy.engine.Engine SELECT chat_messages.id, chat_messages.user_id, chat_messages.character_id, chat_messages.role, chat_messages.content, chat_messages.message_type, chat_messages.emotion_tags, chat_messages.is_proactive, chat_messages.created_at 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID AND chat_messages.character_id = $2::VARCHAR ORDER BY chat_messages.created_at DESC 
+ LIMIT $3::INTEGER OFFSET $4::INTEGER
+2026-07-08 01:36:35,660 INFO sqlalchemy.engine.Engine [cached since 26.08s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'yinyue', 20, 0)
+2026-07-08 01:36:35,702 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:13661 - "GET /api/v1/characters HTTP/1.1" 200 OK
+2026-07-08 01:36:35,763 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID AND chat_messages.character_id = $2::VARCHAR
+2026-07-08 01:36:35,764 INFO sqlalchemy.engine.Engine [cached since 26.07s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'yinyue')
+2026-07-08 01:36:35,866 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:14106 - "GET /api/v1/chat/yinyue/history?limit=20&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14106 - "OPTIONS /api/v1/memory/yinyue HTTP/1.1" 200 OK
+2026-07-08 01:36:38,863 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:38,864 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:38,865 INFO sqlalchemy.engine.Engine [cached since 52.09s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:38,950 INFO sqlalchemy.engine.Engine SELECT memories.id, memories.user_id, memories.character_id, memories.category, memories.content, memories.importance, memories.emotion_tags, memories.source_message_id, memories.recall_count, memories.is_active, memories.created_at, memories.updated_at 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true ORDER BY memories.importance DESC, memories.created_at DESC 
+ LIMIT $3::INTEGER OFFSET $4::INTEGER
+2026-07-08 01:36:38,951 INFO sqlalchemy.engine.Engine [generated in 0.00107s] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'yinyue', 50, 0)
+2026-07-08 01:36:39,056 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true
+2026-07-08 01:36:39,056 INFO sqlalchemy.engine.Engine [generated in 0.00113s] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'yinyue')
+2026-07-08 01:36:39,436 INFO sqlalchemy.engine.Engine SELECT memories.category, count(*) AS count_1 
+FROM memories 
+WHERE memories.user_id = $1::UUID AND memories.character_id = $2::VARCHAR AND memories.is_active = true GROUP BY memories.category
+2026-07-08 01:36:39,438 INFO sqlalchemy.engine.Engine [cached since 44.75s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'yinyue')
+2026-07-08 01:36:39,544 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:14106 - "GET /api/v1/memory/yinyue HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14106 - "OPTIONS /api/v1/emotion/diary?limit=30&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "OPTIONS /api/v1/emotion/trend?days=14 HTTP/1.1" 200 OK
+2026-07-08 01:36:42,182 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:42,183 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:42,184 INFO sqlalchemy.engine.Engine [cached since 55.41s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:42,186 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:42,188 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:42,188 INFO sqlalchemy.engine.Engine [cached since 55.42s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:42,266 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID
+2026-07-08 01:36:42,267 INFO sqlalchemy.engine.Engine [cached since 45.08s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'),)
+2026-07-08 01:36:42,297 INFO sqlalchemy.engine.Engine SELECT emotion_diary.id, emotion_diary.user_id, emotion_diary.date, emotion_diary.dominant_emotion, emotion_diary.intensity, emotion_diary.triggers, emotion_diary.created_at 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID AND emotion_diary.date >= $2::TIMESTAMP WITHOUT TIME ZONE ORDER BY emotion_diary.date ASC
+2026-07-08 01:36:42,298 INFO sqlalchemy.engine.Engine [cached since 44.76s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), datetime.datetime(2026, 6, 24, 0, 0))
+2026-07-08 01:36:42,308 INFO sqlalchemy.engine.Engine SELECT emotion_diary.id, emotion_diary.user_id, emotion_diary.date, emotion_diary.dominant_emotion, emotion_diary.intensity, emotion_diary.triggers, emotion_diary.created_at 
+FROM emotion_diary 
+WHERE emotion_diary.user_id = $1::UUID ORDER BY emotion_diary.date DESC, emotion_diary.created_at DESC 
+ LIMIT $2::INTEGER OFFSET $3::INTEGER
+2026-07-08 01:36:42,309 INFO sqlalchemy.engine.Engine [cached since 45.02s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 30, 0)
+2026-07-08 01:36:42,361 INFO sqlalchemy.engine.Engine COMMIT
+2026-07-08 01:36:42,419 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:38754 - "GET /api/v1/emotion/diary?limit=30&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14106 - "GET /api/v1/emotion/trend?days=14 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:14106 - "OPTIONS /api/v1/settings HTTP/1.1" 200 OK
+2026-07-08 01:36:44,176 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:44,177 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:44,178 INFO sqlalchemy.engine.Engine [cached since 57.41s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:44,181 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:44,187 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:44,189 INFO sqlalchemy.engine.Engine [cached since 57.42s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:44,277 INFO sqlalchemy.engine.Engine SELECT characters.id, characters.name, characters.source, characters.description, characters.avatar_url, characters.color, characters.personality, characters.system_prompt, characters.created_at 
+FROM characters ORDER BY characters.created_at
+2026-07-08 01:36:44,277 INFO sqlalchemy.engine.Engine [cached since 57.31s ago] ()
+2026-07-08 01:36:44,300 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:14106 - "GET /api/v1/settings HTTP/1.1" 200 OK
+2026-07-08 01:36:44,387 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:38754 - "GET /api/v1/characters HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "OPTIONS /api/v1/subscription HTTP/1.1" 200 OK
+2026-07-08 01:36:47,318 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-08 01:36:47,319 INFO sqlalchemy.engine.Engine SELECT users.id, users.phone, users.email, users.nickname, users.avatar_url, users.password_hash, users.selected_character_id, users.push_token, users.push_platform, users.emotion_profile, users.settings, users.created_at, users.updated_at 
+FROM users 
+WHERE users.id = $1::UUID
+2026-07-08 01:36:47,320 INFO sqlalchemy.engine.Engine [cached since 60.55s ago] ('9f3659ce-410a-4e11-83e8-77af6b5f56fa',)
+2026-07-08 01:36:47,434 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM chat_messages 
+WHERE chat_messages.user_id = $1::UUID AND chat_messages.role = $2::VARCHAR AND chat_messages.created_at >= $3::TIMESTAMP WITH TIME ZONE AND chat_messages.created_at < $4::TIMESTAMP WITH TIME ZONE
+2026-07-08 01:36:47,435 INFO sqlalchemy.engine.Engine [cached since 58.53s ago] (UUID('9f3659ce-410a-4e11-83e8-77af6b5f56fa'), 'user', datetime.datetime(2026, 7, 7, 0, 0, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 7, 8, 0, 0, tzinfo=datetime.timezone.utc))
+2026-07-08 01:36:47,548 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:38754 - "GET /api/v1/subscription HTTP/1.1" 200 OK

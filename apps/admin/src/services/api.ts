@@ -16,7 +16,7 @@ api.interceptors.request.use((config) => {
 
 // Response interceptor - handle errors
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       // Redirect to login

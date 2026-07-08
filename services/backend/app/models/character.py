@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Integer, Text, DateTime, JSON, ForeignKey, func
+from sqlalchemy import String, Integer, BigInteger, Text, DateTime, JSON, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,7 +18,7 @@ class Character(Base):
     source: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     avatar_url: Mapped[str] = mapped_column(String(500), default="")
-    color: Mapped[int] = mapped_column(Integer, default=0xFF8B5CF6)
+    color: Mapped[int] = mapped_column(BigInteger, default=0xFF8B5CF6)
 
     # 人格参数
     personality: Mapped[dict] = mapped_column(JSONB, nullable=False)

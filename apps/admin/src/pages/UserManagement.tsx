@@ -26,6 +26,24 @@ interface UserRelation {
   last_chat_at: string | null;
 }
 
+interface UserDetail extends User {
+  relation: UserRelation | null;
+  metrics: {
+    chat_messages: number;
+    memories: number;
+    proactive_messages: number;
+    push_deliveries: number;
+  };
+  push_tokens: Array<{
+    id: string;
+    provider: string;
+    platform: string;
+    token_preview: string;
+    permission_status: string;
+    is_active: boolean;
+  }>;
+}
+
 const CHARACTER_NAMES: Record<string, string> = {
   yinyue: '银月',
   babata: '巴巴塔',
@@ -36,20 +54,15 @@ export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const filteredUsers = users.filter(u =>
-    !searchText ||
-    u.nickname.includes(searchText) ||
-    (u.phone && u.phone.includes(searchText)) ||
-    (u.email && u.email.includes(searchText))
-  );
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [detailVisible, setDetailVisible] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserDetail | null>(null);
   const [userRelation, setUserRelation] = useState<UserRelation | null>(null);
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
 
   useEffect(() => {
     fetchUsers();
-  }, [pagination.current, pagination.pageSize]);
+  }, [pagination.current, pagination.pageSize, appliedSearch]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -58,6 +71,7 @@ export default function UserManagement() {
         params: {
           page: pagination.current,
           page_size: pagination.pageSize,
+          ...(appliedSearch ? { search: appliedSearch } : {}),
         },
       });
       setUsers(response.data.items || []);
@@ -73,36 +87,40 @@ export default function UserManagement() {
   };
 
   const handleSearch = (value: string) => {
-    setSearchText(value);
-    // TODO: 实现搜索
+    setAppliedSearch(value.trim());
+    setPagination({ ...pagination, current: 1 });
   };
 
   const handleViewDetail = async (user: User) => {
-    setSelectedUser(user);
     setDetailVisible(true);
-
-    // 获取用户关系信息
     try {
-      if (user.selected_character_id) {
-        const relation = await api.get(`/characters/${user.selected_character_id}/relation`);
-        setUserRelation(relation.data);
-      }
+      const response = await api.get(`/admin/users/${user.id}`);
+      const detail = response.data as UserDetail;
+      setSelectedUser(detail);
+      setUserRelation(detail.relation);
     } catch (error) {
-      console.error('获取关系信息失败', error);
+      message.error('获取用户详情失败');
+      setSelectedUser({ ...user, relation: null, metrics: {
+        chat_messages: 0,
+        memories: 0,
+        proactive_messages: 0,
+        push_deliveries: 0,
+      }, push_tokens: [] });
+      setUserRelation(null);
     }
   };
 
-  const handleBan = (userId: string) => {
+  const handleBan = (userId: string, banned: boolean) => {
     Modal.confirm({
-      title: '确认封禁',
-      content: '确定要封禁该用户吗？封禁后用户将无法登录。',
+      title: banned ? '确认解封' : '确认封禁',
+      content: banned ? '确定要解除该用户的封禁状态吗？' : '确定要封禁该用户吗？封禁后用户将无法登录。',
       onOk: async () => {
         try {
-          await api.post(`/admin/users/${userId}/ban`);
-          message.success('封禁成功');
+          await api.post(`/admin/users/${userId}/${banned ? 'unban' : 'ban'}`);
+          message.success(banned ? '解封成功' : '封禁成功');
           fetchUsers();
         } catch (error) {
-          message.error('封禁失败');
+          message.error(banned ? '解封失败' : '封禁失败');
         }
       },
     });
@@ -174,9 +192,9 @@ export default function UserManagement() {
             <Button
               type="text"
               size="small"
-              danger
+              danger={!record.settings?.banned}
               icon={<StopOutlined />}
-              onClick={() => handleBan(record.id)}
+              onClick={() => handleBan(record.id, Boolean(record.settings?.banned))}
             />
           </Tooltip>
         </Space>
@@ -192,13 +210,15 @@ export default function UserManagement() {
           style={{ width: 300 }}
           prefix={<SearchOutlined />}
           allowClear
+          value={searchText}
+          onChange={(event) => setSearchText(event.target.value)}
           onSearch={handleSearch}
         />
       </div>
 
       <Table
         columns={columns}
-        dataSource={filteredUsers}
+        dataSource={users}
         rowKey="id"
         loading={loading}
         pagination={{
@@ -247,6 +267,17 @@ export default function UserManagement() {
                   ? `${selectedUser.push_platform.toUpperCase()} (${selectedUser.push_token?.substring(0, 20)}...)`
                   : '未注册'}
               </p>
+              <p>状态: {selectedUser.settings?.banned ? '已封禁' : '正常'}</p>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <h4>运营指标</h4>
+              <Space size="large">
+                <span>消息 {selectedUser.metrics.chat_messages}</span>
+                <span>记忆 {selectedUser.metrics.memories}</span>
+                <span>关怀 {selectedUser.metrics.proactive_messages}</span>
+                <span>推送 {selectedUser.metrics.push_deliveries}</span>
+              </Space>
             </div>
 
             {userRelation && (

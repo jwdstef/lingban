@@ -1,10 +1,12 @@
 """Proactive care APIs."""
 
+import re
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +14,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.memory import ProactiveMessage
 from app.models.user import User
+from app.services.relationship_service import relationship_service
 
 router = APIRouter()
 
@@ -34,6 +37,38 @@ class CareMessageListResponse(BaseModel):
     has_more: bool
 
 
+class UpdateCareFrequencyRequest(BaseModel):
+    proactive_level: Literal["off", "quiet", "low", "medium", "high"]
+
+
+class UpdateDndRequest(BaseModel):
+    dnd_enabled: bool = True
+    dnd_start: str = "23:00"
+    dnd_end: str = "08:00"
+
+    @field_validator("dnd_start", "dnd_end")
+    @classmethod
+    def validate_time(cls, value: str) -> str:
+        if not _TIME_RE.match(value):
+            raise ValueError("time must use HH:MM format")
+        return value
+
+
+_TIME_RE = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
+
+
+def _settings_with_defaults(user: User) -> dict:
+    return {
+        "push_enabled": True,
+        "voice_call_enabled": False,
+        "dnd_enabled": True,
+        "dnd_start": "23:00",
+        "dnd_end": "08:00",
+        "proactive_level": "medium",
+        **(user.settings or {}),
+    }
+
+
 def _serialize_message(message: ProactiveMessage) -> CareMessageResponse:
     return CareMessageResponse(
         id=str(message.id),
@@ -53,6 +88,40 @@ def _parse_message_id(message_id: str) -> uuid.UUID:
         return uuid.UUID(message_id)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid message id") from exc
+
+
+@router.put("/frequency")
+async def update_care_frequency(
+    data: UpdateCareFrequencyRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update proactive care frequency for the current user."""
+    settings = _settings_with_defaults(user)
+    settings["proactive_level"] = data.proactive_level
+    user.settings = settings
+    await db.flush()
+    return {"status": "ok", "settings": settings}
+
+
+@router.put("/dnd")
+async def update_care_dnd(
+    data: UpdateDndRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update proactive care do-not-disturb window."""
+    settings = _settings_with_defaults(user)
+    settings.update(
+        {
+            "dnd_enabled": data.dnd_enabled,
+            "dnd_start": data.dnd_start,
+            "dnd_end": data.dnd_end,
+        }
+    )
+    user.settings = settings
+    await db.flush()
+    return {"status": "ok", "settings": settings}
 
 
 @router.get("/messages", response_model=CareMessageListResponse)
@@ -131,6 +200,9 @@ async def mark_care_message_replied(
     if not message:
         raise HTTPException(status_code=404, detail="Care message not found")
 
-    message.replied = True
+    if not message.replied:
+        message.replied = True
+        await relationship_service.on_reply_proactive(user.id, message.character_id, db)
+
     await db.flush()
     return _serialize_message(message)

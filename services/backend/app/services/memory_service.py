@@ -9,13 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models.memory import Memory
+from app.models.user import User
 
 
 class MemoryService:
     """记忆管理服务"""
 
     def __init__(self):
-        self._openai = AsyncOpenAI(api_key=settings.openai_api_key)
+        self._openai = AsyncOpenAI(
+            api_key=settings.openai_api_key,
+            base_url=settings.openai_base_url,
+        )
 
     async def extract_and_store(
         self,
@@ -26,6 +30,9 @@ class MemoryService:
         db: AsyncSession,
     ) -> list[Memory]:
         """从对话中提取记忆并存储"""
+        if not await self._memory_enabled(user_id, db):
+            return []
+
         # 1. 用 AI 提取结构化记忆
         extracted = await self._extract_memories_with_ai(conversation)
 
@@ -63,6 +70,13 @@ class MemoryService:
 
         await db.commit()
         return memories
+
+    async def _memory_enabled(self, user_id: uuid.UUID, db: AsyncSession) -> bool:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            return False
+        return (user.settings or {}).get("memory_enabled", True) is not False
 
     async def recall_memories(
         self,
@@ -170,7 +184,7 @@ class MemoryService:
 
         try:
             response = await self._openai.chat.completions.create(
-                model="gpt-4o-mini",
+                model="qwen3.7-plus",
                 messages=[
                     {
                         "role": "system",

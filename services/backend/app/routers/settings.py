@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.user_settings import merge_user_settings
 from app.models.user import User
 
 router = APIRouter()
@@ -22,6 +23,7 @@ async def get_settings(user: User = Depends(get_current_user)):
         "dnd_start": "23:00",
         "dnd_end": "08:00",
         "proactive_level": "medium",
+        "memory_enabled": True,
     }
     return {**defaults, **(user.settings or {})}
 
@@ -33,6 +35,6 @@ async def update_settings(
     db: AsyncSession = Depends(get_db),
 ):
     """Update current user settings."""
-    user.settings = {**(user.settings or {}), **data.settings}
+    user.settings = merge_user_settings(user.settings, data.settings)
     await db.flush()
     return {"status": "ok", "settings": user.settings}

@@ -116,8 +116,18 @@ def apply_intimacy_decay():
 def cleanup_expired_data():
     """定时清理过期数据（每天凌晨 3 点）"""
     print(f"[{datetime.now()}] 开始清理过期数据...")
-    # TODO: 清理过期的记忆、日志等
-    print(f"[{datetime.now()}] 过期数据清理完成")
+
+    async def _cleanup():
+        from app.services.data_retention_service import cleanup_due_deleted_accounts
+
+        async with async_session() as db:
+            deleted_accounts = await cleanup_due_deleted_accounts(db)
+            await db.commit()
+            print(
+                f"[{datetime.now()}] 过期数据清理完成，永久删除账号 {deleted_accounts} 个"
+            )
+
+    run_async(_cleanup())
 
 
 # ── 异步任务 ──

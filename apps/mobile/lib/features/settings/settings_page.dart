@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
@@ -15,11 +18,14 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   List<Map<String, dynamic>> _characters = [];
+  Map<String, dynamic> _settings = {};
+  bool _exportingData = false;
 
   @override
   void initState() {
     super.initState();
     _loadCharacters();
+    _loadSettings();
   }
 
   Future<void> _loadCharacters() async {
@@ -33,6 +39,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       }
     } catch (e) {
       // ignore
+    }
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final response = await apiClient.getSettings();
+      if (mounted) {
+        setState(() {
+          _settings = Map<String, dynamic>.from(response.data);
+        });
+      }
+    } catch (_) {
+      // keep defaults rendered locally
     }
   }
 
@@ -186,7 +205,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         decoration: BoxDecoration(
           color: AppTheme.cardColor,
           borderRadius: BorderRadius.circular(16),
@@ -207,7 +226,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 child: Container(
                   width: 20,
                   height: 20,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppTheme.spiritGlow,
                     shape: BoxShape.circle,
                   ),
@@ -219,8 +238,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
@@ -237,16 +256,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   name,
                   style: TextStyle(
                     color: AppTheme.primaryColor.withValues(alpha: 0.9),
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   desc,
                   textAlign: TextAlign.center,
@@ -254,8 +273,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                    fontSize: 11,
-                    height: 1.3,
+                    fontSize: 10,
+                    height: 1.2,
                   ),
                 ),
               ],
@@ -304,7 +323,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
             child: const Center(
-              child: Text('✦', style: TextStyle(color: AppTheme.spiritGlow, fontSize: 18)),
+              child: Text('✦',
+                  style: TextStyle(color: AppTheme.spiritGlow, fontSize: 18)),
             ),
           ),
           const SizedBox(width: 12),
@@ -349,6 +369,257 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  String get _careFrequencyLabel {
+    switch (_settings['proactive_level'] ?? 'medium') {
+      case 'off':
+        return '关闭';
+      case 'quiet':
+      case 'low':
+        return '安静';
+      case 'high':
+        return '积极';
+      case 'medium':
+      default:
+        return '适中';
+    }
+  }
+
+  Future<void> _showFrequencySheet() async {
+    final current = (_settings['proactive_level'] ?? 'medium') as String;
+    final options = [
+      {'key': 'quiet', 'label': '安静', 'desc': '每天最多 1 次'},
+      {'key': 'medium', 'label': '适中', 'desc': '每天最多 2 次'},
+      {'key': 'high', 'label': '积极', 'desc': '每天最多 3 次'},
+      {'key': 'off', 'label': '关闭', 'desc': '不主动打扰'},
+    ];
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: options.map((option) {
+                final key = option['key']!;
+                final isActive = key == current;
+                return ListTile(
+                  leading: Icon(
+                    isActive
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    color: isActive
+                        ? AppTheme.spiritGlow
+                        : AppTheme.primaryColor.withValues(alpha: 0.35),
+                  ),
+                  title: Text(
+                    option['label']!,
+                    style: const TextStyle(color: AppTheme.primaryColor),
+                  ),
+                  subtitle: Text(
+                    option['desc']!,
+                    style: TextStyle(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  onTap: () async {
+                    Navigator.of(sheetContext).pop();
+                    await _updateFrequency(key);
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _updateFrequency(String level) async {
+    try {
+      final response = await apiClient.updateCareFrequency(level);
+      if (!mounted) return;
+      setState(() {
+        _settings = Map<String, dynamic>.from(response.data['settings']);
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('保存失败，请稍后再试')),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateDnd(bool enabled) async {
+    try {
+      final response = await apiClient.updateCareDnd(
+        enabled: enabled,
+        start: (_settings['dnd_start'] ?? '23:00') as String,
+        end: (_settings['dnd_end'] ?? '08:00') as String,
+      );
+      if (!mounted) return;
+      setState(() {
+        _settings = Map<String, dynamic>.from(response.data['settings']);
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('保存失败，请稍后再试')),
+        );
+      }
+    }
+  }
+
+  Future<void> _updatePushEnabled(bool enabled) async {
+    try {
+      final response = await apiClient.updateSettings({
+        'push_enabled': enabled,
+      });
+      if (!mounted) return;
+      setState(() {
+        _settings = Map<String, dynamic>.from(response.data['settings']);
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('保存失败，请稍后再试')),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateMemoryEnabled(bool enabled) async {
+    try {
+      final response = await apiClient.updateMemoryEnabled(enabled);
+      if (!mounted) return;
+      setState(() {
+        _settings = Map<String, dynamic>.from(response.data['settings']);
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('保存失败，请稍后再试')),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportData() async {
+    if (_exportingData) return;
+    setState(() {
+      _exportingData = true;
+    });
+    try {
+      final response = await apiClient.exportUserData();
+      final data = Map<String, dynamic>.from(response.data);
+      final jsonText = const JsonEncoder.withIndent('  ').convert(data);
+      await Clipboard.setData(ClipboardData(text: jsonText));
+      if (!mounted) return;
+      _showExportSheet(data);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('导出失败: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _exportingData = false;
+        });
+      }
+    }
+  }
+
+  void _showExportSheet(Map<String, dynamic> data) {
+    int count(String key) {
+      final value = data[key];
+      return value is List ? value.length : 0;
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetContext) {
+        final exportedAt = data['exported_at']?.toString() ?? '刚刚';
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 22),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '数据已导出',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '完整 JSON 已复制到剪贴板。导出时间：$exportedAt',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.56),
+                    fontSize: 12,
+                    height: 1.45,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildExportChip('对话', count('chat_messages')),
+                    _buildExportChip('记忆', count('memories')),
+                    _buildExportChip('情绪', count('emotion_diary')),
+                    _buildExportChip('关怀', count('proactive_messages')),
+                    _buildExportChip('推送', count('push_deliveries')),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    child: const Text('知道了'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildExportChip(String label, int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$label $count',
+        style: TextStyle(
+          color: AppTheme.primaryColor.withValues(alpha: 0.76),
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
   Widget _buildPartnerSettings() {
     return Container(
       decoration: BoxDecoration(
@@ -374,18 +645,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             iconColor: Colors.pink,
             title: '主动关怀频率',
             subtitle: '伙伴主动找你的频率',
-            value: '适中',
+            value: _careFrequencyLabel,
+            onTap: _showFrequencySheet,
           ),
           _buildDivider(),
           _buildSettingTile(
             icon: Icons.dark_mode,
             iconColor: Colors.cyan,
             title: '夜间模式',
-            subtitle: '22:00 后自动切换',
+            subtitle:
+                '${_settings['dnd_start'] ?? '23:00'} - ${_settings['dnd_end'] ?? '08:00'}',
             trailing: Switch(
-              value: true,
-              onChanged: (v) {},
-              activeColor: AppTheme.spiritGlow,
+              value: (_settings['dnd_enabled'] ?? true) as bool,
+              onChanged: _updateDnd,
+              activeThumbColor: AppTheme.spiritGlow,
             ),
           ),
           _buildDivider(),
@@ -395,9 +668,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: '提醒通知',
             subtitle: '喝水、休息、睡觉提醒',
             trailing: Switch(
-              value: true,
-              onChanged: (v) {},
-              activeColor: AppTheme.spiritGlow,
+              value: (_settings['push_enabled'] ?? true) as bool,
+              onChanged: _updatePushEnabled,
+              activeThumbColor: AppTheme.spiritGlow,
             ),
           ),
         ],
@@ -418,18 +691,48 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       child: Column(
         children: [
           _buildSettingTile(
-            icon: Icons.lock,
+            icon: Icons.psychology_alt_outlined,
             iconColor: Colors.green,
-            title: '数据加密',
-            subtitle: '所有对话和记忆端到端加密',
-            value: '已开启',
+            title: '长期记忆',
+            subtitle: '允许 AI 从后续对话中提取重要记忆',
+            trailing: Switch(
+              value: (_settings['memory_enabled'] ?? true) as bool,
+              onChanged: _updateMemoryEnabled,
+              activeThumbColor: AppTheme.spiritGlow,
+            ),
           ),
           _buildDivider(),
           _buildSettingTile(
             icon: Icons.download,
             iconColor: Colors.purple,
             title: '数据导出',
-            subtitle: '导出你的所有记忆数据',
+            subtitle: '复制账号、对话、记忆和情绪数据 JSON',
+            value: _exportingData ? '导出中' : null,
+            onTap: _exportData,
+          ),
+          _buildDivider(),
+          _buildSettingTile(
+            icon: Icons.lock_outline,
+            iconColor: Colors.cyan,
+            title: '数据保护',
+            subtitle: '导出不包含密码哈希和原始推送 token',
+            value: '已启用',
+          ),
+          _buildDivider(),
+          _buildSettingTile(
+            icon: Icons.privacy_tip_outlined,
+            iconColor: Colors.lightBlueAccent,
+            title: '隐私政策',
+            subtitle: '查看数据收集范围和你的控制权',
+            onTap: () => context.push('/privacy'),
+          ),
+          _buildDivider(),
+          _buildSettingTile(
+            icon: Icons.description_outlined,
+            iconColor: Colors.amber,
+            title: '用户协议',
+            subtitle: '查看服务定位和使用边界',
+            onTap: () => context.push('/terms'),
           ),
           _buildDivider(),
           _buildSettingTile(
@@ -461,6 +764,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             iconColor: Colors.cyan,
             title: '关于灵伴',
             subtitle: '版本 1.0.0',
+            onTap: () => context.push('/about'),
+          ),
+          _buildDivider(),
+          _buildSettingTile(
+            icon: Icons.workspace_premium_outlined,
+            iconColor: Colors.purpleAccent,
+            title: '订阅管理',
+            subtitle: '查看免费/进阶/专业版权益',
+            onTap: () => context.push('/subscription'),
           ),
           _buildDivider(),
           _buildSettingTile(
@@ -484,12 +796,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           width: 0.5,
         ),
       ),
-      child: _buildSettingTile(
-        icon: Icons.link_off,
-        iconColor: Colors.redAccent,
-        title: '解除绑定',
-        subtitle: '解除与伙伴的羁绊（慎重）',
-        onTap: () => _confirmUnbind(selectedId),
+      child: Column(
+        children: [
+          _buildSettingTile(
+            icon: Icons.link_off,
+            iconColor: Colors.redAccent,
+            title: '解除绑定',
+            subtitle: '解除与伙伴的羁绊（慎重）',
+            onTap: () => _confirmUnbind(selectedId),
+          ),
+          _buildDivider(),
+          _buildSettingTile(
+            icon: Icons.person_remove_alt_1_outlined,
+            iconColor: Colors.redAccent,
+            title: '删除账号',
+            subtitle: '申请删除账号，30 天后永久清理',
+            onTap: _confirmDeleteAccount,
+          ),
+        ],
       ),
     );
   }
@@ -546,8 +870,85 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Widget _buildDivider() {
     return Divider(
-        height: 1,
-        color: AppTheme.primaryColor.withValues(alpha: 0.05));
+        height: 1, color: AppTheme.primaryColor.withValues(alpha: 0.05));
+  }
+
+  void _confirmDeleteAccount() {
+    final confirmController = TextEditingController();
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.surfaceColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('删除账号'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('账号会先进入 30 天删除等待期，期间推送会被关闭。确认请输入 DELETE。'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmController,
+              decoration: const InputDecoration(hintText: '输入 DELETE'),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: reasonController,
+              maxLines: 2,
+              decoration: const InputDecoration(hintText: '原因（可选）'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(
+              '取消',
+              style: TextStyle(
+                color: AppTheme.primaryColor.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (confirmController.text.trim() != 'DELETE') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('请输入 DELETE 以确认删除账号')),
+                );
+                return;
+              }
+              Navigator.pop(dialogContext);
+              await _deleteAccount(reasonController.text);
+            },
+            child: const Text(
+              '确认删除',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    ).whenComplete(() {
+      confirmController.dispose();
+      reasonController.dispose();
+    });
+  }
+
+  Future<void> _deleteAccount(String reason) async {
+    try {
+      await apiClient.deleteAccount(confirm: 'DELETE', reason: reason);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('账号已进入 30 天删除等待期')),
+      );
+      _loadSettings();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('删除申请失败: $e')),
+        );
+      }
+    }
   }
 
   void _confirmClearMemories(String characterId) {
@@ -571,18 +972,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               try {
                 await apiClient.clearAllMemories(characterId);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已清除所有记忆')));
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(const SnackBar(content: Text('已清除所有记忆')));
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('清除失败: $e')));
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text('清除失败: $e')));
                 }
               }
             },
-            child: const Text('确认清除',
-                style: TextStyle(color: Colors.redAccent)),
+            child:
+                const Text('确认清除', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -609,8 +1010,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               Navigator.pop(context);
               await _unbindCharacter(characterId);
             },
-            child: const Text('确认解除',
-                style: TextStyle(color: Colors.redAccent)),
+            child:
+                const Text('确认解除', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -656,7 +1057,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         return '傲娇毒舌\n外冷内热';
       case 'babata':
         return '沉稳睿智\n亦师亦友';
-      case 'heihuang':
+      case 'heihaung':
         return '贱萌搞笑\n仗义忠诚';
       default:
         return '专属伙伴';
@@ -669,7 +1070,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         return '✦';
       case 'babata':
         return '◈';
-      case 'heihuang':
+      case 'heihaung':
         return '🐕';
       default:
         return '✧';
