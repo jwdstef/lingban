@@ -1,9 +1,9 @@
-"""AI 对话服务 - Claude 流式对话 + Prompt 组装"""
+"""AI 对话服务 - OpenAI 兼容接口流式对话 + Prompt 组装"""
 
 import uuid
 from typing import AsyncGenerator
 
-import anthropic
+from openai import AsyncOpenAI
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,7 +16,10 @@ class AIService:
     """AI 对话服务"""
 
     def __init__(self):
-        self.client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+        self.client = AsyncOpenAI(
+            api_key=settings.openai_api_key,
+            base_url=settings.openai_base_url,
+        )
         self._character_cache: dict[str, Character] = {}
 
     async def stream_chat(
@@ -48,26 +51,26 @@ class AIService:
             memories=memories,
         )
 
-        # 5. 流式调用 Claude
-        if not settings.anthropic_api_key.strip():
+        # 5. 流式调用 OpenAI 兼容接口
+        if not settings.openai_api_key.strip():
             reply = self._build_local_reply(character_id, messages, memories)
             for chunk in self._chunk_text(reply):
                 yield chunk
             return
 
+        # 组装消息列表（system prompt 作为第一条消息）
+        chat_messages = [{"role": "system", "content": system_prompt}] + messages
+
         try:
-            async with self.client.messages.stream(
-                model="claude-sonnet-4-20250514",
+            stream = await self.client.chat.completions.create(
+                model="qwen3.7-plus",
+                messages=chat_messages,
                 max_tokens=1024,
-                system=system_prompt,
-                messages=messages,
-            ) as stream:
-                async for text in stream.text_stream:
-                    yield text
-        except anthropic.APIConnectionError:
-            yield "[网络连接异常，请稍后重试]"
-        except anthropic.RateLimitError:
-            yield "[AI 服务繁忙，请稍后重试]"
+                stream=True,
+            )
+            async for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
         except Exception as e:
             yield f"[AI 服务异常: {e}]"
 
