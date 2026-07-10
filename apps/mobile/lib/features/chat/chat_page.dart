@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -53,6 +54,17 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   String? _characterName;
   late Future<Map<String, dynamic>> _relationFuture;
 
+  // 打字机效果状态
+  final List<String> _typewriterQueue = [];
+  bool _typewriterRunning = false;
+  bool _streamingFinished = false;
+  String _typewriterAccum = '';
+  Timer? _typewriterTimer;
+  int? _typewriterMsgIndex;
+
+  // 连发分条：待出现的分段定时器
+  final List<Timer> _pendingSegmentTimers = [];
+
   static const int _pageSize = 20;
   static const int _voiceSampleRate = 16000;
   static const int _voiceChannels = 1;
@@ -74,6 +86,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     _messageController.dispose();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _typewriterTimer?.cancel();
+    _cancelPendingSegments();
     unawaited(_voiceSubscription?.cancel());
     unawaited(_ttsCompleteSubscription?.cancel());
     unawaited(_voiceRecorder.dispose());
@@ -260,6 +274,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     if (content.isEmpty || _isSending) return;
 
     _messageController.clear();
+    _cancelPendingSegments();
 
     late final int aiMsgIndex;
     setState(() {
@@ -282,6 +297,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     });
     _scrollToBottom();
 
+    // 初始化打字机效果
+    _typewriterQueue.clear();
+    _typewriterAccum = '';
+    _streamingFinished = false;
+    _typewriterMsgIndex = aiMsgIndex;
+
     try {
       final stream = SSEClient.sendMessage(
         characterId: widget.characterId,
@@ -289,20 +310,46 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       );
 
       String fullResponse = '';
+      bool silenced = false;
+
       await for (final chunk in stream) {
+        if (chunk == '[SILENCED]') {
+          silenced = true;
+          break;
+        }
         fullResponse += chunk;
+        // 将字符加入打字机队列
+        for (final ch in chunk.split('')) {
+          _typewriterQueue.add(ch);
+        }
+        if (!_typewriterRunning) {
+          _startTypewriter(aiMsgIndex);
+        }
+      }
+
+      // 流结束，标记打字机完成
+      _streamingFinished = true;
+      if (!silenced && !_typewriterRunning) {
+        _onTypewriterDone(aiMsgIndex, fullResponse);
+      }
+
+      if (silenced) {
+        _typewriterTimer?.cancel();
+        _typewriterRunning = false;
         if (mounted) {
           setState(() {
             _messages[aiMsgIndex] = _ChatMessage(
               id: _messages[aiMsgIndex].id,
               role: 'assistant',
-              content: fullResponse,
+              content: '',
               createdAt: _messages[aiMsgIndex].createdAt,
-              isStreaming: true,
+              isStreaming: false,
+              silenced: true,
             );
+            _isSending = false;
           });
-          _scrollToBottom();
         }
+        return;
       }
 
       if (!fullResponse.startsWith('[错误:')) {
@@ -310,19 +357,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       }
 
       if (mounted) {
-        setState(() {
-          _messages[aiMsgIndex] = _ChatMessage(
-            id: _messages[aiMsgIndex].id,
-            role: 'assistant',
-            content: fullResponse,
-            createdAt: _messages[aiMsgIndex].createdAt,
-            isStreaming: false,
-          );
-          _isSending = false;
-          _relationFuture = _fetchRelation();
-        });
+        setState(() => _relationFuture = _fetchRelation());
       }
     } catch (e) {
+      _typewriterTimer?.cancel();
+      _typewriterRunning = false;
       if (mounted) {
         setState(() {
           _messages[aiMsgIndex] = _ChatMessage(
@@ -335,6 +374,154 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           _isSending = false;
         });
       }
+    }
+  }
+
+  // ---- 打字机效果 ----
+
+  void _startTypewriter(int msgIndex) {
+    _typewriterRunning = true;
+    _typewriterMsgIndex = msgIndex;
+    _typewriterTick();
+  }
+
+  void _typewriterTick() {
+    if (_typewriterQueue.isEmpty) {
+      _typewriterRunning = false;
+      if (_streamingFinished && _typewriterMsgIndex != null) {
+        // 流已结束且队列为空，触发完成回调
+        final idx = _typewriterMsgIndex!;
+        final msg = idx < _messages.length ? _messages[idx] : null;
+        _onTypewriterDone(idx, msg?.content ?? _typewriterAccum);
+      }
+      return;
+    }
+
+    // 流结束后队列过长 → 加速 flush
+    if (_streamingFinished && _typewriterQueue.length * 60 > 1200) {
+      _typewriterAccum += _typewriterQueue.join();
+      _typewriterQueue.clear();
+      _emitTypewriterText();
+      _typewriterRunning = false;
+      if (_typewriterMsgIndex != null) {
+        final idx = _typewriterMsgIndex!;
+        _onTypewriterDone(idx, _typewriterAccum);
+      }
+      return;
+    }
+
+    final ch = _typewriterQueue.removeAt(0);
+    _typewriterAccum += ch;
+    _emitTypewriterText();
+
+    final delay = _delayForChar(ch);
+    _typewriterTimer = Timer(Duration(milliseconds: delay), _typewriterTick);
+  }
+
+  void _emitTypewriterText() {
+    final idx = _typewriterMsgIndex;
+    if (idx == null || idx >= _messages.length || !mounted) return;
+    setState(() {
+      _messages[idx] = _ChatMessage(
+        id: _messages[idx].id,
+        role: 'assistant',
+        content: _typewriterAccum,
+        createdAt: _messages[idx].createdAt,
+        isStreaming: true,
+      );
+    });
+    _scrollToBottom();
+  }
+
+  int _delayForChar(String ch) {
+    const heavyPunct = {'。', '！', '？', '.', '!', '?', '\n'};
+    const lightPunct = {'，', ',', '、', ';', '；', ':', '：'};
+    final rng = Random();
+    if (heavyPunct.contains(ch)) return 280 + rng.nextInt(140);
+    if (lightPunct.contains(ch)) return 120 + rng.nextInt(100);
+    return 22 + rng.nextInt(38);
+  }
+
+  void _onTypewriterDone(int msgIndex, String fullResponse) {
+    if (!mounted) return;
+    setState(() {
+      _messages[msgIndex] = _ChatMessage(
+        id: _messages[msgIndex].id,
+        role: 'assistant',
+        content: fullResponse,
+        createdAt: _messages[msgIndex].createdAt,
+        isStreaming: false,
+      );
+      _isSending = false;
+    });
+    _splitAndScheduleSegments(msgIndex, fullResponse);
+  }
+
+  // ---- 连发分条 ----
+
+  List<String> _splitIntoSegments(String text) {
+    return text
+        .split(RegExp(r'\n{2,}'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
+
+  void _cancelPendingSegments() {
+    for (final t in _pendingSegmentTimers) {
+      t.cancel();
+    }
+    _pendingSegmentTimers.clear();
+  }
+
+  void _splitAndScheduleSegments(int originalIndex, String fullResponse) {
+    final segments = _splitIntoSegments(fullResponse);
+    if (segments.length <= 1) return;
+
+    // 第一段留在原消息
+    final firstSegment = segments[0];
+    if (!mounted) return;
+    setState(() {
+      _messages[originalIndex] = _ChatMessage(
+        id: _messages[originalIndex].id,
+        role: 'assistant',
+        content: firstSegment,
+        createdAt: _messages[originalIndex].createdAt,
+        isStreaming: false,
+      );
+    });
+
+    // 后续段落错峰 2-5 秒延迟，模拟真人"打完一条又补一条"
+    final rng = Random();
+    int cumulativeDelay = 0;
+    int insertOffset = 0;
+
+    for (int i = 1; i < segments.length; i++) {
+      final stepDelay = 2000 + rng.nextInt(3000);
+      cumulativeDelay += stepDelay;
+      final segment = segments[i];
+      final offset = insertOffset;
+
+      final timer = Timer(Duration(milliseconds: cumulativeDelay), () {
+        if (!mounted) return;
+        setState(() {
+          final insertAt = originalIndex + 1 + offset;
+          if (insertAt <= _messages.length) {
+            _messages.insert(
+              insertAt,
+              _ChatMessage(
+                id: 'seg_${DateTime.now().millisecondsSinceEpoch}_$i',
+                role: 'assistant',
+                content: segment,
+                createdAt: DateTime.now(),
+              ),
+            );
+          }
+        });
+        _scrollToBottom();
+      });
+      _pendingSegmentTimers.add(timer);
+      insertOffset++;
     }
   }
 
@@ -1083,6 +1270,27 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Widget _buildMessageBubble(_ChatMessage message) {
     final isUser = message.role == 'user';
 
+    // 沉默消息：灰色斜体提示，不用正常气泡
+    if (message.silenced) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const SizedBox(width: 40),
+            Text(
+              '${_characterName ?? 'TA'}选择了沉默…',
+              style: TextStyle(
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -1629,6 +1837,7 @@ class _ChatMessage {
   final String content;
   final DateTime createdAt;
   final bool isStreaming;
+  final bool silenced;
   final Uint8List? ttsAudioBytes;
   final String? ttsContentType;
 
@@ -1638,6 +1847,7 @@ class _ChatMessage {
     required this.content,
     required this.createdAt,
     this.isStreaming = false,
+    this.silenced = false,
     this.ttsAudioBytes,
     this.ttsContentType,
   });

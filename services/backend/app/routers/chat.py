@@ -245,6 +245,14 @@ async def send_message(
                 _elapsed_ms(started_at),
             )
             previous_chunk_at = now
+
+            # 沉默标记：不发送给前端，直接结束
+            if full_response.strip() == "[SILENCE]":
+                yield _sse_data(json.dumps({"silenced": True}))
+                yield _sse_data("[DONE]")
+                logger.info("chat.sse.silence request_id=%s", request_id)
+                return
+
             yield _sse_data(chunk)
 
         # 4. 保存 AI 回复
@@ -283,13 +291,25 @@ async def send_message(
             _elapsed_ms(started_at),
         )
 
-        background_tasks.add_task(
-            extract_memory.delay,
-            str(user.id),
-            character_id,
-            [{"role": "user", "content": data.content}, {"role": "assistant", "content": full_response}],
-            str(user_msg_id),
-        )
+        # 6. 批量延迟回写（写入 writeback queue 而非直接提取记忆）
+        from app.services.writeback_queue import WritebackTurn, get_writeback_queue
+        wb = get_writeback_queue()
+        if wb is not None:
+            await wb.enqueue_turn(WritebackTurn(
+                user_id=str(user.id),
+                character_id=character_id,
+                user_text=data.content,
+                assistant_text=full_response,
+            ))
+        else:
+            # 回退到原有的异步记忆提取
+            background_tasks.add_task(
+                extract_memory.delay,
+                str(user.id),
+                character_id,
+                [{"role": "user", "content": data.content}, {"role": "assistant", "content": full_response}],
+                str(user_msg_id),
+            )
 
         yield _sse_data(json.dumps({"message_id": str(ai_msg.id)}))
         yield _sse_data("[DONE]")

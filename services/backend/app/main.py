@@ -28,8 +28,17 @@ async def lifespan(app: FastAPI):
     # Startup: seed characters if not exist
     async with async_session() as db:
         await seed_characters(db)
+
+    # 初始化批量延迟回写队列
+    from app.services.writeback_queue import init_writeback_queue
+    from app.core.database import async_session as session_maker
+    wb = init_writeback_queue(session_maker)
+    await wb.start()
+
     yield
-    # Shutdown
+
+    # Shutdown: drain writeback queue
+    await wb.stop(drain=True)
 
 
 app = FastAPI(

@@ -209,6 +209,9 @@ class SSEClient {
       if (decoded is! Map<String, dynamic>) return data;
       if (decoded.containsKey('message_id')) return null;
 
+      // 沉默标记：后端决定不回复时发送 {"silenced": true}
+      if (decoded['silenced'] == true) return '[SILENCED]';
+
       final delta = decoded['delta'];
       if (delta is String) return delta;
 

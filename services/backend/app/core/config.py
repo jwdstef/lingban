@@ -84,6 +84,27 @@ class Settings(BaseSettings):
     embedding_model: str = "Qwen/Qwen3-VL-Embedding-8B"
     embedding_dimensions: int = 4096
 
+    # ── 分层来源防自污染 ──
+    # 不同来源在检索融合时的权重
+    history_source_weight: float = 1.0        # human_original 真人原始（基准）
+    ai_generated_source_weight: float = 0.25  # AI 生成（低权重，防自污染）
+    user_new_source_weight: float = 0.65      # 用户新输入（事实记忆）
+    # AI 生成内容是否允许长期累积参与检索
+    ai_generated_long_term_enabled: bool = False
+
+    # ── 多路并发召回 + RRF 融合 ──
+    rrf_k: int = 60                           # RRF 公式中的常数 k
+    recency_half_life_days: float = 30.0      # 时间衰减半衰期（天）
+    recency_max_boost: float = 0.15           # 时间衰减最大加成
+    warmth_boost: float = 0.12                # 暖度词加成
+    retrieval_overfetch: int = 2              # 召回过取倍数
+    memory_recall_top_k: int = 8              # 最终返回的记忆数
+
+    # ── 双层互动决策 ──
+    response_policy_enabled: bool = True      # 是否启用互动决策层
+    response_policy_refine_enabled: bool = False  # 是否启用小模型复核（需额外模型配置）
+    response_policy_refine_model: str = ""    # 复核用小模型（留空则复用主模型）
+
     model_config = {
         "env_file": BACKEND_DIR / ".env",
         "env_file_encoding": "utf-8",

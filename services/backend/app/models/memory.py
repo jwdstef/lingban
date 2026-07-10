@@ -33,6 +33,10 @@ class Memory(Base):
         UUID(as_uuid=True), nullable=True
     )
 
+    # 来源类型：human_original / user_new / ai_generated
+    # 用于分层信任，防止 AI 输出污染真人风格证据
+    source: Mapped[str] = mapped_column(String(30), default="human_original", index=True)
+
     # pgvector embedding column. Deferred so regular memory queries avoid
     # loading the large vector payload.
     embedding: Mapped[list[float] | None] = mapped_column(
