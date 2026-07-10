@@ -424,7 +424,18 @@ class AIService:
 这些参数只影响语气和关注重点，不能改变安全边界。
 """)
 
-        # 5. 对话规则
+        # 5. 当前时间
+        from datetime import datetime
+        now = datetime.now()
+        weekday_names = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        weekday = weekday_names[now.weekday()]
+        time_str = now.strftime(f'%Y年%m月%d日 {weekday} %H:%M')
+        parts.append(f"""
+## 当前时间
+现在是 {time_str}
+""")
+
+        # 6. 对话规则
         parts.append("""
 ## 回复规则
 - 保持角色一致性，永远不要跳出角色
