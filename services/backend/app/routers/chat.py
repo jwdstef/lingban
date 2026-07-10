@@ -28,6 +28,11 @@ from app.services.voice_service import VoiceTranscriptionError, voice_service
 router = APIRouter()
 
 
+def _sse_data(data: str) -> str:
+    lines = str(data).splitlines() or [""]
+    return "".join(f"data: {line}\n" for line in lines) + "\n"
+
+
 # ── Schemas ──
 
 class SendMessageRequest(BaseModel):
@@ -165,7 +170,7 @@ async def send_message(
             db=db,
         ):
             full_response += chunk
-            yield f"data: {chunk}\n\n"
+            yield _sse_data(chunk)
 
         # 4. 保存 AI 回复
         ai_msg = ChatMessage(
@@ -204,8 +209,8 @@ async def send_message(
         )
 
         # 7. 发送消息 ID + 完成信号
-        yield f"data: {json.dumps({'message_id': str(ai_msg.id)})}\n\n"
-        yield "data: [DONE]\n\n"
+        yield _sse_data(json.dumps({"message_id": str(ai_msg.id)}))
+        yield _sse_data("[DONE]")
 
     return StreamingResponse(
         generate(),

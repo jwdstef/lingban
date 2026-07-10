@@ -52,6 +52,7 @@ class ProactiveService:
 
         # 生成关怀消息
         content = await self._generate_message(
+            user_id=user.id,
             character_id=character_id,
             trigger_type=trigger_type,
             context=trigger_context,
@@ -190,6 +191,7 @@ class ProactiveService:
 
     async def _generate_message(
         self,
+        user_id: uuid.UUID,
         character_id: str,
         trigger_type: str,
         context: dict,
@@ -198,10 +200,10 @@ class ProactiveService:
         """生成关怀消息内容"""
         # 根据触发类型构建提示
         prompts = {
-            "time_morning": "现在是早上，给用户发一条早安问候，用你的角色风格。要简短自然，像朋友一样。",
-            "time_night": "现在是晚上，给用户发一条晚安问候，用你的角色风格。要简短自然，关心对方早点休息。",
-            "silence": f"用户已经 {context.get('hours', 24)} 小时没和你聊天了，主动关心一下，用你的角色风格。不要太刻意，自然一点。",
-            "emotion": f"用户最近情绪不太好（{context.get('emotion', '低落')}），已经持续 {context.get('days', 2)} 天了。用你的角色风格关心一下，要温暖但不要过度。",
+            "time_morning": "现在是早上，结合你真实记得的用户信息，给用户发一条早安问候。要简短自然，像朋友一样；没有相关记忆就不要编造具体事件。",
+            "time_night": "现在是晚上，结合你真实记得的用户信息，给用户发一条晚安问候。要简短自然，关心对方早点休息；没有相关记忆就不要编造具体事件。",
+            "silence": f"用户已经 {context.get('hours', 24)} 小时没和你聊天了。结合你真实记得的用户信息主动关心一下，说明自然的联系由头；没有相关记忆就只做轻量问候，不要编造。",
+            "emotion": f"用户最近情绪不太好（{context.get('emotion', '低落')}），已经持续 {context.get('days', 2)} 天了。结合你真实记得的用户信息关心一下，要温暖但不要过度；没有相关记忆就不要编造具体事件。",
         }
 
         hint = prompts.get(trigger_type)
@@ -215,7 +217,7 @@ class ProactiveService:
 
             async for chunk in ai_service.stream_chat(
                 character_id=character_id,
-                user_id=uuid.uuid4(),  # 临时 user_id，仅用于生成
+                user_id=user_id,
                 messages=messages,
                 db=db,
             ):

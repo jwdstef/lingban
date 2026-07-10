@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime, timezone
 
+import httpx
 from openai import AsyncOpenAI
 from sqlalchemy import select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +21,7 @@ class MemoryService:
             api_key=settings.openai_api_key,
             base_url=settings.openai_base_url,
         )
+        self._embedding_dim = settings.embedding_dimensions
 
     async def extract_and_store(
         self,
@@ -57,14 +59,7 @@ class MemoryService:
 
             # 写入 pgvector embedding
             if embedding:
-                await db.execute(
-                    text("""
-                        UPDATE memories 
-                        SET embedding = CAST(:embedding AS vector(1536))
-                        WHERE id = :id
-                    """),
-                    {"embedding": self._format_vector(embedding), "id": str(memory.id)},
-                )
+                await self._write_embedding(db, memory.id, embedding)
 
             memories.append(memory)
 
@@ -95,17 +90,17 @@ class MemoryService:
 
         # pgvector 语义检索
         result = await db.execute(
-            text("""
+            text(f"""
                 SELECT id, user_id, character_id, category, content, importance,
                        emotion_tags, source_message_id, recall_count, is_active,
                        created_at, updated_at,
-                       1 - (embedding <=> CAST(:query_embedding AS vector(1536))) AS similarity
+                       1 - (embedding <=> CAST(:query_embedding AS vector({self._embedding_dim}))) AS similarity
                 FROM memories
                 WHERE user_id = :user_id
                   AND character_id = :character_id
                   AND is_active = true
                   AND embedding IS NOT NULL
-                ORDER BY embedding <=> CAST(:query_embedding AS vector(1536))
+                ORDER BY embedding <=> CAST(:query_embedding AS vector({self._embedding_dim}))
                 LIMIT :top_k
             """),
             {
@@ -116,6 +111,8 @@ class MemoryService:
             },
         )
         rows = result.fetchall()
+        if not rows:
+            return await self._recall_by_importance(user_id, character_id, db, top_k)
 
         # 更新召回计数
         memory_ids = [str(row[0]) for row in rows]
@@ -147,6 +144,42 @@ class MemoryService:
             memories.append(m)
 
         return memories
+
+    async def backfill_missing_embeddings(
+        self,
+        db: AsyncSession,
+        user_id: uuid.UUID | None = None,
+        character_id: str | None = None,
+        limit: int = 100,
+    ) -> int:
+        """Fill embeddings for active memories that were created before embedding was configured."""
+        where_clauses = [
+            Memory.is_active == True,
+            Memory.embedding.is_(None),
+        ]
+        if user_id:
+            where_clauses.append(Memory.user_id == user_id)
+        if character_id:
+            where_clauses.append(Memory.character_id == character_id)
+
+        result = await db.execute(
+            select(Memory.id, Memory.content)
+            .where(*where_clauses)
+            .order_by(Memory.created_at.asc())
+            .limit(limit)
+        )
+
+        updated = 0
+        for memory_id, content in result.all():
+            embedding = await self._get_embedding(content)
+            if not embedding:
+                continue
+            await self._write_embedding(db, memory_id, embedding)
+            updated += 1
+
+        if updated:
+            await db.flush()
+        return updated
 
     async def _recall_by_importance(
         self,
@@ -184,7 +217,7 @@ class MemoryService:
 
         try:
             response = await self._openai.chat.completions.create(
-                model="qwen3.7-plus",
+                model=settings.openai_chat_model,
                 messages=[
                     {
                         "role": "system",
@@ -219,23 +252,54 @@ class MemoryService:
             return []
 
     async def _get_embedding(self, text: str) -> list[float] | None:
-        """获取文本 embedding"""
+        """获取文本 embedding（SiliconFlow API）"""
         try:
-            if not settings.openai_api_key.strip():
+            if not settings.embedding_api_key.strip():
                 return None
 
-            response = await self._openai.embeddings.create(
-                model=settings.embedding_model,
-                input=text,
-                dimensions=settings.embedding_dimensions,
-            )
-            return response.data[0].embedding
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"{settings.embedding_base_url}/embeddings",
+                    headers={
+                        "Authorization": f"Bearer {settings.embedding_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "input": text,
+                        "model": settings.embedding_model,
+                    },
+                )
+                response.raise_for_status()
+                data = response.json()
+                embedding = data["data"][0]["embedding"]
+                # 截断或补零到目标维度
+                if len(embedding) > self._embedding_dim:
+                    embedding = embedding[: self._embedding_dim]
+                elif len(embedding) < self._embedding_dim:
+                    embedding.extend([0.0] * (self._embedding_dim - len(embedding)))
+                return embedding
         except Exception:
             return None
 
     def _format_vector(self, vector: list[float]) -> str:
         """格式化向量为 pgvector 字符串"""
         return "[" + ",".join(str(v) for v in vector) + "]"
+
+    async def _write_embedding(
+        self,
+        db: AsyncSession,
+        memory_id: uuid.UUID,
+        embedding: list[float],
+    ) -> None:
+        await db.execute(
+            text(f"""
+                UPDATE memories
+                SET embedding = CAST(:embedding AS vector({self._embedding_dim})),
+                    updated_at = now()
+                WHERE id = :id
+            """),
+            {"embedding": self._format_vector(embedding), "id": str(memory_id)},
+        )
 
     def _extract_memories_locally(self, user_messages: list[str]) -> list[dict]:
         """Rule-based memory extraction for local development without OpenAI."""

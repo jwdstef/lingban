@@ -36,7 +36,7 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier() : super(const AuthState()) {
+  AuthNotifier() : super(const AuthState(isLoading: true)) {
     _checkAuth();
     // 注册 401 回调
     apiClient.onUnauthorized = () {
@@ -53,13 +53,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final data = response.data;
         state = state.copyWith(
           isAuthenticated: true,
+          isLoading: false,
           userId: data['id'],
           nickname: data['nickname'],
           selectedCharacterId: data['selected_character_id'],
         );
       } catch (e) {
         await prefs.remove('access_token');
+        state = const AuthState(isLoading: false);
       }
+    } else {
+      state = const AuthState(isLoading: false);
     }
   }
 

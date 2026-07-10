@@ -19,13 +19,18 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   List<Map<String, dynamic>> _characters = [];
   Map<String, dynamic> _settings = {};
+  Map<String, dynamic> _relation = {};
   bool _exportingData = false;
+  bool _savingPersonality = false;
+  bool _resettingCharacter = false;
+  bool _deletingAccount = false;
 
   @override
   void initState() {
     super.initState();
     _loadCharacters();
     _loadSettings();
+    _loadRelation();
   }
 
   Future<void> _loadCharacters() async {
@@ -52,6 +57,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       }
     } catch (_) {
       // keep defaults rendered locally
+    }
+  }
+
+  Future<void> _loadRelation([String? characterId]) async {
+    final selectedId =
+        characterId ?? ref.read(authStateProvider).selectedCharacterId;
+    if (selectedId == null || selectedId.isEmpty) return;
+    try {
+      final response = await apiClient.getRelation(selectedId);
+      if (mounted) {
+        setState(() {
+          _relation = Map<String, dynamic>.from(response.data);
+        });
+      }
+    } catch (_) {
+      // Relation data is decorative on settings and should not block the page.
     }
   }
 
@@ -172,7 +193,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 icon: '+',
                 color: Colors.grey,
                 isActive: false,
-                onTap: () {},
+                onTap: () => _showComingSoon('自定义伴侣'),
               );
             }
             final char = _characters[index];
@@ -291,69 +312,76 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ? _characters.where((c) => c['id'] == selectedId).toList()
         : <Map<String, dynamic>>[];
     final name = character.isNotEmpty ? character.first['name'] ?? '灵伴' : '灵伴';
+    final consecutiveDays = _relation['consecutive_days'] as int? ?? 0;
+    final level = _relation['level'] as int? ?? 1;
+    final label = _relation['label'] as String? ?? '陌生';
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.08),
-          width: 0.5,
+    return GestureDetector(
+      onTap:
+          selectedId.isEmpty ? null : () => context.push('/memory/$selectedId'),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppTheme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppTheme.primaryColor.withValues(alpha: 0.08),
+            width: 0.5,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  AppTheme.spiritGlow.withValues(alpha: 0.5),
-                  AppTheme.spiritGlow.withValues(alpha: 0.1),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppTheme.spiritGlow.withValues(alpha: 0.5),
+                    AppTheme.spiritGlow.withValues(alpha: 0.1),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.spiritGlow.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                  ),
                 ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.spiritGlow.withValues(alpha: 0.3),
-                  blurRadius: 15,
-                ),
-              ],
+              child: const Center(
+                child: Text('✦',
+                    style: TextStyle(color: AppTheme.spiritGlow, fontSize: 18)),
+              ),
             ),
-            child: const Center(
-              child: Text('✦',
-                  style: TextStyle(color: AppTheme.spiritGlow, fontSize: 18)),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: AppTheme.primaryColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '陪伴你第 47 天 · 羁绊等级：老友',
-                  style: TextStyle(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                    fontSize: 11,
+                  const SizedBox(height: 2),
+                  Text(
+                    '连续陪伴 $consecutiveDays 天 · Lv.$level $label',
+                    style: TextStyle(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                      fontSize: 11,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.chevron_right,
-              color: AppTheme.primaryColor.withValues(alpha: 0.3), size: 20),
-        ],
+            Icon(Icons.chevron_right,
+                color: AppTheme.primaryColor.withValues(alpha: 0.3), size: 20),
+          ],
+        ),
       ),
     );
   }
@@ -382,6 +410,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       default:
         return '适中';
     }
+  }
+
+  String get _personalityLabel {
+    final sass = ((_settings['personality_sass'] as num?) ?? 50).round();
+    final sharpness =
+        ((_settings['personality_sharpness'] as num?) ?? 35).round();
+    final care = ((_settings['personality_care'] as num?) ?? 70).round();
+    if (sass == 50 && sharpness == 35 && care == 70) return '默认';
+    return '已调整';
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  void _showComingSoon(String feature) {
+    _showMessage('$feature正在准备中，当前版本暂未开放');
   }
 
   Future<void> _showFrequencySheet() async {
@@ -438,6 +486,207 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         );
       },
     );
+  }
+
+  Future<void> _showPersonalitySheet() async {
+    var sass = ((_settings['personality_sass'] as num?) ?? 50).toDouble();
+    var sharpness =
+        ((_settings['personality_sharpness'] as num?) ?? 35).toDouble();
+    var care = ((_settings['personality_care'] as num?) ?? 70).toDouble();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.tune,
+                            color: AppTheme.spiritGlow, size: 20),
+                        const SizedBox(width: 8),
+                        const Text(
+                          '性格调整',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          icon: Icon(
+                            Icons.close,
+                            color:
+                                AppTheme.primaryColor.withValues(alpha: 0.55),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _buildPersonalitySlider(
+                      label: '傲娇度',
+                      value: sass,
+                      low: '直白',
+                      high: '傲娇',
+                      onChanged: (value) => setSheetState(() => sass = value),
+                    ),
+                    _buildPersonalitySlider(
+                      label: '毒舌度',
+                      value: sharpness,
+                      low: '温和',
+                      high: '犀利',
+                      onChanged: (value) =>
+                          setSheetState(() => sharpness = value),
+                    ),
+                    _buildPersonalitySlider(
+                      label: '关心度',
+                      value: care,
+                      low: '克制',
+                      high: '主动',
+                      onChanged: (value) => setSheetState(() => care = value),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: _savingPersonality
+                            ? null
+                            : () async {
+                                setSheetState(() => _savingPersonality = true);
+                                final saved = await _updatePersonality(
+                                  sass: sass.round(),
+                                  sharpness: sharpness.round(),
+                                  care: care.round(),
+                                );
+                                if (sheetContext.mounted) {
+                                  setSheetState(
+                                      () => _savingPersonality = false);
+                                }
+                                if (saved && mounted && sheetContext.mounted) {
+                                  Navigator.of(sheetContext).pop();
+                                }
+                              },
+                        icon: _savingPersonality
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.check),
+                        label: Text(_savingPersonality ? '保存中' : '保存'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPersonalitySlider({
+    required String label,
+    required double value,
+    required String low,
+    required String high,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                value.round().toString(),
+                style: const TextStyle(
+                  color: AppTheme.spiritGlow,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          Slider(
+            value: value,
+            min: 0,
+            max: 100,
+            divisions: 20,
+            activeColor: AppTheme.spiritGlow,
+            inactiveColor: AppTheme.primaryColor.withValues(alpha: 0.14),
+            onChanged: onChanged,
+          ),
+          Row(
+            children: [
+              Text(
+                low,
+                style: TextStyle(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.42),
+                  fontSize: 11,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                high,
+                style: TextStyle(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.42),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> _updatePersonality({
+    required int sass,
+    required int sharpness,
+    required int care,
+  }) async {
+    try {
+      final response = await apiClient.updateSettings({
+        'personality_sass': sass,
+        'personality_sharpness': sharpness,
+        'personality_care': care,
+      });
+      if (!mounted) return false;
+      setState(() {
+        _settings = Map<String, dynamic>.from(response.data['settings']);
+      });
+      _showMessage('性格设置已保存');
+      return true;
+    } catch (_) {
+      _showMessage('保存失败，请稍后再试');
+      return false;
+    }
   }
 
   Future<void> _updateFrequency(String level) async {
@@ -637,7 +886,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             iconColor: Colors.purple,
             title: '性格调整',
             subtitle: '傲娇度、毒舌度、关心度',
-            value: '默认',
+            value: _personalityLabel,
+            onTap: _showPersonalitySheet,
           ),
           _buildDivider(),
           _buildSettingTile(
@@ -780,6 +1030,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             iconColor: Colors.orange,
             title: '给个好评',
             subtitle: '喜欢的话，给个好评吧',
+            onTap: () => _showComingSoon('应用商店评价'),
           ),
         ],
       ),
@@ -801,8 +1052,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           _buildSettingTile(
             icon: Icons.link_off,
             iconColor: Colors.redAccent,
-            title: '解除绑定',
-            subtitle: '解除与伙伴的羁绊（慎重）',
+            title: '重置伴侣数据',
+            subtitle: '清空当前伴侣的记忆和聊天记录（慎重）',
             onTap: () => _confirmUnbind(selectedId),
           ),
           _buildDivider(),
@@ -847,19 +1098,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           : null,
       trailing: trailing ??
           (value != null
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(value,
-                        style: TextStyle(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.5),
-                            fontSize: 12)),
-                    const SizedBox(width: 4),
-                    Icon(Icons.chevron_right,
-                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                        size: 18),
-                  ],
-                )
+              ? onTap == null
+                  ? Text(value,
+                      style: TextStyle(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                          fontSize: 12))
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(value,
+                            style: TextStyle(
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.5),
+                                fontSize: 12)),
+                        const SizedBox(width: 4),
+                        Icon(Icons.chevron_right,
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                            size: 18),
+                      ],
+                    )
               : Icon(Icons.chevron_right,
                   color: AppTheme.primaryColor.withValues(alpha: 0.3),
                   size: 18)),
@@ -874,6 +1131,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _confirmDeleteAccount() {
+    if (_deletingAccount) return;
     final confirmController = TextEditingController();
     final reasonController = TextEditingController();
 
@@ -935,6 +1193,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _deleteAccount(String reason) async {
+    if (_deletingAccount) return;
+    setState(() => _deletingAccount = true);
     try {
       await apiClient.deleteAccount(confirm: 'DELETE', reason: reason);
       if (!mounted) return;
@@ -948,6 +1208,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           SnackBar(content: Text('删除申请失败: $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _deletingAccount = false);
     }
   }
 
@@ -991,13 +1253,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   void _confirmUnbind(String characterId) {
+    if (_resettingCharacter) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppTheme.surfaceColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('解除绑定'),
-        content: const Text('解除后所有记忆和关系将清零，确定要解除吗？'),
+        title: const Text('重置伴侣数据'),
+        content: const Text('将清空当前伴侣的聊天记录和长期记忆。关系等级会在下次互动后重新计算，确定继续吗？'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1008,34 +1271,37 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await _unbindCharacter(characterId);
+              await _resetCharacterData(characterId);
             },
             child:
-                const Text('确认解除', style: TextStyle(color: Colors.redAccent)),
+                const Text('确认重置', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _unbindCharacter(String characterId) async {
+  Future<void> _resetCharacterData(String characterId) async {
+    if (_resettingCharacter) return;
+    setState(() => _resettingCharacter = true);
     try {
-      // 清空记忆和对话历史
       await apiClient.clearAllMemories(characterId);
       await apiClient.clearChatHistory(characterId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('已解除绑定')),
+          const SnackBar(content: Text('伴侣记忆和聊天记录已重置')),
         );
-        // 刷新页面
-        setState(() {});
+        await _loadCharacters();
+        await _loadSettings();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('解除失败: $e')),
+          SnackBar(content: Text('重置失败: $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _resettingCharacter = false);
     }
   }
 
@@ -1043,6 +1309,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final authNotifier = ref.read(authProvider.notifier);
     try {
       await authNotifier.selectCharacter(characterId);
+      await _loadRelation(characterId);
+      if (mounted) _showMessage('已切换伴侣');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

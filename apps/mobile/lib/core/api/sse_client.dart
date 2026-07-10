@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
 
 class SSEClient {
-  /// 发送消息并接收 SSE 流式响应
-  /// 使用 utf8.decoder + LineSplitter 确保中文多字节安全
   static Stream<String> sendMessage({
     required String characterId,
     required String content,
@@ -35,28 +34,37 @@ class SSEClient {
         options: Options(responseType: ResponseType.stream),
       );
 
-      // 用 utf8.decoder + LineSplitter 安全处理流式数据
-      final byteStream = response.data!.stream.cast<List<int>>();
-      final decodedStream = byteStream.transform(utf8.decoder);
-      final lineStream = decodedStream.transform(const LineSplitter());
+      final decodedStream =
+          response.data!.stream.cast<List<int>>().transform(utf8.decoder);
+      String buffer = '';
 
-      await for (final line in lineStream) {
-        if (line.startsWith('data: ')) {
-          final data = line.substring(6);
+      await for (final chunk in decodedStream) {
+        buffer += chunk;
 
-          // 跳过 [DONE] 信号
-          if (data == '[DONE]') {
-            return;
+        while (true) {
+          final boundary = _findEventBoundary(buffer);
+          if (boundary == null) break;
+
+          final event = buffer.substring(0, boundary.start);
+          buffer = buffer.substring(boundary.end);
+
+          for (final data in _parseEventData(event)) {
+            if (data == '[DONE]') return;
+
+            final content = _contentFromData(data);
+            if (content != null && content.isNotEmpty) {
+              yield content;
+            }
           }
+        }
+      }
 
-          // 跳过 message_id JSON 协议数据
-          if (data.startsWith('{') && data.contains('message_id')) {
-            continue;
-          }
+      for (final data in _parseEventData(buffer)) {
+        if (data == '[DONE]') return;
 
-          if (data.isNotEmpty) {
-            yield data;
-          }
+        final content = _contentFromData(data);
+        if (content != null && content.isNotEmpty) {
+          yield content;
         }
       }
     } on DioException catch (e) {
@@ -65,4 +73,64 @@ class SSEClient {
       yield '[错误: $e]';
     }
   }
+
+  static _EventBoundary? _findEventBoundary(String buffer) {
+    final lfIndex = buffer.indexOf('\n\n');
+    final crlfIndex = buffer.indexOf('\r\n\r\n');
+
+    if (lfIndex == -1 && crlfIndex == -1) return null;
+    if (lfIndex == -1) {
+      return _EventBoundary(crlfIndex, crlfIndex + 4);
+    }
+    if (crlfIndex == -1 || lfIndex < crlfIndex) {
+      return _EventBoundary(lfIndex, lfIndex + 2);
+    }
+    return _EventBoundary(crlfIndex, crlfIndex + 4);
+  }
+
+  static Iterable<String> _parseEventData(String event) sync* {
+    final normalized = event.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+    final dataLines = <String>[];
+
+    for (final line in normalized.split('\n')) {
+      if (!line.startsWith('data:')) continue;
+
+      var value = line.substring(5);
+      if (value.startsWith(' ')) {
+        value = value.substring(1);
+      }
+      dataLines.add(value);
+    }
+
+    if (dataLines.isNotEmpty) {
+      yield dataLines.join('\n');
+    }
+  }
+
+  static String? _contentFromData(String data) {
+    if (!data.startsWith('{')) return data;
+
+    try {
+      final decoded = jsonDecode(data);
+      if (decoded is! Map<String, dynamic>) return data;
+      if (decoded.containsKey('message_id')) return null;
+
+      final delta = decoded['delta'];
+      if (delta is String) return delta;
+
+      final content = decoded['content'];
+      if (content is String) return content;
+    } catch (_) {
+      return data;
+    }
+
+    return data;
+  }
+}
+
+class _EventBoundary {
+  final int start;
+  final int end;
+
+  const _EventBoundary(this.start, this.end);
 }

@@ -23,6 +23,8 @@ GoRouter _createRouter(WidgetRef ref) {
     initialLocation: '/onboarding',
     redirect: (context, state) {
       final authState = ref.read(authProvider);
+      if (authState.isLoading) return null;
+
       final isAuthenticated = authState.isAuthenticated;
       final hasSelectedCharacter = authState.selectedCharacterId != null;
       final isOnboarding = state.matchedLocation == '/onboarding';

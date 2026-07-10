@@ -102,7 +102,7 @@ def upgrade() -> None:
         sa.Column("importance", sa.Integer, server_default="5"),
         sa.Column("emotion_tags", JSONB, server_default="[]"),
         sa.Column("source_message_id", UUID(as_uuid=True), nullable=True),
-        sa.Column("embedding", sa.Text, nullable=True),  # managed as vector(1536) via raw SQL
+        sa.Column("embedding", sa.Text, nullable=True),  # managed as vector(4096) via raw SQL
         sa.Column("recall_count", sa.Integer, server_default="0"),
         sa.Column("is_active", sa.Boolean, server_default="true"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
@@ -113,7 +113,7 @@ def upgrade() -> None:
     op.create_index("idx_memories_active", "memories", ["user_id", "character_id", "is_active", "created_at"])
 
     # Replace the text embedding column with actual pgvector type
-    op.execute("ALTER TABLE memories ALTER COLUMN embedding TYPE vector(1536) USING embedding::vector(1536)")
+    op.execute("ALTER TABLE memories ALTER COLUMN embedding TYPE vector(4096) USING embedding::vector(4096)")
 
     # ── proactive_messages ──
     op.create_table(

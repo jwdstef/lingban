@@ -51,11 +51,7 @@ celery_app.conf.beat_schedule = {
 
 def run_async(coro):
     """在同步 Celery 任务中运行异步协程"""
-    loop = asyncio.new_event_loop()
-    try:
-        return loop.run_until_complete(coro)
-    finally:
-        loop.close()
+    return asyncio.run(coro)
 
 
 # ── 定时任务 ──
@@ -140,13 +136,19 @@ def extract_memory(
     source_message_id: str | None = None,
 ):
     """异步提取记忆（对话后触发）"""
-    print(f"[{datetime.now()}] 开始提取记忆: user={user_id}, character={character_id}")
+    print(f"[{datetime.now()}] 开始提取记忆：user={user_id}, character={character_id}")
 
     async def _extract():
         import uuid
+        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+        from app.core.config import settings
         from app.services.memory_service import memory_service
 
-        async with async_session() as db:
+        # 为每个任务创建新的引擎和会话，避免事件循环问题
+        engine = create_async_engine(settings.database_url)
+        session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+        async with session_maker() as db:
             try:
                 memories = await memory_service.extract_and_store(
                     user_id=uuid.UUID(user_id),
@@ -157,6 +159,43 @@ def extract_memory(
                 )
                 print(f"[{datetime.now()}] 记忆提取完成，提取 {len(memories)} 条")
             except Exception as e:
-                print(f"[ExtractMemory] 记忆提取失败: {e}")
+                print(f"[ExtractMemory] 记忆提取失败：{e}")
+            finally:
+                await engine.dispose()
 
     run_async(_extract())
+
+
+@celery_app.task(name="app.services.tasks.backfill_memory_embeddings")
+def backfill_memory_embeddings(
+    user_id: str | None = None,
+    character_id: str | None = None,
+    limit: int = 100,
+):
+    """Backfill pgvector embeddings for existing active memories."""
+    print(
+        f"[{datetime.now()}] 开始补齐记忆向量 user={user_id}, "
+        f"character={character_id}, limit={limit}"
+    )
+
+    async def _backfill():
+        import uuid
+        from app.services.memory_service import memory_service
+
+        async with async_session() as db:
+            try:
+                updated = await memory_service.backfill_missing_embeddings(
+                    db=db,
+                    user_id=uuid.UUID(user_id) if user_id else None,
+                    character_id=character_id,
+                    limit=limit,
+                )
+                await db.commit()
+                print(f"[{datetime.now()}] 记忆向量补齐完成，更新 {updated} 条")
+                return updated
+            except Exception as e:
+                await db.rollback()
+                print(f"[BackfillMemoryEmbeddings] 记忆向量补齐失败: {e}")
+                raise
+
+    return run_async(_backfill())

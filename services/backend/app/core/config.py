@@ -1,4 +1,9 @@
-from pydantic_settings import BaseSettings
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource
+
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -23,6 +28,7 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     openai_api_key: str = ""
     openai_base_url: str = "https://api.openai.com/v1"
+    openai_chat_model: str = "qwen3.7-plus"
     openai_audio_transcription_model: str = "whisper-1"
 
     # Push providers
@@ -67,10 +73,27 @@ class Settings(BaseSettings):
     wechat_pay_notify_url: str = ""
 
     # Embedding
-    embedding_model: str = "text-embedding-3-small"
-    embedding_dimensions: int = 1536
+    embedding_provider: str = "siliconflow"
+    embedding_api_key: str = ""
+    embedding_base_url: str = "https://api.siliconflow.cn/v1"
+    embedding_model: str = "Qwen/Qwen3-VL-Embedding-8B"
+    embedding_dimensions: int = 4096
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {
+        "env_file": BACKEND_DIR / ".env",
+        "env_file_encoding": "utf-8",
+    }
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return init_settings, dotenv_settings, env_settings, file_secret_settings
 
 
 settings = Settings()

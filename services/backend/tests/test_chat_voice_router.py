@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 from fastapi import HTTPException
 
-from app.routers.chat import send_voice_message
+from app.routers.chat import _sse_data, send_voice_message
 from app.services.subscription_service import SubscriptionLimitError
 from app.services.tts_service import TTSAudio
 
@@ -67,6 +67,11 @@ class FakeUpload:
 async def fake_stream_chat(**kwargs):
     yield "voice "
     yield "reply"
+
+
+class ChatSSETest(unittest.TestCase):
+    def test_sse_data_encodes_multiline_chunks(self):
+        self.assertEqual(_sse_data("hello\nworld"), "data: hello\ndata: world\n\n")
 
 
 class ChatVoiceRouterTest(unittest.IsolatedAsyncioTestCase):

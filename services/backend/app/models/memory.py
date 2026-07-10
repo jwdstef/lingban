@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from pgvector.sqlalchemy import Vector
 
+from app.core.config import settings
 from app.core.database import Base
 
 
@@ -36,7 +37,7 @@ class Memory(Base):
     # loading the large vector payload.
     embedding: Mapped[list[float] | None] = mapped_column(
         "embedding",
-        Vector(1536),
+        Vector(settings.embedding_dimensions),
         nullable=True,
         deferred=True,
     )

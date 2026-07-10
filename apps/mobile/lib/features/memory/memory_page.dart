@@ -1,9 +1,24 @@
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
+
+@visibleForTesting
+List<Map<String, dynamic>> visibleTimelineMemories(
+  List<Map<String, dynamic>> memories, {
+  required bool showAll,
+  int collapsedLimit = 5,
+}) {
+  if (showAll) return List<Map<String, dynamic>>.unmodifiable(memories);
+  return List<Map<String, dynamic>>.unmodifiable(
+    memories.take(collapsedLimit),
+  );
+}
 
 class MemoryPage extends ConsumerStatefulWidget {
   final String characterId;
@@ -28,6 +43,8 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
   List<Map<String, dynamic>> _categories = [];
   bool _isLoading = true;
   String? _selectedCategory;
+  int _consecutiveDays = 0;
+  bool _showAllTimeline = false;
 
   @override
   void initState() {
@@ -58,6 +75,19 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
               List<Map<String, dynamic>>.from(data['categories'] ?? []);
           _isLoading = false;
         });
+      }
+
+      // 获取关系数据（相处天数）
+      try {
+        final relationResponse =
+            await apiClient.getRelation(widget.characterId);
+        if (mounted && relationResponse.data != null) {
+          setState(() {
+            _consecutiveDays = relationResponse.data['consecutive_days'] ?? 0;
+          });
+        }
+      } catch (_) {
+        // 关系数据获取失败不影响主流程
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -236,9 +266,9 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
           // 统计网格
           Row(
             children: [
-              _buildStatItem('47', '相处天数'),
-              _buildStatItem('${_countByCategory('emotion')}', '斗嘴次数'),
-              _buildStatItem('${_countByCategory('daily')}', '深夜陪伴'),
+              _buildStatItem('$_consecutiveDays', '相处天数'),
+              _buildStatItem('${_countByCategory('emotion')}', '情绪记忆'),
+              _buildStatItem('${_countByCategory('daily')}', '日常记忆'),
             ],
           ),
         ],
@@ -297,13 +327,27 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            Text(
-              '全部 ›',
-              style: TextStyle(
-                color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                fontSize: 12,
+            if (_memories.length > 5)
+              GestureDetector(
+                onTap: () {
+                  setState(() => _showAllTimeline = !_showAllTimeline);
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 4,
+                  ),
+                  child: Text(
+                    _showAllTimeline ? '收起' : '全部 ›',
+                    style: TextStyle(
+                      color: AppTheme.spiritGlow.withValues(alpha: 0.82),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -329,12 +373,16 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
             ),
           )
         else
-          ..._memories
-              .take(5)
-              .toList()
+          ...(_showAllTimeline ? _memories : _memories.take(5).toList())
               .asMap()
               .entries
-              .map((entry) => _buildTimelineItem(entry.key, entry.value)),
+              .map((entry) => _buildTimelineItem(
+                    entry.key,
+                    entry.value,
+                    totalItems: _showAllTimeline
+                        ? _memories.length
+                        : math.min(_memories.length, 5),
+                  )),
       ],
     );
   }
@@ -626,7 +674,11 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
     );
   }
 
-  Widget _buildTimelineItem(int index, Map<String, dynamic> memory) {
+  Widget _buildTimelineItem(
+    int index,
+    Map<String, dynamic> memory, {
+    required int totalItems,
+  }) {
     final emotionTags = List<String>.from(memory['emotion_tags'] ?? []);
     final category = memory['category'] as String? ?? '';
     final tag =
@@ -634,7 +686,6 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
     final date = memory['created_at'] ?? '';
     final dateStr = _formatDate(date);
     final dotColor = _dotColors[index % _dotColors.length];
-    final totalItems = _memories.length > 5 ? 5 : _memories.length;
     final isLast = index == totalItems - 1;
 
     return Padding(
@@ -760,43 +811,79 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
       {
         'icon': Icons.nightlight_round,
         'color': AppTheme.spiritGlow,
-        'title': '深夜emo',
+        'title': '情绪',
         'desc': '失眠、焦虑、突然难过...',
         'category': 'emotion',
       },
       {
         'icon': Icons.work_outline,
         'color': AppTheme.accentColor,
-        'title': '职场生存',
+        'title': '日常',
         'desc': '加班、甩锅、想辞职...',
         'category': 'daily',
       },
       {
         'icon': Icons.home_outlined,
         'color': AppTheme.emotionThinking,
-        'title': '一个人的日子',
+        'title': '事实',
         'desc': '搬家、生病、一个人过节...',
         'category': 'fact',
       },
       {
         'icon': Icons.auto_awesome,
         'color': AppTheme.emotionHappy,
-        'title': '小确幸',
+        'title': '事件',
         'desc': '做饭成功、涨薪、遇到好人...',
         'category': 'event',
+      },
+      {
+        'icon': Icons.favorite_outline,
+        'color': Colors.pinkAccent,
+        'title': '偏好',
+        'desc': '喜欢的食物、音乐、习惯...',
+        'category': 'preference',
+      },
+      {
+        'icon': Icons.people_outline,
+        'color': Colors.teal,
+        'title': '人物',
+        'desc': '朋友、家人、同事...',
+        'category': 'person',
       },
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '记忆分类',
-          style: TextStyle(
-            color: AppTheme.primaryColor.withValues(alpha: 0.8),
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '记忆分类',
+              style: TextStyle(
+                color: AppTheme.primaryColor.withValues(alpha: 0.8),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (_selectedCategory != null)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedCategory = null;
+                    _showAllTimeline = false;
+                  });
+                  _loadMemories();
+                },
+                child: Text(
+                  '清除筛选 ›',
+                  style: TextStyle(
+                    color: AppTheme.spiritGlow.withValues(alpha: 0.8),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 12),
         GridView.builder(
@@ -811,51 +898,69 @@ class _MemoryPageState extends ConsumerState<MemoryPage> {
           itemCount: gridItems.length,
           itemBuilder: (context, index) {
             final item = gridItems[index];
-            final count = _countByCategory(item['category'] as String);
-            return Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppTheme.cardColor,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                  width: 0.5,
+            final category = item['category'] as String;
+            final count = _countByCategory(category);
+            final isSelected = _selectedCategory == category;
+
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedCategory = isSelected ? null : category;
+                  _showAllTimeline = false;
+                });
+                _loadMemories();
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppTheme.primaryColor.withValues(alpha: 0.15)
+                      : AppTheme.cardColor,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppTheme.spiritGlow.withValues(alpha: 0.5)
+                        : AppTheme.primaryColor.withValues(alpha: 0.08),
+                    width: isSelected ? 1.5 : 0.5,
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    item['icon'] as IconData,
-                    color: item['color'] as Color,
-                    size: 20,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    item['title'] as String,
-                    style: TextStyle(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.9),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      item['icon'] as IconData,
+                      color: item['color'] as Color,
+                      size: 20,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    item['desc'] as String,
-                    style: TextStyle(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                      fontSize: 10,
+                    const SizedBox(height: 6),
+                    Text(
+                      item['title'] as String,
+                      style: TextStyle(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.9),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '$count 件',
-                    style: TextStyle(
-                      color: AppTheme.spiritGlow.withValues(alpha: 0.7),
-                      fontSize: 11,
+                    const SizedBox(height: 2),
+                    Text(
+                      item['desc'] as String,
+                      style: TextStyle(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                        fontSize: 10,
+                      ),
                     ),
-                  ),
-                ],
+                    const Spacer(),
+                    Text(
+                      count > 0 ? '$count 件' : '暂无',
+                      style: TextStyle(
+                        color: count > 0
+                            ? AppTheme.spiritGlow.withValues(alpha: 0.7)
+                            : AppTheme.primaryColor.withValues(alpha: 0.3),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },

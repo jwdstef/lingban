@@ -617,8 +617,7 @@ async function run() {
       mobile: true,
     });
 
-    const storedToken = JSON.stringify(user.token);
-    const tokenScript = `localStorage.setItem('flutter.access_token', ${JSON.stringify(storedToken)});`;
+    const tokenScript = `localStorage.setItem('flutter.access_token', JSON.stringify(${JSON.stringify(user.token)}));`;
     await client.send("Page.addScriptToEvaluateOnNewDocument", { source: tokenScript });
     await client.send("Runtime.evaluate", { expression: tokenScript });
 

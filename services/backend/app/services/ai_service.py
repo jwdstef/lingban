@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.models.character import Character, UserCharacterRelation
 from app.models.memory import Memory
+from app.models.user import User
 
 
 class AIService:
@@ -39,6 +40,7 @@ class AIService:
 
         # 2. 加载关系上下文
         relationship = await self._get_relationship(user_id, character_id, db)
+        user_settings = await self._get_user_settings(user_id, db)
 
         # 3. 召回相关记忆
         user_message = messages[-1]["content"] if messages else ""
@@ -49,6 +51,7 @@ class AIService:
             character=character,
             relationship=relationship,
             memories=memories,
+            user_settings=user_settings,
         )
 
         # 5. 流式调用 OpenAI 兼容接口
@@ -63,7 +66,7 @@ class AIService:
 
         try:
             stream = await self.client.chat.completions.create(
-                model="qwen3.7-plus",
+                model=settings.openai_chat_model,
                 messages=chat_messages,
                 max_tokens=1024,
                 stream=True,
@@ -98,6 +101,13 @@ class AIService:
             )
         )
         return result.scalar_one_or_none()
+
+    async def _get_user_settings(
+        self, user_id: uuid.UUID, db: AsyncSession
+    ) -> dict:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        return user.settings or {} if user else {}
 
     async def _recall_memories(
         self,
@@ -138,6 +148,7 @@ class AIService:
         character: Character,
         relationship: UserCharacterRelation | None,
         memories: list[Memory],
+        user_settings: dict | None = None,
     ) -> str:
         """组装完整 System Prompt"""
         parts = []
@@ -174,7 +185,20 @@ class AIService:
 {memory_text}
 """)
 
-        # 4. 对话规则
+        # 4. 用户可调性格参数
+        settings_data = user_settings or {}
+        sass = int(settings_data.get("personality_sass", 50) or 50)
+        sharpness = int(settings_data.get("personality_sharpness", 35) or 35)
+        care = int(settings_data.get("personality_care", 70) or 70)
+        parts.append(f"""
+## 用户调校的相处方式
+- 傲娇度: {sass}/100。数值越高，越可以用嘴硬、别扭但在意的表达；数值低时更直白温柔。
+- 毒舌度: {sharpness}/100。数值越高，吐槽更明显；但不得羞辱、攻击或制造心理压力。
+- 关心度: {care}/100。数值越高，越主动追问近况、睡眠、情绪和计划；数值低时保持克制陪伴。
+这些参数只影响语气和关注重点，不能改变安全边界。
+""")
+
+        # 5. 对话规则
         parts.append("""
 ## 回复规则
 - 保持角色一致性，永远不要跳出角色
