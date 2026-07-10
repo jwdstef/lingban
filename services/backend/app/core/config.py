@@ -29,7 +29,10 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_base_url: str = "https://api.openai.com/v1"
     openai_chat_model: str = "qwen3.7-plus"
+    openai_chat_max_tokens: int = 384
     openai_audio_transcription_model: str = "whisper-1"
+    ai_local_stream_chunk_delay_ms: int = 25
+    ai_memory_recall_timeout_ms: int = 800
 
     # Push providers
     jpush_app_key: str = ""

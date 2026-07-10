@@ -6,7 +6,12 @@ from unittest.mock import AsyncMock, patch
 
 from fastapi import HTTPException
 
-from app.routers.chat import _sse_data, send_voice_message
+from app.routers.chat import (
+    SendMessageRequest,
+    _sse_data,
+    send_message,
+    send_voice_message,
+)
 from app.services.subscription_service import SubscriptionLimitError
 from app.services.tts_service import TTSAudio
 
@@ -72,6 +77,50 @@ async def fake_stream_chat(**kwargs):
 class ChatSSETest(unittest.TestCase):
     def test_sse_data_encodes_multiline_chunks(self):
         self.assertEqual(_sse_data("hello\nworld"), "data: hello\ndata: world\n\n")
+
+
+class ChatMessageRouterTest(unittest.IsolatedAsyncioTestCase):
+    async def test_send_message_opens_sse_before_content_chunks(self):
+        user = FakeUser(id=uuid.uuid4())
+        db = FakeDb()
+
+        async def fake_text_stream_chat(**kwargs):
+            self.assertIn("request_id", kwargs)
+            yield "hello"
+            yield " world"
+
+        with patch(
+            "app.routers.chat.subscription_service.ensure_chat_quota",
+            new_callable=AsyncMock,
+            return_value={"limit": 20, "used": 0, "remaining": 20},
+        ), patch(
+            "app.routers.chat.ai_service.stream_chat",
+            side_effect=fake_text_stream_chat,
+        ), patch(
+            "app.routers.chat.relationship_service.on_chat",
+            new_callable=AsyncMock,
+        ), patch(
+            "app.routers.chat.record_emotion_from_text",
+            new_callable=AsyncMock,
+        ), patch(
+            "app.routers.chat.extract_memory.delay",
+        ):
+            response = await send_message(
+                character_id="yinyue",
+                data=SendMessageRequest(content="hello"),
+                user=user,
+                db=db,
+            )
+
+            chunks = []
+            async for chunk in response.body_iterator:
+                chunks.append(chunk)
+
+        self.assertTrue(chunks[0].startswith(": request_id="))
+        self.assertEqual(chunks[1], "data: hello\n\n")
+        self.assertEqual(chunks[2], "data:  world\n\n")
+        self.assertEqual(chunks[-1], "data: [DONE]\n\n")
+        self.assertTrue(db.committed)
 
 
 class ChatVoiceRouterTest(unittest.IsolatedAsyncioTestCase):

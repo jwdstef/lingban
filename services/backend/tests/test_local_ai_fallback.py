@@ -33,6 +33,29 @@ class LocalAIFallbackTest(unittest.TestCase):
         self.assertEqual(memories[0]["category"], "emotion")
         self.assertIn("工作压力", memories[0]["content"])
 
+    def test_chat_memory_recall_timeout_returns_empty_memories(self):
+        service = AIService()
+
+        async def slow_recall(**kwargs):
+            await asyncio.sleep(0.05)
+            return ["should-time-out"]
+
+        with patch(
+            "app.services.ai_service.settings.ai_memory_recall_timeout_ms",
+            1,
+        ), patch.object(service, "_recall_memories", side_effect=slow_recall):
+            memories = asyncio.run(
+                service._recall_memories_for_chat(
+                    user_id="user-id",
+                    character_id="yinyue",
+                    query="hello",
+                    db=None,
+                    request_id="test",
+                )
+            )
+
+        self.assertEqual(memories, [])
+
 
 if __name__ == "__main__":
     unittest.main()

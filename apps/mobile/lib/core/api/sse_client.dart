@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
@@ -12,8 +13,14 @@ class SSEClient {
     required String content,
     String messageType = 'text',
   }) async* {
+    final requestId = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
+    final stopwatch = Stopwatch()..start();
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
+    _debugLog(
+      requestId,
+      'start character=$characterId contentChars=${content.length}',
+    );
 
     final dio = Dio(BaseOptions(
       baseUrl: AppConfig.baseUrl,
@@ -33,10 +40,23 @@ class SSEClient {
         },
         options: Options(responseType: ResponseType.stream),
       );
+      _debugLog(
+        requestId,
+        'connected status=${response.statusCode} elapsedMs=${stopwatch.elapsedMilliseconds}',
+      );
 
       final decodedStream =
-          response.data!.stream.cast<List<int>>().transform(utf8.decoder);
+          response.data!.stream.cast<List<int>>().map((bytes) {
+        _debugLog(
+          requestId,
+          'rawChunk bytes=${bytes.length} elapsedMs=${stopwatch.elapsedMilliseconds}',
+        );
+        return bytes;
+      }).transform(utf8.decoder);
       String buffer = '';
+      var eventCount = 0;
+      var contentChunkCount = 0;
+      var firstContentLogged = false;
 
       await for (final chunk in decodedStream) {
         buffer += chunk;
@@ -48,11 +68,42 @@ class SSEClient {
           final event = buffer.substring(0, boundary.start);
           buffer = buffer.substring(boundary.end);
 
+          for (final comment in _parseEventComments(event)) {
+            _debugLog(
+              requestId,
+              'comment "$comment" elapsedMs=${stopwatch.elapsedMilliseconds}',
+            );
+          }
+
           for (final data in _parseEventData(event)) {
-            if (data == '[DONE]') return;
+            eventCount += 1;
+            _debugLog(
+              requestId,
+              'event=$eventCount dataChars=${data.length} elapsedMs=${stopwatch.elapsedMilliseconds}',
+            );
+            if (data == '[DONE]') {
+              _debugLog(
+                requestId,
+                'done contentChunks=$contentChunkCount elapsedMs=${stopwatch.elapsedMilliseconds}',
+              );
+              return;
+            }
 
             final content = _contentFromData(data);
             if (content != null && content.isNotEmpty) {
+              contentChunkCount += 1;
+              if (!firstContentLogged) {
+                firstContentLogged = true;
+                _debugLog(
+                  requestId,
+                  'firstContent elapsedMs=${stopwatch.elapsedMilliseconds} chars=${content.length}',
+                );
+              } else {
+                _debugLog(
+                  requestId,
+                  'contentChunk=$contentChunkCount chars=${content.length} elapsedMs=${stopwatch.elapsedMilliseconds}',
+                );
+              }
               yield content;
             }
           }
@@ -60,18 +111,51 @@ class SSEClient {
       }
 
       for (final data in _parseEventData(buffer)) {
-        if (data == '[DONE]') return;
+        eventCount += 1;
+        if (data == '[DONE]') {
+          _debugLog(
+            requestId,
+            'done contentChunks=$contentChunkCount elapsedMs=${stopwatch.elapsedMilliseconds}',
+          );
+          return;
+        }
 
         final content = _contentFromData(data);
         if (content != null && content.isNotEmpty) {
+          contentChunkCount += 1;
+          if (!firstContentLogged) {
+            firstContentLogged = true;
+            _debugLog(
+              requestId,
+              'firstContent elapsedMs=${stopwatch.elapsedMilliseconds} chars=${content.length}',
+            );
+          } else {
+            _debugLog(
+              requestId,
+              'contentChunk=$contentChunkCount chars=${content.length} elapsedMs=${stopwatch.elapsedMilliseconds}',
+            );
+          }
           yield content;
         }
       }
     } on DioException catch (e) {
+      _debugLog(
+        requestId,
+        'dioError type=${e.type} message=${e.message} elapsedMs=${stopwatch.elapsedMilliseconds}',
+      );
       yield '[错误: ${e.message}]';
     } catch (e) {
+      _debugLog(
+        requestId,
+        'error $e elapsedMs=${stopwatch.elapsedMilliseconds}',
+      );
       yield '[错误: $e]';
     }
+  }
+
+  static void _debugLog(String requestId, String message) {
+    if (!kDebugMode) return;
+    debugPrint('[SSE $requestId] $message');
   }
 
   static _EventBoundary? _findEventBoundary(String buffer) {
@@ -104,6 +188,16 @@ class SSEClient {
 
     if (dataLines.isNotEmpty) {
       yield dataLines.join('\n');
+    }
+  }
+
+  static Iterable<String> _parseEventComments(String event) sync* {
+    final normalized = event.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+
+    for (final line in normalized.split('\n')) {
+      if (line.startsWith(':')) {
+        yield line.substring(1).trimLeft();
+      }
     }
   }
 

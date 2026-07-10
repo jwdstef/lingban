@@ -2,6 +2,8 @@
 
 import base64
 import json
+import logging
+import time
 import uuid
 from datetime import datetime
 
@@ -26,11 +28,20 @@ from app.services.tts_service import TTSGenerationError, tts_service
 from app.services.voice_service import VoiceTranscriptionError, voice_service
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+def _elapsed_ms(start: float) -> int:
+    return int((time.perf_counter() - start) * 1000)
 
 
 def _sse_data(data: str) -> str:
     lines = str(data).splitlines() or [""]
     return "".join(f"data: {line}\n" for line in lines) + "\n"
+
+
+def _sse_comment(comment: str) -> str:
+    return f": {comment}\n\n"
 
 
 # ── Schemas ──
@@ -124,10 +135,30 @@ async def send_message(
     db: AsyncSession = Depends(get_db),
 ):
     """发送消息并获取 AI 回复（SSE 流式）"""
+    request_id = uuid.uuid4().hex[:8]
+    started_at = time.perf_counter()
+    logger.info(
+        "chat.sse.start request_id=%s user_id=%s character_id=%s content_chars=%d",
+        request_id,
+        user.id,
+        character_id,
+        len(data.content),
+    )
     try:
         await subscription_service.ensure_chat_quota(user=user, db=db)
     except SubscriptionLimitError as exc:
+        logger.info(
+            "chat.sse.quota_blocked request_id=%s elapsed_ms=%d quota=%s",
+            request_id,
+            _elapsed_ms(started_at),
+            exc.quota,
+        )
         raise _subscription_limit_http_error(exc) from exc
+    logger.debug(
+        "chat.sse.quota_ok request_id=%s elapsed_ms=%d",
+        request_id,
+        _elapsed_ms(started_at),
+    )
 
     # 1. 保存用户消息
     user_msg = ChatMessage(
@@ -141,6 +172,12 @@ async def send_message(
     await db.flush()
     await create_event_for_message(db, user_msg)
     user_msg_id = user_msg.id
+    logger.debug(
+        "chat.sse.user_message_saved request_id=%s user_message_id=%s elapsed_ms=%d",
+        request_id,
+        user_msg_id,
+        _elapsed_ms(started_at),
+    )
 
     # 2. 获取最近 20 条对话上下文
     recent_query = (
@@ -157,19 +194,56 @@ async def send_message(
         {"role": m.role, "content": m.content}
         for m in recent_messages
     ]
+    logger.info(
+        "chat.sse.context_ready request_id=%s history_messages=%d elapsed_ms=%d",
+        request_id,
+        len(claude_messages),
+        _elapsed_ms(started_at),
+    )
 
     # 3. SSE 流式生成
     async def generate():
         full_response = ""
         msg_count = len([m for m in recent_messages if m.role == "user"])
+        chunk_count = 0
+        first_chunk_sent = False
+        previous_chunk_at = time.perf_counter()
+
+        yield _sse_comment(f"request_id={request_id}")
+        logger.debug(
+            "chat.sse.open_sent request_id=%s elapsed_ms=%d",
+            request_id,
+            _elapsed_ms(started_at),
+        )
 
         async for chunk in ai_service.stream_chat(
             character_id=character_id,
             user_id=user.id,
             messages=claude_messages,
             db=db,
+            request_id=request_id,
         ):
             full_response += chunk
+            chunk_count += 1
+            now = time.perf_counter()
+            if not first_chunk_sent:
+                first_chunk_sent = True
+                logger.info(
+                    "chat.sse.first_chunk request_id=%s first_chunk_ms=%d chars=%d",
+                    request_id,
+                    _elapsed_ms(started_at),
+                    len(chunk),
+                )
+            logger.debug(
+                "chat.sse.chunk request_id=%s chunk=%d chars=%d total_chars=%d gap_ms=%d elapsed_ms=%d",
+                request_id,
+                chunk_count,
+                len(chunk),
+                len(full_response),
+                int((now - previous_chunk_at) * 1000),
+                _elapsed_ms(started_at),
+            )
+            previous_chunk_at = now
             yield _sse_data(chunk)
 
         # 4. 保存 AI 回复
@@ -199,6 +273,14 @@ async def send_message(
         )
 
         await db.commit()
+        logger.info(
+            "chat.sse.persisted request_id=%s assistant_message_id=%s chunks=%d chars=%d elapsed_ms=%d",
+            request_id,
+            ai_msg.id,
+            chunk_count,
+            len(full_response),
+            _elapsed_ms(started_at),
+        )
 
         # 6. 异步触发记忆提取
         extract_memory.delay(
@@ -211,6 +293,11 @@ async def send_message(
         # 7. 发送消息 ID + 完成信号
         yield _sse_data(json.dumps({"message_id": str(ai_msg.id)}))
         yield _sse_data("[DONE]")
+        logger.info(
+            "chat.sse.done request_id=%s elapsed_ms=%d",
+            request_id,
+            _elapsed_ms(started_at),
+        )
 
     return StreamingResponse(
         generate(),
