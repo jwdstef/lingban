@@ -442,6 +442,14 @@ class _AuthFormState extends ConsumerState<_AuthForm> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    // 测试阶段：默认填充测试账号
+    _phoneController.text = '13900001111';
+    _passwordController.text = 'test123456';
+  }
+
+  @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
