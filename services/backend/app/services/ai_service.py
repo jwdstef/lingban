@@ -142,11 +142,9 @@ class AIService:
 
         try:
             openai_started_at = time.perf_counter()
-            stream = await self.client.chat.completions.create(
-                model=settings.openai_chat_model,
+            stream = await self._create_chat_stream(
                 messages=chat_messages,
-                max_tokens=settings.openai_chat_max_tokens,
-                stream=True,
+                request_id=stream_id,
             )
             logger.info(
                 "ai.stream.upstream_connected request_id=%s model=%s stage_ms=%d elapsed_ms=%d",
@@ -159,9 +157,19 @@ class AIService:
             total_chars = 0
             first_chunk_logged = False
             previous_chunk_at = time.perf_counter()
+            truncated = False
             async for chunk in stream:
                 if chunk.choices and chunk.choices[0].delta.content:
                     content = chunk.choices[0].delta.content
+                    if settings.ai_chat_response_char_limit > 0:
+                        remaining_chars = settings.ai_chat_response_char_limit - total_chars
+                        if remaining_chars <= 0:
+                            truncated = True
+                            await self._close_stream(stream, stream_id)
+                            break
+                        if len(content) > remaining_chars:
+                            content = content[:remaining_chars]
+                            truncated = True
                     chunk_count += 1
                     total_chars += len(content)
                     now = time.perf_counter()
@@ -183,11 +191,21 @@ class AIService:
                     )
                     previous_chunk_at = now
                     yield content
+                    if truncated:
+                        logger.info(
+                            "ai.stream.truncated request_id=%s limit_chars=%d elapsed_ms=%d",
+                            stream_id,
+                            settings.ai_chat_response_char_limit,
+                            _elapsed_ms(started_at),
+                        )
+                        await self._close_stream(stream, stream_id)
+                        break
             logger.info(
-                "ai.stream.done request_id=%s chunks=%d chars=%d elapsed_ms=%d",
+                "ai.stream.done request_id=%s chunks=%d chars=%d truncated=%s elapsed_ms=%d",
                 stream_id,
                 chunk_count,
                 total_chars,
+                truncated,
                 _elapsed_ms(started_at),
             )
         except Exception as e:
@@ -197,6 +215,51 @@ class AIService:
                 _elapsed_ms(started_at),
             )
             yield f"[AI 服务异常: {e}]"
+
+    async def _create_chat_stream(self, messages: list[dict], request_id: str):
+        kwargs = {
+            "model": settings.openai_chat_model,
+            "messages": messages,
+            "max_tokens": settings.openai_chat_max_tokens,
+            "stream": True,
+        }
+        if self._should_disable_reasoning():
+            kwargs["extra_body"] = {"enable_thinking": False}
+
+        try:
+            return await self.client.chat.completions.create(**kwargs)
+        except Exception:
+            if "extra_body" not in kwargs:
+                raise
+            logger.warning(
+                "ai.stream.disable_reasoning_rejected request_id=%s model=%s",
+                request_id,
+                settings.openai_chat_model,
+                exc_info=True,
+            )
+            kwargs.pop("extra_body", None)
+            return await self.client.chat.completions.create(**kwargs)
+
+    def _should_disable_reasoning(self) -> bool:
+        if not settings.openai_chat_disable_reasoning:
+            return False
+        model = settings.openai_chat_model.lower()
+        return model.startswith(("qwen3", "qwen-3", "qwq"))
+
+    async def _close_stream(self, stream, request_id: str) -> None:
+        close = getattr(stream, "close", None) or getattr(stream, "aclose", None)
+        if close is None:
+            return
+        try:
+            result = close()
+            if asyncio.iscoroutine(result):
+                await result
+        except Exception:
+            logger.debug(
+                "ai.stream.close_failed request_id=%s",
+                request_id,
+                exc_info=True,
+            )
 
     async def _get_character(self, character_id: str, db: AsyncSession) -> Character | None:
         """从数据库加载角色（带缓存）"""

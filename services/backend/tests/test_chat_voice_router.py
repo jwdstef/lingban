@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
 
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException
 
 from app.routers.chat import (
     SendMessageRequest,
@@ -83,6 +83,7 @@ class ChatMessageRouterTest(unittest.IsolatedAsyncioTestCase):
     async def test_send_message_opens_sse_before_content_chunks(self):
         user = FakeUser(id=uuid.uuid4())
         db = FakeDb()
+        background_tasks = BackgroundTasks()
 
         async def fake_text_stream_chat(**kwargs):
             self.assertIn("request_id", kwargs)
@@ -104,10 +105,11 @@ class ChatMessageRouterTest(unittest.IsolatedAsyncioTestCase):
             new_callable=AsyncMock,
         ), patch(
             "app.routers.chat.extract_memory.delay",
-        ):
+        ) as extract_memory:
             response = await send_message(
                 character_id="yinyue",
                 data=SendMessageRequest(content="hello"),
+                background_tasks=background_tasks,
                 user=user,
                 db=db,
             )
@@ -121,6 +123,8 @@ class ChatMessageRouterTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(chunks[2], "data:  world\n\n")
         self.assertEqual(chunks[-1], "data: [DONE]\n\n")
         self.assertTrue(db.committed)
+        extract_memory.assert_not_called()
+        self.assertEqual(len(background_tasks.tasks), 1)
 
 
 class ChatVoiceRouterTest(unittest.IsolatedAsyncioTestCase):

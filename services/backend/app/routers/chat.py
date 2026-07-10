@@ -7,7 +7,7 @@ import time
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select, func
@@ -131,6 +131,7 @@ async def get_chat_history(
 async def send_message(
     character_id: str,
     data: SendMessageRequest,
+    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -282,15 +283,14 @@ async def send_message(
             _elapsed_ms(started_at),
         )
 
-        # 6. 异步触发记忆提取
-        extract_memory.delay(
+        background_tasks.add_task(
+            extract_memory.delay,
             str(user.id),
             character_id,
             [{"role": "user", "content": data.content}, {"role": "assistant", "content": full_response}],
             str(user_msg_id),
         )
 
-        # 7. 发送消息 ID + 完成信号
         yield _sse_data(json.dumps({"message_id": str(ai_msg.id)}))
         yield _sse_data("[DONE]")
         logger.info(
