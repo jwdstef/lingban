@@ -42,12 +42,16 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   bool _isLoadingMore = false;
   bool _isPreparingRecording = false;
   bool _isRecording = false;
+  bool _scrollToBottomScheduled = false;
+  bool _initialScrollToBottomDone = false;
+  bool _markInitialScrollPending = false;
   String? _playingMessageId;
   bool _hasMoreMessages = true;
   bool _hasMarkedCareReply = false;
   DateTime? _recordingStartedAt;
   int _currentPage = 0;
   String? _characterName;
+  late Future<Map<String, dynamic>> _relationFuture;
 
   static const int _pageSize = 20;
   static const int _voiceSampleRate = 16000;
@@ -56,6 +60,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   @override
   void initState() {
     super.initState();
+    _relationFuture = _fetchRelation();
     _loadHistory();
     _loadCharacterName();
     _scrollController.addListener(_onScroll);
@@ -77,6 +82,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   void _onScroll() {
+    if (!_initialScrollToBottomDone || !_scrollController.hasClients) return;
+
     // 滚动到顶部时加载更多历史消息
     if (_scrollController.position.pixels <= 0 &&
         !_isLoadingMore &&
@@ -124,7 +131,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           _hasMoreMessages = messages.length >= _pageSize;
           _currentPage = 0;
         });
-        _scrollToBottom();
+        _scrollToBottom(animated: false, markInitialComplete: true);
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
@@ -148,6 +155,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           List<Map<String, dynamic>>.from(data['messages'] ?? []);
 
       if (mounted) {
+        final previousMaxScrollExtent = _scrollController.hasClients
+            ? _scrollController.position.maxScrollExtent
+            : null;
+        final previousPixels = _scrollController.hasClients
+            ? _scrollController.position.pixels
+            : null;
+
         setState(() {
           // 将旧消息插入到列表顶部
           final newMessages = <_ChatMessage>[];
@@ -165,47 +179,107 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           _isLoadingMore = false;
           _hasMoreMessages = olderMessages.length >= _pageSize;
         });
+
+        if (previousMaxScrollExtent != null && previousPixels != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !_scrollController.hasClients) return;
+
+            final addedExtent = _scrollController.position.maxScrollExtent -
+                previousMaxScrollExtent;
+            final target = previousPixels + addedExtent;
+            final clampedTarget = target
+                .clamp(
+                  _scrollController.position.minScrollExtent,
+                  _scrollController.position.maxScrollExtent,
+                )
+                .toDouble();
+            _scrollController.jumpTo(clampedTarget);
+          });
+        }
       }
     } catch (e) {
       if (mounted) setState(() => _isLoadingMore = false);
     }
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+  void _scrollToBottom({
+    bool animated = true,
+    bool markInitialComplete = false,
+  }) {
+    if (markInitialComplete) {
+      _markInitialScrollPending = true;
+    }
+
+    if (_scrollToBottomScheduled) return;
+
+    _scrollToBottomScheduled = true;
+    var remainingAttempts = animated ? 1 : 3;
+
+    void scrollAfterNextFrame() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final didScroll = _performScrollToBottom(animated: animated);
+        remainingAttempts -= 1;
+
+        if (mounted && (!didScroll || !animated) && remainingAttempts > 0) {
+          scrollAfterNextFrame();
+          return;
+        }
+
+        _scrollToBottomScheduled = false;
+        if (_markInitialScrollPending && mounted) {
+          _initialScrollToBottomDone = true;
+          _markInitialScrollPending = false;
+        }
       });
     }
+
+    scrollAfterNextFrame();
+  }
+
+  bool _performScrollToBottom({required bool animated}) {
+    if (!mounted || !_scrollController.hasClients) return false;
+
+    final target = _scrollController.position.maxScrollExtent;
+    if (animated) {
+      unawaited(
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+        ),
+      );
+    } else {
+      _scrollController.jumpTo(target);
+    }
+
+    return true;
   }
 
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
     if (content.isEmpty || _isSending) return;
 
-    setState(() => _isSending = true);
     _messageController.clear();
 
-    _messages.add(_ChatMessage(
-      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
-      role: 'user',
-      content: content,
-      createdAt: DateTime.now(),
-    ));
-    _scrollToBottom();
+    late final int aiMsgIndex;
+    setState(() {
+      _isSending = true;
+      _messages.add(_ChatMessage(
+        id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+        role: 'user',
+        content: content,
+        createdAt: DateTime.now(),
+      ));
 
-    final aiMsgIndex = _messages.length;
-    _messages.add(_ChatMessage(
-      id: 'temp_ai_${DateTime.now().millisecondsSinceEpoch}',
-      role: 'assistant',
-      content: '',
-      createdAt: DateTime.now(),
-      isStreaming: true,
-    ));
+      aiMsgIndex = _messages.length;
+      _messages.add(_ChatMessage(
+        id: 'temp_ai_${DateTime.now().millisecondsSinceEpoch}',
+        role: 'assistant',
+        content: '',
+        createdAt: DateTime.now(),
+        isStreaming: true,
+      ));
+    });
     _scrollToBottom();
 
     try {
@@ -216,11 +290,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
       String fullResponse = '';
       await for (final chunk in stream) {
-        if (chunk.startsWith('[错误:')) {
-          fullResponse = chunk;
-        } else {
-          fullResponse += chunk;
-        }
+        fullResponse += chunk;
         if (mounted) {
           setState(() {
             _messages[aiMsgIndex] = _ChatMessage(
@@ -249,6 +319,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             isStreaming: false,
           );
           _isSending = false;
+          _relationFuture = _fetchRelation();
         });
       }
     } catch (e) {
@@ -461,6 +532,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             ttsContentType: ttsAudio?.contentType,
           );
           _isSending = false;
+          _relationFuture = _fetchRelation();
         });
         _scrollToBottom();
       }
@@ -627,6 +699,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             isStreaming: false,
           );
           _isSending = false;
+          _relationFuture = _fetchRelation();
         });
         _scrollToBottom();
       }
@@ -836,12 +909,32 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  '醒着 · 等你找她',
-                  style: TextStyle(
-                    color: AppTheme.textSecondary.withValues(alpha: 0.72),
-                    fontSize: 11,
-                  ),
+                FutureBuilder<Map<String, dynamic>>(
+                  future: _relationFuture,
+                  builder: (context, snapshot) {
+                    final level = snapshot.data?['level'] as int? ?? 1;
+                    final consecutiveDays =
+                        snapshot.data?['consecutive_days'] as int? ?? 0;
+
+                    String status;
+                    if (consecutiveDays >= 7) {
+                      status = '已陪伴 $consecutiveDays 天';
+                    } else if (level >= 3) {
+                      status = '老朋友';
+                    } else if (level >= 2) {
+                      status = '越来越熟了';
+                    } else {
+                      status = '刚认识';
+                    }
+
+                    return Text(
+                      status,
+                      style: TextStyle(
+                        color: AppTheme.textSecondary.withValues(alpha: 0.72),
+                        fontSize: 11,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -883,35 +976,64 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Widget _buildMoodStrip() {
-    final name = _characterName ?? '银月';
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.spiritGlow.withValues(alpha: 0.16),
-          width: 0.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.auto_awesome, color: AppTheme.spiritGlow, size: 14),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '$name现在有点担心你',
-              style: TextStyle(
-                color: AppTheme.primaryColor.withValues(alpha: 0.72),
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
+    final name = _characterName ?? '灵伴';
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _relationFuture,
+      builder: (context, snapshot) {
+        final intimacy = snapshot.data?['intimacy'] as int? ?? 0;
+        final level = snapshot.data?['level'] as int? ?? 1;
+
+        String status;
+        if (level >= 3) {
+          status = '$name很想你';
+        } else if (level >= 2) {
+          status = '$name在等你';
+        } else if (intimacy >= 50) {
+          status = '$name有点担心你';
+        } else {
+          status = '$name醒着';
+        }
+
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppTheme.cardColor.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppTheme.spiritGlow.withValues(alpha: 0.16),
+              width: 0.5,
             ),
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_awesome,
+                  color: AppTheme.spiritGlow, size: 14),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.72),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
+  }
+
+  Future<Map<String, dynamic>> _fetchRelation() async {
+    try {
+      final response = await apiClient.getRelation(widget.characterId);
+      return Map<String, dynamic>.from(response.data);
+    } catch (_) {
+      return {};
+    }
   }
 
   Widget _buildMessageList() {
