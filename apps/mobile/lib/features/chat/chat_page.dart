@@ -61,6 +61,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   String _typewriterAccum = '';
   Timer? _typewriterTimer;
   int? _typewriterMsgIndex;
+  bool _typewriterDoneCalled = false;
 
   // 连发分条：待出现的分段定时器
   final List<Timer> _pendingSegmentTimers = [];
@@ -301,6 +302,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     _typewriterQueue.clear();
     _typewriterAccum = '';
     _streamingFinished = false;
+    _typewriterDoneCalled = false;
     _typewriterMsgIndex = aiMsgIndex;
 
     try {
@@ -329,7 +331,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
       // 流结束，标记打字机完成
       _streamingFinished = true;
-      if (!silenced && !_typewriterRunning) {
+      if (!silenced && !_typewriterRunning && !_typewriterDoneCalled) {
         _onTypewriterDone(aiMsgIndex, fullResponse);
       }
 
@@ -388,12 +390,14 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   void _typewriterTick() {
     if (_typewriterQueue.isEmpty) {
       _typewriterRunning = false;
-      if (_streamingFinished && _typewriterMsgIndex != null) {
+      if (_streamingFinished && _typewriterMsgIndex != null && !_typewriterDoneCalled) {
         // 流已结束且队列为空，触发完成回调
         final idx = _typewriterMsgIndex!;
         final msg = idx < _messages.length ? _messages[idx] : null;
         _onTypewriterDone(idx, msg?.content ?? _typewriterAccum);
       }
+      // 流未结束时，仅停止 typewriter，不调用 done
+      // _sendMessage 的流结束后会补调 _onTypewriterDone
       return;
     }
 
@@ -403,7 +407,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       _typewriterQueue.clear();
       _emitTypewriterText();
       _typewriterRunning = false;
-      if (_typewriterMsgIndex != null) {
+      if (_typewriterMsgIndex != null && !_typewriterDoneCalled) {
         final idx = _typewriterMsgIndex!;
         _onTypewriterDone(idx, _typewriterAccum);
       }
@@ -443,7 +447,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   void _onTypewriterDone(int msgIndex, String fullResponse) {
-    if (!mounted) return;
+    if (!mounted || _typewriterDoneCalled) return;
+    _typewriterDoneCalled = true;
     setState(() {
       _messages[msgIndex] = _ChatMessage(
         id: _messages[msgIndex].id,
