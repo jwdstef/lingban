@@ -63,6 +63,65 @@ class TestSourceLayeredTrust:
     def test_memory_model_has_source_field(self):
         from app.models.memory import Memory
         assert hasattr(Memory, "source")
+        assert hasattr(Memory, "content_fingerprint")
+
+    def test_content_fingerprint_is_stable(self):
+        from app.services.memory_service import content_fingerprint
+        a = content_fingerprint(
+            user_id="u1", character_id="c1", source="user_new", content="  今天  加班  "
+        )
+        b = content_fingerprint(
+            user_id="u1", character_id="c1", source="user_new", content="今天 加班"
+        )
+        c = content_fingerprint(
+            user_id="u1", character_id="c1", source="ai_generated", content="今天 加班"
+        )
+        assert a == b
+        assert a != c
+
+    def test_select_persona_memories_filters_non_human(self):
+        from app.services.memory_service import MemoryService, ScoredMemory
+        from app.models.memory import Memory
+
+        svc = MemoryService()
+        human = Memory(
+            id=uuid.uuid4(), user_id=uuid.uuid4(), character_id="c1",
+            category="preference", content="喜欢安静",
+            importance=8, emotion_tags=[], source="human_original",
+            created_at=datetime.now(timezone.utc),
+        )
+        ai = Memory(
+            id=uuid.uuid4(), user_id=uuid.uuid4(), character_id="c1",
+            category="fact", content="我记得你喜欢安静",
+            importance=5, emotion_tags=[], source="ai_generated",
+            created_at=datetime.now(timezone.utc),
+        )
+        scored = [
+            ScoredMemory(memory=human, score=1.0, rank=1, kind="preference"),
+            ScoredMemory(memory=ai, score=0.8, rank=2, kind="fact"),
+        ]
+        selected = svc.select_persona_memories(scored)
+        assert len(selected) == 1
+        assert selected[0].memory.source == "human_original"
+
+    def test_to_memory_sources_payload(self):
+        from app.services.memory_service import MemoryService, ScoredMemory
+        from app.models.memory import Memory
+
+        svc = MemoryService()
+        memory = Memory(
+            id=uuid.uuid4(), user_id=uuid.uuid4(), character_id="c1",
+            category="daily", content="昨晚睡得很晚",
+            importance=6, emotion_tags=[], source="user_new",
+            created_at=datetime.now(timezone.utc),
+        )
+        scored = [ScoredMemory(memory=memory, score=0.9, rank=1, kind="daily", path_names={"live"})]
+        payload = svc.to_memory_sources(scored)
+        assert len(payload) == 1
+        assert payload[0]["chunk_id"] == str(memory.id)
+        assert payload[0]["text"] == "昨晚睡得很晚"
+        assert payload[0]["source"] == "user_new"
+        assert "live" in payload[0]["paths"]
 
 
 # ────────────────────────────────────────────────────────────
@@ -536,8 +595,14 @@ class TestWritebackQueue:
 
         wb = WritebackQueue(mock_session_maker, batch_turns=10)
 
-        # Mock embedding 返回空
-        with patch.object(wb, '_get_embeddings', new_callable=AsyncMock, return_value=[]):
+        # Mock embedding 返回空；指纹去重返回空集合
+        with patch.object(wb, '_get_embeddings', new_callable=AsyncMock, return_value=[]), \
+             patch.object(wb, '_insert_memory', new_callable=AsyncMock) as mock_insert, \
+             patch(
+                 'app.services.memory_service.MemoryService.filter_existing_fingerprints',
+                 new_callable=AsyncMock,
+                 return_value=set(),
+             ):
             turns = [WritebackTurn(
                 user_id="u1", character_id="c1",
                 user_text="用户输入", assistant_text="AI回复",
@@ -546,8 +611,45 @@ class TestWritebackQueue:
 
             # 应该有 2 条记录（用户 + AI）
             assert count == 2
+            assert mock_insert.await_count == 2
             # 验证 commit 被调用
             mock_session.commit.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_persist_batch_skips_existing_fingerprints(self):
+        """已存在指纹应被跳过，实现中断续跑去重。"""
+        from app.services.writeback_queue import WritebackQueue, WritebackTurn
+        from app.services.memory_service import content_fingerprint
+
+        mock_session = AsyncMock()
+        mock_session_maker = MagicMock()
+        mock_session_maker.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_maker.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        wb = WritebackQueue(mock_session_maker, batch_turns=10)
+        existing_fp = content_fingerprint(
+            user_id="u1",
+            character_id="c1",
+            source="user_new",
+            content="用户输入",
+        )
+
+        with patch.object(wb, '_get_embeddings', new_callable=AsyncMock, return_value=[]), \
+             patch(
+                 'app.services.memory_service.MemoryService.filter_existing_fingerprints',
+                 new_callable=AsyncMock,
+                 return_value={existing_fp},
+             ) as mock_filter, \
+             patch.object(wb, '_insert_memory', new_callable=AsyncMock) as mock_insert:
+            turns = [WritebackTurn(
+                user_id="u1", character_id="c1",
+                user_text="用户输入", assistant_text="AI回复",
+            )]
+            count = await wb._persist_batch(turns)
+
+            assert count == 1  # 用户输入被跳过，只写 AI
+            mock_filter.assert_awaited()
+            assert mock_insert.await_count == 1
 
 
 # ────────────────────────────────────────────────────────────
@@ -606,6 +708,9 @@ class TestConfigSettings:
         assert settings.warmth_boost == 0.12
         assert settings.retrieval_overfetch == 2
         assert settings.memory_recall_top_k == 8
+        assert settings.preference_path_boost == 1.35
+        assert settings.live_recent_limit == 20
+        assert settings.memory_sources_top_k == 5
 
     def test_response_policy_config(self):
         from app.core.config import settings

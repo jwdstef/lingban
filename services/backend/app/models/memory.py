@@ -37,6 +37,11 @@ class Memory(Base):
     # 用于分层信任，防止 AI 输出污染真人风格证据
     source: Mapped[str] = mapped_column(String(30), default="human_original", index=True)
 
+    # 内容指纹：用于批量回写 / 导入中断续跑去重
+    content_fingerprint: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+
     # pgvector embedding column. Deferred so regular memory queries avoid
     # loading the large vector payload.
     embedding: Mapped[list[float] | None] = mapped_column(

@@ -13,6 +13,27 @@ class SSEClient {
     required String content,
     String messageType = 'text',
   }) async* {
+    await for (final event in sendMessageEvents(
+      characterId: characterId,
+      content: content,
+      messageType: messageType,
+    )) {
+      if (event is SSEContentEvent) {
+        yield event.content;
+      } else if (event is SSESilenceEvent) {
+        yield '[SILENCED]';
+      } else if (event is SSEErrorEvent) {
+        yield '[错误: ${event.message}]';
+      }
+    }
+  }
+
+  /// 结构化 SSE 事件流：支持正文 / 沉默 / 记忆溯源
+  static Stream<SSEEvent> sendMessageEvents({
+    required String characterId,
+    required String content,
+    String messageType = 'text',
+  }) async* {
     final requestId = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
     final stopwatch = Stopwatch()..start();
     final prefs = await SharedPreferences.getInstance();
@@ -89,22 +110,24 @@ class SSEClient {
               return;
             }
 
-            final content = _contentFromData(data);
-            if (content != null && content.isNotEmpty) {
+            final parsed = _eventFromData(data);
+            if (parsed is SSEContentEvent) {
               contentChunkCount += 1;
               if (!firstContentLogged) {
                 firstContentLogged = true;
                 _debugLog(
                   requestId,
-                  'firstContent elapsedMs=${stopwatch.elapsedMilliseconds} chars=${content.length}',
+                  'firstContent elapsedMs=${stopwatch.elapsedMilliseconds} chars=${parsed.content.length}',
                 );
               } else {
                 _debugLog(
                   requestId,
-                  'contentChunk=$contentChunkCount chars=${content.length} elapsedMs=${stopwatch.elapsedMilliseconds}',
+                  'contentChunk=$contentChunkCount chars=${parsed.content.length} elapsedMs=${stopwatch.elapsedMilliseconds}',
                 );
               }
-              yield content;
+            }
+            if (parsed != null) {
+              yield parsed;
             }
           }
         }
@@ -120,22 +143,24 @@ class SSEClient {
           return;
         }
 
-        final content = _contentFromData(data);
-        if (content != null && content.isNotEmpty) {
+        final parsed = _eventFromData(data);
+        if (parsed is SSEContentEvent) {
           contentChunkCount += 1;
           if (!firstContentLogged) {
             firstContentLogged = true;
             _debugLog(
               requestId,
-              'firstContent elapsedMs=${stopwatch.elapsedMilliseconds} chars=${content.length}',
+              'firstContent elapsedMs=${stopwatch.elapsedMilliseconds} chars=${parsed.content.length}',
             );
           } else {
             _debugLog(
               requestId,
-              'contentChunk=$contentChunkCount chars=${content.length} elapsedMs=${stopwatch.elapsedMilliseconds}',
+              'contentChunk=$contentChunkCount chars=${parsed.content.length} elapsedMs=${stopwatch.elapsedMilliseconds}',
             );
           }
-          yield content;
+        }
+        if (parsed != null) {
+          yield parsed;
         }
       }
     } on DioException catch (e) {
@@ -143,13 +168,13 @@ class SSEClient {
         requestId,
         'dioError type=${e.type} message=${e.message} elapsedMs=${stopwatch.elapsedMilliseconds}',
       );
-      yield '[错误: ${e.message}]';
+      yield SSEErrorEvent(e.message ?? e.toString());
     } catch (e) {
       _debugLog(
         requestId,
         'error $e elapsedMs=${stopwatch.elapsedMilliseconds}',
       );
-      yield '[错误: $e]';
+      yield SSEErrorEvent(e.toString());
     }
   }
 
@@ -201,28 +226,81 @@ class SSEClient {
     }
   }
 
-  static String? _contentFromData(String data) {
-    if (!data.startsWith('{')) return data;
+  static SSEEvent? _eventFromData(String data) {
+    if (!data.startsWith('{')) {
+      return data.isEmpty ? null : SSEContentEvent(data);
+    }
 
     try {
       final decoded = jsonDecode(data);
-      if (decoded is! Map<String, dynamic>) return data;
-      if (decoded.containsKey('message_id')) return null;
+      if (decoded is! Map<String, dynamic>) {
+        return SSEContentEvent(data);
+      }
+
+      // 记忆溯源：{"memory_sources":[...]}
+      if (decoded.containsKey('memory_sources')) {
+        final raw = decoded['memory_sources'];
+        final sources = <Map<String, dynamic>>[];
+        if (raw is List) {
+          for (final item in raw) {
+            if (item is Map) {
+              sources.add(Map<String, dynamic>.from(item));
+            }
+          }
+        }
+        return SSEMemorySourcesEvent(sources);
+      }
+
+      // 结束元信息：message_id 本身不渲染
+      if (decoded.containsKey('message_id') &&
+          !decoded.containsKey('content') &&
+          !decoded.containsKey('delta')) {
+        return null;
+      }
 
       // 沉默标记：后端决定不回复时发送 {"silenced": true}
-      if (decoded['silenced'] == true) return '[SILENCED]';
+      if (decoded['silenced'] == true) {
+        return const SSESilenceEvent();
+      }
 
       final delta = decoded['delta'];
-      if (delta is String) return delta;
+      if (delta is String && delta.isNotEmpty) {
+        return SSEContentEvent(delta);
+      }
 
       final content = decoded['content'];
-      if (content is String) return content;
+      if (content is String && content.isNotEmpty) {
+        return SSEContentEvent(content);
+      }
     } catch (_) {
-      return data;
+      return SSEContentEvent(data);
     }
 
-    return data;
+    return null;
   }
+}
+
+sealed class SSEEvent {
+  const SSEEvent();
+}
+
+class SSEContentEvent extends SSEEvent {
+  final String content;
+  const SSEContentEvent(this.content);
+}
+
+class SSESilenceEvent extends SSEEvent {
+  const SSESilenceEvent();
+}
+
+class SSEMemorySourcesEvent extends SSEEvent {
+  final List<Map<String, dynamic>> sources;
+  const SSEMemorySourcesEvent(this.sources);
+}
+
+class SSEErrorEvent extends SSEEvent {
+  final String message;
+  const SSEErrorEvent(this.message);
 }
 
 class _EventBoundary {

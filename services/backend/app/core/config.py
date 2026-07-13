@@ -99,6 +99,9 @@ class Settings(BaseSettings):
     warmth_boost: float = 0.12                # 暖度词加成
     retrieval_overfetch: int = 2              # 召回过取倍数
     memory_recall_top_k: int = 8              # 最终返回的记忆数
+    preference_path_boost: float = 1.35       # preference 路额外加权（贴近 response_pair）
+    live_recent_limit: int = 20               # live 连续性最近条数
+    memory_sources_top_k: int = 5             # 下发给前端的记忆溯源条数
 
     # ── 双层互动决策 ──
     response_policy_enabled: bool = True      # 是否启用互动决策层

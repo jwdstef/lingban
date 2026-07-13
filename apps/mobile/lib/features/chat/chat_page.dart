@@ -306,19 +306,42 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     _typewriterMsgIndex = aiMsgIndex;
 
     try {
-      final stream = SSEClient.sendMessage(
+      final stream = SSEClient.sendMessageEvents(
         characterId: widget.characterId,
         content: content,
       );
 
       String fullResponse = '';
       bool silenced = false;
+      List<_MemorySource> memorySources = const [];
 
-      await for (final chunk in stream) {
-        if (chunk == '[SILENCED]') {
+      await for (final event in stream) {
+        if (event is SSESilenceEvent) {
           silenced = true;
           break;
         }
+        if (event is SSEMemorySourcesEvent) {
+          memorySources = event.sources
+              .map(_MemorySource.fromJson)
+              .where((s) => s.text.isNotEmpty)
+              .toList();
+          if (mounted && aiMsgIndex < _messages.length) {
+            setState(() {
+              _messages[aiMsgIndex] = _messages[aiMsgIndex].copyWith(
+                memorySources: memorySources,
+              );
+            });
+          }
+          continue;
+        }
+        if (event is SSEErrorEvent) {
+          fullResponse = '[错误: ${event.message}]';
+          break;
+        }
+        if (event is! SSEContentEvent) {
+          continue;
+        }
+        final chunk = event.content;
         fullResponse += chunk;
         // 将字符加入打字机队列
         for (final ch in chunk.split('')) {
@@ -332,7 +355,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       // 流结束，标记打字机完成
       _streamingFinished = true;
       if (!silenced && !_typewriterRunning && !_typewriterDoneCalled) {
-        _onTypewriterDone(aiMsgIndex, fullResponse);
+        _onTypewriterDone(aiMsgIndex, fullResponse, memorySources: memorySources);
       }
 
       if (silenced) {
@@ -347,6 +370,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               createdAt: _messages[aiMsgIndex].createdAt,
               isStreaming: false,
               silenced: true,
+              memorySources: memorySources,
             );
             _isSending = false;
           });
@@ -483,15 +507,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     final segments = _splitIntoSegments(fullResponse);
     if (segments.length <= 1) return;
 
-    // 第一段留在原消息
+    // 第一段留在原消息（保留 memorySources 等元信息）
     final firstSegment = segments[0];
     if (!mounted) return;
     setState(() {
-      _messages[originalIndex] = _ChatMessage(
-        id: _messages[originalIndex].id,
-        role: 'assistant',
+      _messages[originalIndex] = _messages[originalIndex].copyWith(
         content: firstSegment,
-        createdAt: _messages[originalIndex].createdAt,
         isStreaming: false,
       );
     });
@@ -1360,6 +1381,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   Widget _buildMessageContent(_ChatMessage message, bool isUser) {
     final hasTts = !isUser && message.ttsAudioBytes != null;
+    final hasMemorySources =
+        !isUser && !message.isStreaming && message.memorySources.isNotEmpty;
     final isPlaying = _playingMessageId == message.id;
     final text = message.content.isEmpty && message.isStreaming
         ? '...'
@@ -1374,49 +1397,211 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       ),
     );
 
-    if (!hasTts) return textWidget;
+    if (!hasTts && !hasMemorySources) return textWidget;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         textWidget,
-        const SizedBox(height: 10),
-        InkWell(
-          onTap: () => _playTtsAudio(message),
-          borderRadius: BorderRadius.circular(18),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppTheme.spiritGlow.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: AppTheme.spiritGlow.withValues(alpha: 0.24),
-                width: 0.5,
+        if (hasMemorySources) ...[
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => _showMemorySources(message.memorySources),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.spiritGlow.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppTheme.spiritGlow.withValues(alpha: 0.22),
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.auto_awesome,
+                    size: 13,
+                    color: AppTheme.spiritGlow,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '记忆溯源 ${message.memorySources.length}',
+                    style: TextStyle(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.78),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                  color: AppTheme.spiritGlow,
-                  size: 16,
+          ),
+        ],
+        if (hasTts) ...[
+          const SizedBox(height: 10),
+          InkWell(
+            onTap: () => _playTtsAudio(message),
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.spiritGlow.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppTheme.spiritGlow.withValues(alpha: 0.24),
+                  width: 0.5,
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  isPlaying ? '停止' : '播放语音',
-                  style: const TextStyle(
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
                     color: AppTheme.spiritGlow,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    isPlaying ? '停止' : '播放语音',
+                    style: const TextStyle(
+                      color: AppTheme.spiritGlow,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _showMemorySources(List<_MemorySource> sources) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.surfaceColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.auto_awesome,
+                      size: 18,
+                      color: AppTheme.spiritGlow,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '记忆溯源',
+                      style: TextStyle(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.9),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(
+                        Icons.close,
+                        color: AppTheme.primaryColor.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '这句话参考了以下历史记忆片段',
+                  style: TextStyle(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.55),
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: sources.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final source = sources[index];
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardColor,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  source.kindLabel,
+                                  style: const TextStyle(
+                                    color: AppTheme.spiritGlow,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  source.sourceLabel,
+                                  style: TextStyle(
+                                    color: AppTheme.primaryColor
+                                        .withValues(alpha: 0.5),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  '#${source.rank}',
+                                  style: TextStyle(
+                                    color: AppTheme.primaryColor
+                                        .withValues(alpha: 0.4),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              source.text,
+                              style: TextStyle(
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.82),
+                                fontSize: 13,
+                                height: 1.45,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -1836,6 +2021,72 @@ class _VoiceRecorderSheetState extends State<_VoiceRecorderSheet> {
   }
 }
 
+class _MemorySource {
+  final String chunkId;
+  final String kind;
+  final String text;
+  final double score;
+  final int rank;
+  final String source;
+  final String category;
+
+  const _MemorySource({
+    required this.chunkId,
+    required this.kind,
+    required this.text,
+    required this.score,
+    required this.rank,
+    required this.source,
+    required this.category,
+  });
+
+  factory _MemorySource.fromJson(Map<String, dynamic> json) {
+    return _MemorySource(
+      chunkId: (json['chunk_id'] ?? '').toString(),
+      kind: (json['kind'] ?? json['category'] ?? 'memory').toString(),
+      text: (json['text'] ?? '').toString(),
+      score: (json['score'] is num) ? (json['score'] as num).toDouble() : 0,
+      rank: (json['rank'] is num) ? (json['rank'] as num).toInt() : 0,
+      source: (json['source'] ?? 'human_original').toString(),
+      category: (json['category'] ?? '').toString(),
+    );
+  }
+
+  String get kindLabel {
+    switch (kind) {
+      case 'preference':
+        return '偏好';
+      case 'emotion':
+        return '情绪';
+      case 'daily':
+        return '日常';
+      case 'live':
+        return '近期';
+      case 'person':
+        return '人物';
+      case 'event':
+        return '事件';
+      case 'fact':
+        return '事实';
+      default:
+        return kind.isEmpty ? '记忆' : kind;
+    }
+  }
+
+  String get sourceLabel {
+    switch (source) {
+      case 'human_original':
+        return '真人证据';
+      case 'user_new':
+        return '近期事实';
+      case 'ai_generated':
+        return 'AI 连续性';
+      default:
+        return source;
+    }
+  }
+}
+
 class _ChatMessage {
   final String id;
   final String role;
@@ -1845,6 +2096,7 @@ class _ChatMessage {
   final bool silenced;
   final Uint8List? ttsAudioBytes;
   final String? ttsContentType;
+  final List<_MemorySource> memorySources;
 
   _ChatMessage({
     required this.id,
@@ -1855,5 +2107,30 @@ class _ChatMessage {
     this.silenced = false,
     this.ttsAudioBytes,
     this.ttsContentType,
+    this.memorySources = const [],
   });
+
+  _ChatMessage copyWith({
+    String? id,
+    String? role,
+    String? content,
+    DateTime? createdAt,
+    bool? isStreaming,
+    bool? silenced,
+    Uint8List? ttsAudioBytes,
+    String? ttsContentType,
+    List<_MemorySource>? memorySources,
+  }) {
+    return _ChatMessage(
+      id: id ?? this.id,
+      role: role ?? this.role,
+      content: content ?? this.content,
+      createdAt: createdAt ?? this.createdAt,
+      isStreaming: isStreaming ?? this.isStreaming,
+      silenced: silenced ?? this.silenced,
+      ttsAudioBytes: ttsAudioBytes ?? this.ttsAudioBytes,
+      ttsContentType: ttsContentType ?? this.ttsContentType,
+      memorySources: memorySources ?? this.memorySources,
+    );
+  }
 }

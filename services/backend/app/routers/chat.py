@@ -205,6 +205,7 @@ async def send_message(
     # 3. SSE 流式生成
     async def generate():
         full_response = ""
+        memory_sources: list[dict] = []
         msg_count = len([m for m in recent_messages if m.role == "user"])
         chunk_count = 0
         first_chunk_sent = False
@@ -224,6 +225,22 @@ async def send_message(
             db=db,
             request_id=request_id,
         ):
+            # 记忆溯源事件：先于正文下发，不计入回复内容
+            if isinstance(chunk, dict) and chunk.get("event") == "memory_sources":
+                memory_sources = list(chunk.get("sources") or [])
+                yield _sse_data(json.dumps({
+                    "memory_sources": memory_sources,
+                }, ensure_ascii=False))
+                logger.info(
+                    "chat.sse.memory_sources request_id=%s count=%d",
+                    request_id,
+                    len(memory_sources),
+                )
+                continue
+
+            if not isinstance(chunk, str):
+                continue
+
             full_response += chunk
             chunk_count += 1
             now = time.perf_counter()
@@ -248,6 +265,10 @@ async def send_message(
 
             # 沉默标记：不发送给前端，直接结束
             if full_response.strip() == "[SILENCE]":
+                if memory_sources:
+                    yield _sse_data(json.dumps({
+                        "memory_sources": memory_sources,
+                    }, ensure_ascii=False))
                 yield _sse_data(json.dumps({"silenced": True}))
                 yield _sse_data("[DONE]")
                 logger.info("chat.sse.silence request_id=%s", request_id)
@@ -311,7 +332,10 @@ async def send_message(
                 str(user_msg_id),
             )
 
-        yield _sse_data(json.dumps({"message_id": str(ai_msg.id)}))
+        yield _sse_data(json.dumps({
+            "message_id": str(ai_msg.id),
+            "memory_sources": memory_sources,
+        }, ensure_ascii=False))
         yield _sse_data("[DONE]")
         logger.info(
             "chat.sse.done request_id=%s elapsed_ms=%d",
@@ -387,13 +411,23 @@ async def send_voice_message(
     msg_count = len([m for m in recent_messages if m.role == "user"])
 
     full_response = ""
+    memory_sources: list[dict] = []
     async for chunk in ai_service.stream_chat(
         character_id=character_id,
         user_id=user.id,
         messages=claude_messages,
         db=db,
     ):
+        if isinstance(chunk, dict) and chunk.get("event") == "memory_sources":
+            memory_sources = list(chunk.get("sources") or [])
+            continue
+        if not isinstance(chunk, str):
+            continue
         full_response += chunk
+
+    # 语音链路也尊重沉默决策，不落空回复
+    if full_response.strip() == "[SILENCE]":
+        full_response = ""
 
     ai_msg = ChatMessage(
         user_id=user.id,
@@ -421,12 +455,23 @@ async def send_voice_message(
 
     await db.commit()
 
-    extract_memory.delay(
-        str(user.id),
-        character_id,
-        [{"role": "user", "content": transcript_text}, {"role": "assistant", "content": full_response}],
-        str(user_msg_id),
-    )
+    # 语音链路与文本链路统一：优先批量延迟回写
+    from app.services.writeback_queue import WritebackTurn, get_writeback_queue
+    wb = get_writeback_queue()
+    if wb is not None and full_response:
+        await wb.enqueue_turn(WritebackTurn(
+            user_id=str(user.id),
+            character_id=character_id,
+            user_text=transcript_text,
+            assistant_text=full_response,
+        ))
+    elif full_response:
+        extract_memory.delay(
+            str(user.id),
+            character_id,
+            [{"role": "user", "content": transcript_text}, {"role": "assistant", "content": full_response}],
+            str(user_msg_id),
+        )
 
     tts_status = "not_requested"
     tts_audio_base64 = None

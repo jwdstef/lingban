@@ -184,30 +184,77 @@ class WritebackQueue:
         分层策略：
         - 用户输入：source=user_new（用户近况事实，不参与风格蒸馏）
         - AI 回复：source=ai_generated（仅用于连续性检索）
+
+        中断续跑：
+        - content_fingerprint 基于 user/character/source/content 确定性生成
+        - 写库前先查已存在指纹，只处理未入库部分
         """
-        items: list[tuple[str, str, str]] = []  # (text, role, source)
+        from app.services.memory_service import content_fingerprint, memory_service
+
+        items: list[tuple[str, str, str, str, WritebackTurn]] = []
+        # (text, role, source, fingerprint, turn)
         for t in turns:
             user_text = t.user_text.strip()
             if user_text:
-                items.append((user_text, "user", "user_new"))
+                fp = content_fingerprint(
+                    user_id=t.user_id,
+                    character_id=t.character_id,
+                    source="user_new",
+                    content=user_text,
+                )
+                items.append((user_text, "user", "user_new", fp, t))
             assistant_text = t.assistant_text.strip()
             if assistant_text:
-                items.append((assistant_text, "assistant", "ai_generated"))
+                fp = content_fingerprint(
+                    user_id=t.user_id,
+                    character_id=t.character_id,
+                    source="ai_generated",
+                    content=assistant_text,
+                )
+                items.append((assistant_text, "assistant", "ai_generated", fp, t))
 
         if not items:
             return 0
 
-        # 批量获取 embedding
-        texts = [item[0] for item in items]
-        vectors = await self._get_embeddings(texts)
+        # 按会话分组做 fingerprint 去重
+        pending_by_conv: dict[str, list[tuple[str, str, str, str, WritebackTurn]]] = {}
+        for item in items:
+            turn = item[4]
+            conv_key = f"{turn.user_id}:{turn.character_id}"
+            pending_by_conv.setdefault(conv_key, []).append(item)
 
+        written = 0
         async with self._session_maker() as db:
-            for i, (text_content, role, source) in enumerate(items):
-                embedding = vectors[i] if i < len(vectors) else None
-                await self._insert_memory(db, text_content, role, source, embedding, turns[0])
+            for conv_key, conv_items in pending_by_conv.items():
+                user_id, character_id = conv_key.split(":", 1)
+                fingerprints = [item[3] for item in conv_items]
+                existing = await memory_service.filter_existing_fingerprints(
+                    db,
+                    user_id=user_id,
+                    character_id=character_id,
+                    fingerprints=fingerprints,
+                )
+                pending = [item for item in conv_items if item[3] not in existing]
+                if not pending:
+                    continue
+
+                texts = [item[0] for item in pending]
+                vectors = await self._get_embeddings(texts)
+                for i, (text_content, role, source, fingerprint, turn) in enumerate(pending):
+                    embedding = vectors[i] if i < len(vectors) else None
+                    await self._insert_memory(
+                        db,
+                        text_content,
+                        role,
+                        source,
+                        embedding,
+                        turn,
+                        fingerprint=fingerprint,
+                    )
+                    written += 1
 
             await db.commit()
-        return len(items)
+        return written
 
     async def _insert_memory(
         self,
@@ -217,16 +264,19 @@ class WritebackQueue:
         source: str,
         embedding: list[float] | None,
         turn: WritebackTurn,
+        *,
+        fingerprint: str | None = None,
     ) -> None:
         """插入一条记忆。"""
         memory_id = uuid.uuid4()
         await db.execute(
             text("""
                 INSERT INTO memories (id, user_id, character_id, category, content,
-                                      importance, emotion_tags, source, is_active,
-                                      recall_count, created_at, updated_at)
+                                      importance, emotion_tags, source, content_fingerprint,
+                                      is_active, recall_count, created_at, updated_at)
                 VALUES (:id, :user_id, :character_id, :category, :content,
-                        :importance, :emotion_tags, :source, true, 0, now(), now())
+                        :importance, :emotion_tags, :source, :content_fingerprint,
+                        true, 0, now(), now())
             """),
             {
                 "id": str(memory_id),
@@ -237,6 +287,7 @@ class WritebackQueue:
                 "importance": 5,
                 "emotion_tags": "[]",
                 "source": source,
+                "content_fingerprint": fingerprint,
             },
         )
 

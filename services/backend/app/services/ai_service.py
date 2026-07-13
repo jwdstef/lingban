@@ -40,8 +40,14 @@ class AIService:
         messages: list[dict],
         db: AsyncSession,
         request_id: str | None = None,
-    ) -> AsyncGenerator[str, None]:
-        """流式对话 - 组装完整 Prompt 后调用 Claude"""
+    ) -> AsyncGenerator[str | dict, None]:
+        """流式对话 - 组装完整 Prompt 后调用 Claude
+
+        特殊事件：
+        - dict: {"event": "memory_sources", "sources": [...]} 记忆溯源
+        - str: "[SILENCE]" 沉默标记
+        - 其他 str: 正文 token
+        """
         stream_id = request_id or uuid.uuid4().hex[:8]
         started_at = time.perf_counter()
         logger.info(
@@ -79,23 +85,34 @@ class AIService:
             _elapsed_ms(started_at),
         )
 
-        # 3. 召回相关记忆
+        # 3. 召回相关记忆（带分数：溯源 + persona 过滤）
         user_message = messages[-1]["content"] if messages else ""
         memory_started_at = time.perf_counter()
-        memories = await self._recall_memories_for_chat(
+        scored_memories = await self._recall_scored_memories_for_chat(
             user_id=user_id,
             character_id=character_id,
             query=user_message,
             db=db,
             request_id=stream_id,
         )
+        from app.services.memory_service import memory_service
+
+        memory_sources = memory_service.to_memory_sources(scored_memories)
+        persona_memories = [
+            sm.memory for sm in memory_service.select_persona_memories(scored_memories)
+        ]
+        prompt_memories = persona_memories or [sm.memory for sm in scored_memories]
         logger.info(
-            "ai.stream.memory_recalled request_id=%s memories=%d stage_ms=%d elapsed_ms=%d",
+            "ai.stream.memory_recalled request_id=%s memories=%d persona=%d sources=%d stage_ms=%d elapsed_ms=%d",
             stream_id,
-            len(memories),
+            len(scored_memories),
+            len(persona_memories),
+            len(memory_sources),
             _elapsed_ms(memory_started_at),
             _elapsed_ms(started_at),
         )
+        if memory_sources:
+            yield {"event": "memory_sources", "sources": memory_sources}
 
         # 3.5 双层互动决策（规则引擎 + 可选小模型复核）
         policy_block = None
@@ -133,7 +150,7 @@ class AIService:
         system_prompt = self._assemble_prompt(
             character=character,
             relationship=relationship,
-            memories=memories,
+            memories=prompt_memories,
             user_settings=user_settings,
             policy_block=policy_block,
         )
@@ -146,7 +163,7 @@ class AIService:
 
         # 5. 流式调用 OpenAI 兼容接口
         if not settings.openai_api_key.strip():
-            reply = self._build_local_reply(character_id, messages, memories)
+            reply = self._build_local_reply(character_id, messages, prompt_memories)
             chunks = list(self._chunk_text(reply))
             delay_seconds = max(settings.ai_local_stream_chunk_delay_ms, 0) / 1000
             for index, chunk in enumerate(chunks, start=1):
@@ -335,10 +352,27 @@ class AIService:
         top_k: int = 5,
     ) -> list[Memory]:
         """召回相关记忆 - 使用语义检索"""
-        from app.services.memory_service import memory_service
+        scored = await self._recall_scored_memories(
+            user_id=user_id,
+            character_id=character_id,
+            query=query,
+            db=db,
+            top_k=top_k,
+        )
+        return [sm.memory for sm in scored]
+
+    async def _recall_scored_memories(
+        self,
+        user_id: uuid.UUID,
+        character_id: str,
+        query: str,
+        db: AsyncSession,
+        top_k: int = 5,
+    ):
+        """召回带分数的记忆，供 prompt 组装和记忆溯源使用。"""
+        from app.services.memory_service import ScoredMemory, memory_service
 
         if not query:
-            # 没有查询文本时，按重要度召回
             result = await db.execute(
                 select(Memory)
                 .where(
@@ -349,10 +383,19 @@ class AIService:
                 .order_by(Memory.importance.desc(), Memory.created_at.desc())
                 .limit(top_k)
             )
-            return list(result.scalars().all())
+            memories = list(result.scalars().all())
+            return [
+                ScoredMemory(
+                    memory=m,
+                    score=float(m.importance),
+                    rank=i + 1,
+                    kind=m.category,
+                    path_names={"fallback"},
+                )
+                for i, m in enumerate(memories)
+            ]
 
-        # 使用 pgvector 语义检索
-        return await memory_service.recall_memories(
+        return await memory_service.recall_memories_hybrid(
             user_id=user_id,
             character_id=character_id,
             query=query,
@@ -369,6 +412,25 @@ class AIService:
         request_id: str,
         top_k: int = 5,
     ) -> list[Memory]:
+        scored = await self._recall_scored_memories_for_chat(
+            user_id=user_id,
+            character_id=character_id,
+            query=query,
+            db=db,
+            request_id=request_id,
+            top_k=top_k,
+        )
+        return [sm.memory for sm in scored]
+
+    async def _recall_scored_memories_for_chat(
+        self,
+        user_id: uuid.UUID,
+        character_id: str,
+        query: str,
+        db: AsyncSession,
+        request_id: str,
+        top_k: int = 5,
+    ):
         timeout_seconds = max(settings.ai_memory_recall_timeout_ms, 0) / 1000
         if timeout_seconds <= 0:
             logger.info(
@@ -378,8 +440,8 @@ class AIService:
             return []
 
         try:
-            return await asyncio.wait_for(
-                self._recall_memories(
+            scored = await asyncio.wait_for(
+                self._recall_scored_memories(
                     user_id=user_id,
                     character_id=character_id,
                     query=query,
@@ -388,6 +450,17 @@ class AIService:
                 ),
                 timeout=timeout_seconds,
             )
+            # 更新召回计数
+            memory_ids = [str(sm.memory.id) for sm in scored]
+            if memory_ids:
+                from sqlalchemy import update
+                await db.execute(
+                    update(Memory)
+                    .where(Memory.id.in_(memory_ids))
+                    .values(recall_count=Memory.recall_count + 1)
+                )
+                await db.commit()
+            return scored
         except TimeoutError:
             logger.warning(
                 "ai.stream.memory_timeout request_id=%s timeout_ms=%d",
@@ -411,6 +484,8 @@ class AIService:
         policy_block: str | None = None,
     ) -> str:
         """组装完整 System Prompt"""
+        from app.services.memory_service import is_persona_eligible
+
         parts = []
 
         # 1. 角色基础 Prompt（从数据库加载）
@@ -434,21 +509,24 @@ class AIService:
             else:
                 parts.append("- 你们刚认识，保持礼貌和适当距离")
 
-        # 3. 长期记忆（带来源权重标注）
+        # 3. 长期记忆（persona 优先 + 来源标注）
         if memories:
             memory_lines = []
             for m in memories:
                 src = getattr(m, "source", "human_original") or "human_original"
                 src_tag = ""
                 if src == "ai_generated":
-                    src_tag = " [AI]"
+                    src_tag = " [AI-仅作连续性，不可当真人语气]"
                 elif src == "user_new":
-                    src_tag = " [近期]"
+                    src_tag = " [近期事实]"
+                elif is_persona_eligible(src):
+                    src_tag = " [真人风格证据]"
                 memory_lines.append(f"- [{m.category}]{src_tag} {m.content}")
             memory_text = "\n".join(memory_lines)
             parts.append(f"""
 ## 你记住的事情
-以下是你从过去的对话中记住的关于用户的信息，在对话中自然地引用它们：
+以下是你从过去的对话中记住的关于用户的信息，在对话中自然地引用它们。
+只有标记为“真人风格证据”的内容可用于语气/人格模仿；AI 标记内容只可用于连续性，不可当风格证据：
 {memory_text}
 """)
 

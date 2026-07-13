@@ -2,11 +2,14 @@
 
 核心设计：
 - 分层来源：human_original / user_new / ai_generated，不同权重参与融合
-- 多路召回：按 category 分路并发检索，RRF 融合
-- RRF 公式：rrf = Σ 1/(k + rank_i)，配合 source_weight × recency × warmth
+- 多路召回：按 category/source 分路并发检索，RRF 融合
+- RRF 公式：rrf = Σ 1/(k + rank_i)，配合 source_weight × recency × warmth × path_boost
 """
 
+from __future__ import annotations
+
 import asyncio
+import hashlib
 import logging
 import math
 import uuid
@@ -62,6 +65,25 @@ def recency_weight(timestamp_ms: int, now_ms: int) -> float:
     return boost
 
 
+def content_fingerprint(
+    *,
+    user_id: str,
+    character_id: str,
+    source: str,
+    content: str,
+) -> str:
+    """确定性内容指纹，用于中断续跑 / 回写去重。"""
+    normalized = "\n".join(
+        [
+            str(user_id).strip().lower(),
+            str(character_id).strip().lower(),
+            str(source).strip().lower(),
+            " ".join(content.strip().split()),
+        ]
+    )
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
 # ── 暖度词检测 ──
 
 _WARMTH_KEYWORDS = (
@@ -88,12 +110,29 @@ class ScoredMemory:
         rank: int,
         kind: str,
         similarity: float = 0.0,
+        path_names: set[str] | None = None,
     ):
         self.memory = memory
         self.score = score
         self.rank = rank
-        self.kind = kind  # "preference" / "emotion" / "daily" / "fact" / "event" / "person"
+        self.kind = kind  # "preference" / "emotion" / "daily" / "fact" / "event" / "person" / "live"
         self.similarity = similarity
+        self.path_names = path_names or set()
+
+    def to_source_payload(self) -> dict:
+        memory = self.memory
+        created_ms = int(memory.created_at.timestamp() * 1000) if memory.created_at else 0
+        return {
+            "chunk_id": str(memory.id),
+            "kind": self.kind,
+            "text": memory.content,
+            "score": round(float(self.score), 6),
+            "rank": int(self.rank),
+            "source": getattr(memory, "source", "human_original") or "human_original",
+            "category": memory.category,
+            "timestamp_ms": created_ms,
+            "paths": sorted(self.path_names),
+        }
 
 
 class MemoryService:
@@ -207,6 +246,61 @@ class MemoryService:
         await db.commit()
         return count
 
+    async def filter_existing_fingerprints(
+        self,
+        db: AsyncSession,
+        *,
+        user_id: str,
+        character_id: str,
+        fingerprints: list[str],
+    ) -> set[str]:
+        """查库返回已存在的内容指纹（用于中断续跑 / 回写去重）。"""
+        return await self._existing_content_fingerprints(
+            str(user_id),
+            character_id,
+            fingerprints,
+            db,
+        )
+
+    async def _existing_content_fingerprints(
+        self,
+        user_id: str | uuid.UUID,
+        character_id: str,
+        fingerprints: list[str],
+        db: AsyncSession,
+    ) -> set[str]:
+        """查询已存在的 content_fingerprint，兼容不同驱动绑定。"""
+        unique_fps = list({fp for fp in fingerprints if fp})
+        if not unique_fps:
+            return set()
+
+        # 兼容不同驱动：用 IN 列表查指纹，避免 ANY 数组绑定差异
+        placeholders = ", ".join(f":fp_{i}" for i in range(len(unique_fps)))
+        params: dict = {
+            "user_id": str(user_id),
+            "character_id": character_id,
+        }
+        for i, fp in enumerate(unique_fps):
+            params[f"fp_{i}"] = fp
+
+        result = await db.execute(
+            text(
+                f"""
+                SELECT content_fingerprint
+                FROM memories
+                WHERE user_id = :user_id
+                  AND character_id = :character_id
+                  AND is_active = true
+                  AND content_fingerprint IN ({placeholders})
+                """
+            ),
+            params,
+        )
+        rows = result.fetchall()
+        if asyncio.iscoroutine(rows):
+            rows = await rows
+        return {str(row[0]) for row in rows if row and row[0]}
+
     # ── 多路并发召回 + RRF 融合 ──
 
     async def recall_memories_hybrid(
@@ -219,13 +313,14 @@ class MemoryService:
     ) -> list[ScoredMemory]:
         """多路并发召回 + RRF 融合。
 
-        按 category 分路检索：
-        - preference 路（用户偏好）
-        - emotion 路（情绪记忆）
-        - daily 路（日常事实）
-        - fact/event/person 路（其他事实）
+        五路检索（适配 lingban 数据模型）：
+        - preference 路：偏好/关系证据（高权重，贴近 response_pair）
+        - emotion 路：情绪记忆
+        - daily 路：日常事实
+        - fact_event_person 路：结构化事实窗口
+        - live / recent_live 路：user_new / ai_generated 连续性证据
 
-        每路独立 rank，然后 RRF 融合，配合 source_weight × recency × warmth。
+        每路独立 rank，然后 RRF 融合，配合 source_weight × recency × warmth × path_boost。
         """
         final_k = top_k or settings.memory_recall_top_k
         overfetch = max(1, settings.retrieval_overfetch)
@@ -252,6 +347,20 @@ class MemoryService:
             "fact_event_person": self._search_by_categories(
                 user_id, character_id, query_embedding, db,
                 ["fact", "event", "person"], per_path_k
+            ),
+            "live": self._search_by_sources(
+                user_id,
+                character_id,
+                query_embedding,
+                db,
+                ["user_new", "ai_generated"],
+                per_path_k,
+            ),
+            "recent_live": self._recent_live_memories(
+                user_id,
+                character_id,
+                db,
+                limit=settings.live_recent_limit,
             ),
         }
 
@@ -304,6 +413,55 @@ class MemoryService:
             extra_where=f"AND category IN ({cat_list})",
             params={},
         )
+
+    async def _search_by_sources(
+        self,
+        user_id: uuid.UUID,
+        character_id: str,
+        query_embedding: list[float],
+        db: AsyncSession,
+        sources: list[str],
+        top_k: int,
+    ) -> list[tuple[Memory, float]]:
+        """按 source 分路做向量检索（live 连续性）。"""
+        source_list = ", ".join(f"'{s}'" for s in sources)
+        return await self._vector_search(
+            user_id,
+            character_id,
+            query_embedding,
+            db,
+            top_k,
+            extra_where=f"AND source IN ({source_list})",
+            params={},
+        )
+
+    async def _recent_live_memories(
+        self,
+        user_id: uuid.UUID,
+        character_id: str,
+        db: AsyncSession,
+        *,
+        limit: int = 20,
+    ) -> list[tuple[Memory, float]]:
+        """最近 live 记录，作为连续性召回的 recency 路。"""
+        result = await db.execute(
+            select(Memory)
+            .where(
+                Memory.user_id == user_id,
+                Memory.character_id == character_id,
+                Memory.is_active == True,
+                Memory.source.in_(["user_new", "ai_generated"]),
+            )
+            .order_by(Memory.created_at.desc())
+            .limit(max(1, limit))
+        )
+        memories = list(result.scalars().all())
+        # 越新的分数越高，给 RRF 一个稳定 rank 基础
+        scored: list[tuple[Memory, float]] = []
+        for index, memory in enumerate(memories):
+            score = max(0.05, 1.0 - index * 0.03)
+            scored.append((memory, score))
+        return scored
 
     async def _vector_search(
         self,
@@ -370,7 +528,7 @@ class MemoryService:
 
         公式：
             rrf = Σ 1/(k + rank_i)  ← 同一 memory 多路命中时得分相加
-            final = rrf × source_weight × recency × (1 + warmth × warmth_boost)
+            final = rrf × source_weight × recency × (1 + warmth × warmth_boost) × path_boost
         """
         k = settings.rrf_k
         aggregated: dict[str, dict] = {}
@@ -384,12 +542,14 @@ class MemoryService:
                         "rrf": 0.0,
                         "ranks": [],
                         "kinds": set(),
+                        "paths": set(),
                         "best_similarity": 0.0,
                     }
                 agg = aggregated[mid]
                 agg["rrf"] += 1.0 / (k + rank)
                 agg["ranks"].append(rank)
                 agg["kinds"].add(memory.category)
+                agg["paths"].add(path_name)
                 agg["best_similarity"] = max(agg["best_similarity"], similarity)
 
         # 计算最终分数
@@ -414,16 +574,27 @@ class MemoryService:
             warmth = compute_warmth(memory.content)
             warm_factor = 1.0 + warmth * settings.warmth_boost
 
+            # path boost：preference 路贴近 response_pair 的高价值证据
+            path_boost = 1.0
+            if "preference" in entry["paths"]:
+                path_boost = max(path_boost, settings.preference_path_boost)
+            if "live" in entry["paths"] or "recent_live" in entry["paths"]:
+                path_boost = max(path_boost, 1.1)
+
             # 最终分数
-            final_score = rrf * src_w * rec_w * warm_factor
+            final_score = rrf * src_w * rec_w * warm_factor * path_boost
 
             kind = sorted(entry["kinds"])[0] if entry["kinds"] else "unknown"
+            if "live" in entry["paths"] or "recent_live" in entry["paths"]:
+                if kind in {"unknown", "fact"}:
+                    kind = "live"
             fused.append(ScoredMemory(
                 memory=memory,
                 score=final_score,
                 rank=0,
                 kind=kind,
                 similarity=entry["best_similarity"],
+                path_names=set(entry["paths"]),
             ))
 
         # 按分数降序排列
@@ -435,6 +606,31 @@ class MemoryService:
             sm.rank = i + 1
 
         return result
+
+    def select_persona_memories(
+        self,
+        scored_memories: list[ScoredMemory],
+        *,
+        top_k: int | None = None,
+    ) -> list[ScoredMemory]:
+        """仅保留可参与 persona / 风格蒸馏的记忆。"""
+        limit = top_k or settings.memory_recall_top_k
+        selected = [
+            sm
+            for sm in scored_memories
+            if is_persona_eligible(getattr(sm.memory, "source", "human_original") or "human_original")
+        ]
+        return selected[:limit]
+
+    def to_memory_sources(
+        self,
+        scored_memories: list[ScoredMemory],
+        *,
+        top_k: int | None = None,
+    ) -> list[dict]:
+        """导出前端记忆溯源 payload。"""
+        limit = top_k or settings.memory_sources_top_k
+        return [sm.to_source_payload() for sm in scored_memories[:limit]]
 
     async def _recall_fallback(
         self,
@@ -456,7 +652,13 @@ class MemoryService:
         )
         memories = list(result.scalars().all())
         return [
-            ScoredMemory(memory=m, score=float(m.importance), rank=i + 1, kind=m.category)
+            ScoredMemory(
+                memory=m,
+                score=float(m.importance),
+                rank=i + 1,
+                kind=m.category,
+                path_names={"fallback"},
+            )
             for i, m in enumerate(memories)
         ]
 
