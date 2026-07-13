@@ -107,6 +107,28 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     }
   }
 
+  _ChatMessage _chatMessageFromHistory(Map<String, dynamic> msg) {
+    final sourcesRaw = msg['memory_sources'];
+    final sources = <_MemorySource>[];
+    if (sourcesRaw is List) {
+      for (final item in sourcesRaw) {
+        if (item is Map) {
+          final source = _MemorySource.fromJson(Map<String, dynamic>.from(item));
+          if (source.text.isNotEmpty) {
+            sources.add(source);
+          }
+        }
+      }
+    }
+    return _ChatMessage(
+      id: msg['id'] ?? '',
+      role: msg['role'] ?? 'user',
+      content: msg['content'] ?? '',
+      createdAt: DateTime.tryParse(msg['created_at'] ?? '') ?? DateTime.now(),
+      memorySources: sources,
+    );
+  }
+
   Future<void> _loadCharacterName() async {
     try {
       final response = await apiClient.getCharacters();
@@ -134,13 +156,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         setState(() {
           _messages.clear();
           for (final msg in messages) {
-            _messages.add(_ChatMessage(
-              id: msg['id'] ?? '',
-              role: msg['role'] ?? 'user',
-              content: msg['content'] ?? '',
-              createdAt:
-                  DateTime.tryParse(msg['created_at'] ?? '') ?? DateTime.now(),
-            ));
+            _messages.add(_chatMessageFromHistory(msg));
           }
           _isLoading = false;
           _hasMoreMessages = messages.length >= _pageSize;
@@ -181,13 +197,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           // 将旧消息插入到列表顶部
           final newMessages = <_ChatMessage>[];
           for (final msg in olderMessages) {
-            newMessages.add(_ChatMessage(
-              id: msg['id'] ?? '',
-              role: msg['role'] ?? 'user',
-              content: msg['content'] ?? '',
-              createdAt:
-                  DateTime.tryParse(msg['created_at'] ?? '') ?? DateTime.now(),
-            ));
+            newMessages.add(_chatMessageFromHistory(msg));
           }
           _messages.insertAll(0, newMessages);
           _currentPage = nextPage;

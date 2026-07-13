@@ -58,6 +58,7 @@ class ChatMessageResponse(BaseModel):
     message_type: str
     is_proactive: bool
     created_at: datetime
+    memory_sources: list[dict] | None = None
 
     model_config = {"from_attributes": True}
 
@@ -117,6 +118,7 @@ async def get_chat_history(
                 message_type=m.message_type,
                 is_proactive=m.is_proactive,
                 created_at=m.created_at,
+                memory_sources=list(m.memory_sources or []) if m.memory_sources else None,
             )
             for m in reversed(messages)
         ],
@@ -276,12 +278,13 @@ async def send_message(
 
             yield _sse_data(chunk)
 
-        # 4. 保存 AI 回复
+        # 4. 保存 AI 回复（附带记忆溯源，便于历史回看）
         ai_msg = ChatMessage(
             user_id=user.id,
             character_id=character_id,
             role="assistant",
             content=full_response,
+            memory_sources=memory_sources or None,
         )
         db.add(ai_msg)
         await db.flush()
@@ -434,6 +437,7 @@ async def send_voice_message(
         character_id=character_id,
         role="assistant",
         content=full_response,
+        memory_sources=memory_sources or None,
     )
     db.add(ai_msg)
     await db.flush()

@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     openai_audio_transcription_model: str = "whisper-1"
     ai_chat_response_char_limit: int = 120
     ai_local_stream_chunk_delay_ms: int = 25
-    ai_memory_recall_timeout_ms: int = 800
+    ai_memory_recall_timeout_ms: int = 3000
 
     # Push providers
     jpush_app_key: str = ""

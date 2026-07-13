@@ -22,6 +22,8 @@ class ChatMessage(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     message_type: Mapped[str] = mapped_column(String(20), default="text")  # text / voice / image
     emotion_tags: Mapped[dict] = mapped_column(JSONB, default=list)
+    # AI 回复引用的记忆溯源片段（仅 assistant 有值）
+    memory_sources: Mapped[list | None] = mapped_column(JSONB, nullable=True, default=None)
     is_proactive: Mapped[bool] = mapped_column(Boolean, default=False)
 
     created_at: Mapped[datetime] = mapped_column(

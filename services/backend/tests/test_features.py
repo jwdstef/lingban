@@ -674,6 +674,49 @@ class TestSilenceMechanism:
         parsed = json.loads(data)
         assert parsed["silenced"] is True
 
+    def test_sse_memory_sources_json_format(self):
+        """SSE 记忆溯源事件应为 {"memory_sources": [...]}。"""
+        payload = {
+            "memory_sources": [
+                {
+                    "chunk_id": "abc",
+                    "kind": "preference",
+                    "text": "喜欢猫",
+                    "score": 0.9,
+                    "rank": 1,
+                    "source": "human_original",
+                }
+            ]
+        }
+        data = json.dumps(payload, ensure_ascii=False)
+        parsed = json.loads(data)
+        assert isinstance(parsed["memory_sources"], list)
+        assert parsed["memory_sources"][0]["text"] == "喜欢猫"
+
+    def test_chat_message_model_has_memory_sources(self):
+        from app.models.chat import ChatMessage
+        assert hasattr(ChatMessage, "memory_sources")
+
+    def test_chat_history_response_includes_memory_sources_field(self):
+        from app.routers.chat import ChatMessageResponse
+        from datetime import datetime, timezone
+
+        resp = ChatMessageResponse(
+            id="1",
+            role="assistant",
+            content="你好",
+            message_type="text",
+            is_proactive=False,
+            created_at=datetime.now(timezone.utc),
+            memory_sources=[{"text": "喜欢猫", "source": "human_original"}],
+        )
+        assert resp.memory_sources is not None
+        assert resp.memory_sources[0]["text"] == "喜欢猫"
+
+    def test_memory_recall_timeout_default_is_more_tolerant(self):
+        from app.core.config import settings
+        assert settings.ai_memory_recall_timeout_ms >= 2500
+
     def test_sse_done_marker(self):
         """SSE 结束标记为 [DONE]。"""
         assert "[DONE]" == "[DONE]"
